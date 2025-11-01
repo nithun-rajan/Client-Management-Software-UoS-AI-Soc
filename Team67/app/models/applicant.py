@@ -1,38 +1,33 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Date, Enum as SQLEnum
-from app.core.database import Base
-import enum
+from sqlalchemy import Column, String, Date, Text, Float, Boolean
+from sqlalchemy.orm import relationship
+from app.models.base import BaseModel
+from app.models.enums import ApplicantStatus
 
-class ApplicantStatus(str, enum.Enum):
-    NEW = "new"
-    QUALIFIED = "qualified"
-    VIEWING_BOOKED = "viewing_booked"
-    OFFER_SUBMITTED = "offer_submitted"
-    REFERENCES = "references"
-    LET_AGREED = "let_agreed"
-    ARCHIVED = "archived"
-
-class Applicant(Base):
+class Applicant(BaseModel):
     __tablename__ = "applicants"
-
-    id = Column(Integer, primary_key=True, index=True)
-    full_name = Column(String, nullable=False, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    phone = Column(String)
     
-    # Requirements
-    bedrooms_min = Column(Integer)
-    bedrooms_max = Column(Integer)
+    # Basic identity (from page 22-23)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    date_of_birth = Column(Date)
+    
+    # Applicant status (page 23)
+    status = Column(String, default=ApplicantStatus.NEW)
+    
+    # Property requirements (page 23-24)
+    desired_bedrooms = Column(String)
+    desired_property_type = Column(String)
     rent_budget_min = Column(Float)
     rent_budget_max = Column(Float)
-    desired_locations = Column(String)  # Comma-separated postcodes
-    move_in_date = Column(Date, nullable=True)
+    preferred_locations = Column(Text)
+    move_in_date = Column(Date)
     
-    # Status
-    status = Column(SQLEnum(ApplicantStatus), default=ApplicantStatus.NEW)
+    # Additional criteria
+    has_pets = Column(Boolean, default=False)
+    pet_details = Column(Text)
+    special_requirements = Column(Text)
     
-    # References
-    references_passed = Column(Boolean, default=False)
-    right_to_rent_checked = Column(Boolean, default=False)
-    
-    # Notes
-    notes = Column(String)
+    # Relationships
+    tenancies = relationship("Tenancy", back_populates="applicant")
