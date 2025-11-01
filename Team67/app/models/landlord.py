@@ -1,23 +1,27 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date
-from app.core.database import Base
+from sqlalchemy import Column, String, Boolean, Date, Text
+from sqlalchemy.orm import relationship
+from app.models.base import BaseModel
 
-class Landlord(Base):
+class Landlord(BaseModel):
     __tablename__ = "landlords"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # Core fields (keeping your existing structure)
     full_name = Column(String, nullable=False, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(String, nullable=False, index=True)
     phone = Column(String)
-    address = Column(String)
+    address = Column(Text)
     
-    # Compliance fields (simplified for now)
+    # Compliance fields
     aml_verified = Column(Boolean, default=False)
     aml_verification_date = Column(Date, nullable=True)
     
-    # Banking (simplified)
+    # Banking
     bank_account_name = Column(String)
     sort_code = Column(String)
     account_number = Column(String)
     
     # Notes
-    notes = Column(String)
+    notes = Column(Text)
+    
+    # Relationships
+    properties = relationship("Property", back_populates="landlord")
