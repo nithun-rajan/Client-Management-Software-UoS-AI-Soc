@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from app.models.property import PropertyStatus, PropertyType
+from pydantic import ConfigDict
+
 
 class PropertyBase(BaseModel):
     address: str
@@ -28,5 +30,4 @@ class PropertyResponse(PropertyBase):
     id: int
     status: PropertyStatus
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
