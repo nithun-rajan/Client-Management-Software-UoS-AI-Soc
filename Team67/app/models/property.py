@@ -1,26 +1,24 @@
-from sqlalchemy import Column, Integer, String, Float, Enum as SQLEnum
-from app.core.database import Base
-import enum
+from sqlalchemy import Column, String, ForeignKey, JSON
+from sqlalchemy.orm import relationship
+from app.models.base import BaseModel
+from app.models.enums import PropertyStatus
 
-class PropertyStatus(str, enum.Enum):
-    AVAILABLE = "available"
-    LET_BY = "let_by"
-    MANAGED = "managed"
-
-class PropertyType(str, enum.Enum):
-    FLAT = "flat"
-    HOUSE = "house"
-    MAISONETTE = "maisonette"
-
-class Property(Base):
+class Property(BaseModel):
     __tablename__ = "properties"
-
-    id = Column(Integer, primary_key=True, index=True)
-    address = Column(String, nullable=False)
-    postcode = Column(String, index=True)
-    property_type = Column(SQLEnum(PropertyType), nullable=False)
-    bedrooms = Column(Integer)
-    bathrooms = Column(Integer)
-    rent = Column(Float)
-    status = Column(SQLEnum(PropertyStatus), default=PropertyStatus.AVAILABLE)
-    description = Column(String)
+    
+    address_line1 = Column(String, nullable=False)
+    address_line2 = Column(String)
+    city = Column(String, nullable=False)
+    postcode = Column(String, nullable=False)
+    status = Column(String, default=PropertyStatus.AVAILABLE)  # Using correct enum
+    
+    # Property details
+    property_type = Column(String)  # flat, house, etc
+    bedrooms = Column(String)
+    bathrooms = Column(String)
+        
+    # Relationships
+    landlord_id = Column(String, ForeignKey('landlords.id'))
+    landlord = relationship("Landlord", back_populates="properties")
+    
+    tenancies = relationship("Tenancy", back_populates="property")
