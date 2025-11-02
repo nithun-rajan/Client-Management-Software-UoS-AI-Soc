@@ -1,0 +1,316 @@
+{
+  "info": {
+    "name": "CRM Sales Pipeline API",
+    "description": "Complete API collection for Sales Pipeline with Workflow States, Milestones, SLA Tracking, and KPIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"demo123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/auth/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"demo123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:5500/api/auth/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Offers",
+      "item": [
+        {
+          "name": "Create Offer (New)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"property_id\": 1,\n  \"price\": 250000,\n  \"terms\": \"Subject to survey\",\n  \"state\": \"New\",\n  \"applicant_name\": \"John Smith\",\n  \"applicant_contact\": \"john@example.com\",\n  \"notes\": \"First-time buyer\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/offers",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers"]
+            }
+          }
+        },
+        {
+          "name": "Create Offer (Direct to Offer state)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"property_id\": 1,\n  \"price\": 275000,\n  \"terms\": \"No chain\",\n  \"state\": \"Offer\",\n  \"applicant_name\": \"Jane Doe\",\n  \"applicant_contact\": \"jane@example.com\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/offers",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers"]
+            }
+          }
+        },
+        {
+          "name": "List All Offers",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:5500/api/offers",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers"]
+            }
+          }
+        },
+        {
+          "name": "Counter Offer",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 260000,\n  \"terms\": \"Revised offer with better terms\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/counter",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "counter"]
+            }
+          }
+        },
+        {
+          "name": "Accept Offer (to Exchange)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/accept",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Withdraw Offer",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Buyer pulled out\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/withdraw",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "withdraw"]
+            }
+          }
+        },
+        {
+          "name": "Transition State",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"state\": \"Viewing\",\n  \"notes\": \"Scheduled viewing for next week\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/transition",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "transition"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Milestones",
+      "item": [
+        {
+          "name": "Mark Searches Completed",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/milestones/searches",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "milestones", "searches"]
+            }
+          }
+        },
+        {
+          "name": "Mark Contracts Exchanged",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/milestones/contracts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "milestones", "contracts"]
+            }
+          }
+        },
+        {
+          "name": "Mark Funds Received",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/milestones/funds",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "milestones", "funds"]
+            }
+          }
+        },
+        {
+          "name": "Complete Offer",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/{{offer_id}}/milestones/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "{{offer_id}}", "milestones", "complete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SLA & Workflow",
+      "item": [
+        {
+          "name": "Check SLA Overdue",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "http://localhost:5500/api/offers/check-sla",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "offers", "check-sla"]
+            }
+          }
+        },
+        {
+          "name": "Get Workflow Config",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:5500/api/workflow/config",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "workflow", "config"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "KPIs",
+      "item": [
+        {
+          "name": "Get Sales KPIs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:5500/api/kpi/sales",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "kpi", "sales"]
+            }
+          }
+        },
+        {
+          "name": "Get KPI Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:5500/api/kpi/summary",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5500",
+              "path": ["api", "kpi", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5500",
+      "type": "string"
+    },
+    {
+      "key": "offer_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}
+
