@@ -44,5 +44,6 @@ class Tenancy(BaseModel):
     
     # Link to applicant (when we implement applicants)
     applicant_id = Column(String, ForeignKey('applicants.id'))
+    applicant = relationship("Applicant", back_populates="tenancies")
     
     tasks = relationship("Task", back_populates="tenancy")
