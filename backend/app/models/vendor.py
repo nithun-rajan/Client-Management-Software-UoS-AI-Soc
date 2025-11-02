@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Date, Text
-#from sqlalchemy.orm import relationship #unused
+from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from app.models.enums import VendorStatus
 
@@ -25,3 +25,6 @@ class Vendor(BaseModel):
     instruction_type = Column(String)  # sole_agency, multi_agency
     agreed_commission = Column(String)  # e.g., "1.5% + VAT"
     minimum_fee = Column(String)
+    
+    # Relationships
+    tasks = relationship("Task", back_populates="vendor")
