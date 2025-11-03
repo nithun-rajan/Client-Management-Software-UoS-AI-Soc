@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+package-lock.json
+bun.lockb
+yarn.lock
+
+# Build outputs
+dist
+build
+.vite
+.turbo
+out
+.next
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+
+# Misc
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Generated files
+public/mockServiceWorker.js

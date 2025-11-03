@@ -1,6 +1,7 @@
 #import relevant enums for the table
 from enum import Enum
 
+
 class PropertyStatus(str, Enum):
     # From pages 9, 29-31 - Lettings lifecycle
     AVAILABLE = "available"
@@ -10,7 +11,7 @@ class PropertyStatus(str, Enum):
     UNDER_OFFER = "under_offer"
     BLOCKED = "blocked"        # Page 10: Current status includes "Blocked"
     MAINTENANCE = "maintenance" # Page 10: Current status includes "Maintenance"
-    
+
     # Sales equivalents (implied from sales sections)
     SSTC = "sstc"              # Sold Subject to Contract
     EXCHANGED = "exchanged"
@@ -33,7 +34,7 @@ class TenancyStatus(str, Enum):
     DRAFT = "draft"
     OFFER_ACCEPTED = "offer_accepted"      # Stage 1.2
     REFERENCING = "referencing"            # Stage 2
-    DOCUMENTATION = "documentation"        # Stage 3  
+    DOCUMENTATION = "documentation"        # Stage 3
     MOVE_IN_PREP = "move_in_prep"          # Stage 4
     ACTIVE = "active"                      # Stage 5.1
     ENDED = "ended"

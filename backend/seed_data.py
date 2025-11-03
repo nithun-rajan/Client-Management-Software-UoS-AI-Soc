@@ -3,18 +3,19 @@ Seed script to populate database with realistic test data
 Run with: python seed_data.py
 """
 
-from faker import Faker
 import random
-from datetime import datetime, timedelta
+
+from faker import Faker
 from sqlalchemy.orm import Session
 
 # Import your database and models
-from app.core.database import SessionLocal, engine, Base
-import app.models  # ensure all models are registered before metadata operations
-from app.models.property import Property
-from app.models.enums import PropertyStatus, ApplicantStatus
-from app.models.landlord import Landlord
+from app.core.database import Base, SessionLocal, engine
 from app.models.applicant import Applicant
+from app.models.enums import ApplicantStatus, PropertyStatus
+from app.models.landlord import Landlord
+from app.models.property import Property
+
+
 # Ensure all mapped classes are loaded; avoid importing unused models directly
 
 fake = Faker('en_GB')
@@ -29,18 +30,18 @@ def clear_database():
 def create_properties(db: Session, count: int = 20):
     """Create realistic properties"""
     print(f"\n🏠 Creating {count} properties...")
-    
+
     property_types = ["flat", "house", "maisonette"]
     statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
-    
+
     uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
-    
+
     properties = []
     for i in range(count):
         city = random.choice(uk_cities)
         property_type = random.choice(property_types)
         bedrooms = random.randint(1, 5)
-        
+
         address_line1 = fake.street_address()
         address_line2 = fake.secondary_address() if random.choice([True, False]) else None
         property = Property(
@@ -53,13 +54,13 @@ def create_properties(db: Session, count: int = 20):
             bedrooms=str(bedrooms),
             bathrooms=str(random.randint(1, min(bedrooms, 3)))
         )
-        
+
         db.add(property)
         properties.append(property)
-        
+
         if (i + 1) % 5 == 0:
             print(f"   Created {i + 1}/{count} properties...")
-    
+
     db.commit()
     print(f"✅ Created {count} properties")
     return properties
@@ -67,7 +68,7 @@ def create_properties(db: Session, count: int = 20):
 def create_landlords(db: Session, count: int = 10):
     """Create realistic landlords"""
     print(f"\n👔 Creating {count} landlords...")
-    
+
     landlords = []
     for i in range(count):
         landlord = Landlord(
@@ -83,13 +84,13 @@ def create_landlords(db: Session, count: int = 10):
             notes=f"{'Experienced' if random.choice([True, False]) else 'New'} landlord. "
                 f"Owns {random.randint(1, 8)} properties."
         )
-        
+
         db.add(landlord)
         landlords.append(landlord)
-        
+
         if (i + 1) % 3 == 0:
             print(f"   Created {i + 1}/{count} landlords...")
-    
+
     db.commit()
     print(f"✅ Created {count} landlords")
     return landlords
@@ -97,10 +98,10 @@ def create_landlords(db: Session, count: int = 10):
 def create_applicants(db: Session, count: int = 15):
     """Create realistic applicants"""
     print(f"\n👥 Creating {count} applicants...")
-    
+
     statuses = list(ApplicantStatus)
     uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
-    
+
     applicants = []
     for i in range(count):
         bedrooms_min = random.randint(1, 3)
@@ -127,13 +128,13 @@ def create_applicants(db: Session, count: int = 15):
             pet_details=("Has a small dog" if has_pets else None),
             special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
         )
-        
+
         db.add(applicant)
         applicants.append(applicant)
-        
+
         if (i + 1) % 5 == 0:
             print(f"   Created {i + 1}/{count} applicants...")
-    
+
     db.commit()
     print(f"✅ Created {count} applicants")
     return applicants
@@ -143,31 +144,31 @@ def main():
     print("\n" + "="*60)
     print("🌱 TEAM 67 CRM - DATABASE SEEDING SCRIPT")
     print("="*60)
-    
+
     # Create database session
     db = SessionLocal()
-    
+
     try:
         # Clear existing data
         clear_database()
-        
+
         # Create all data
         properties = create_properties(db, count=20)
         landlords = create_landlords(db, count=10)
         applicants = create_applicants(db, count=15)
-        
+
         # Summary
         print("\n" + "="*60)
         print("✅ SEEDING COMPLETE!")
         print("="*60)
-        print(f"📊 Summary:")
+        print("📊 Summary:")
         print(f"   • {len(properties)} Properties")
         print(f"   • {len(landlords)} Landlords")
         print(f"   • {len(applicants)} Applicants")
         print("\n🚀 Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
-        
+
     except Exception as e:
         print(f"\n❌ Error during seeding: {e}")
         db.rollback()

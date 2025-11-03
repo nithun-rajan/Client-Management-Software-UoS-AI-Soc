@@ -1,10 +1,11 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.core.database import get_db
 from app.models.property import Property
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate
+
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -17,7 +18,7 @@ def create_property(property_data: PropertyCreate, db: Session = Depends(get_db)
     db.refresh(db_property)
     return db_property
 
-@router.get("/", response_model=List[PropertyResponse])
+@router.get("/", response_model=list[PropertyResponse])
 def list_properties(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all properties"""
     properties = db.query(Property).offset(skip).limit(limit).all()
@@ -41,10 +42,10 @@ def update_property(
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
-    
+
     for key, value in property_data.model_dump(exclude_unset=True).items():
         setattr(property, key, value)
-    
+
     db.commit()
     db.refresh(property)
     return property
@@ -55,6 +56,6 @@ def delete_property(property_id: int, db: Session = Depends(get_db)):
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
-    
+
     db.delete(property)
     db.commit()
