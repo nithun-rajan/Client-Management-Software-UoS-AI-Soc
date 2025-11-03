@@ -10,10 +10,12 @@ from sqlalchemy.orm import Session
 
 # Import your database and models
 from app.core.database import SessionLocal, engine, Base
+import app.models  # ensure all models are registered before metadata operations
 from app.models.property import Property
 from app.models.enums import PropertyStatus, ApplicantStatus
 from app.models.landlord import Landlord
 from app.models.applicant import Applicant
+# Ensure all mapped classes are loaded; avoid importing unused models directly
 
 fake = Faker('en_GB')
 
@@ -39,21 +41,17 @@ def create_properties(db: Session, count: int = 20):
         property_type = random.choice(property_types)
         bedrooms = random.randint(1, 5)
         
-        # Realistic rent based on bedrooms and city
-        base_rent = 800 if city != "London" else 1500
-        rent = base_rent + (bedrooms * 200) + random.randint(-100, 300)
-        
+        address_line1 = fake.street_address()
+        address_line2 = fake.secondary_address() if random.choice([True, False]) else None
         property = Property(
-            address=f"{fake.street_address()}, {city}",
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
             postcode=fake.postcode(),
-            property_type=property_type,
-            bedrooms=bedrooms,
-            bathrooms=random.randint(1, min(bedrooms, 3)),
-            rent=round(rent, 2),
             status=random.choice(statuses),
-            description=f"Beautiful {property_type.value} in {city} with {bedrooms} bedrooms. "
-                    f"{'Modern and spacious' if rent > 1500 else 'Cozy and affordable'} property. "
-                    f"{'Close to transport links.' if random.choice([True, False]) else 'Quiet neighborhood.'}"
+            property_type=property_type,
+            bedrooms=str(bedrooms),
+            bathrooms=str(random.randint(1, min(bedrooms, 3)))
         )
         
         db.add(property)
@@ -107,28 +105,27 @@ def create_applicants(db: Session, count: int = 15):
     for i in range(count):
         bedrooms_min = random.randint(1, 3)
         bedrooms_max = bedrooms_min + random.randint(0, 2)
-        
+        desired_bedrooms = f"{bedrooms_min}-{bedrooms_max}"
         rent_min = random.randint(800, 1500)
         rent_max = rent_min + random.randint(500, 1500)
-        
         move_date = fake.date_between(start_date='today', end_date='+3m')
-        
+        has_pets = random.choice([True, False])
         applicant = Applicant(
-            full_name=fake.name(),
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            bedrooms_min=bedrooms_min,
-            bedrooms_max=bedrooms_max,
+            date_of_birth=fake.date_between(start_date='-40y', end_date='-18y'),
+            status=random.choice(statuses),
+            desired_bedrooms=desired_bedrooms,
+            desired_property_type=random.choice(["flat", "house", "maisonette"]),
             rent_budget_min=rent_min,
             rent_budget_max=rent_max,
-            desired_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
+            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
             move_in_date=move_date,
-            status=random.choice(statuses),
-            references_passed=random.choice([True, False]),
-            right_to_rent_checked=random.choice([True, False]),
-            notes=f"Looking for {bedrooms_min}-{bedrooms_max} bed property. "
-                f"{'First-time renter' if random.choice([True, False]) else 'Experienced tenant'}. "
-                f"{'Has pets' if random.choice([True, False, False]) else 'No pets'}."
+            has_pets=has_pets,
+            pet_details=("Has a small dog" if has_pets else None),
+            special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
         )
         
         db.add(applicant)

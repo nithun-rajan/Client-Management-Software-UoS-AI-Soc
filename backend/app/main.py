@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 
 from app.core.database import Base, engine, get_db
+import app.models  # ensure all models are registered before table creation
 from app.api.v1 import properties, landlords, applicants, search, kpis, events
 from app.models.property import Property
 from app.models.landlord import Landlord
