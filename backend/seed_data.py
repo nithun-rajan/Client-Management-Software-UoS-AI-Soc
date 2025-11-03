@@ -29,7 +29,7 @@ def create_properties(db: Session, count: int = 20):
     print(f"\n🏠 Creating {count} properties...")
     
     property_types = ["flat", "house", "maisonette"]
-    statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
+    statuses = ["available", "let_by", "tenanted"]
     
     uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
     
@@ -39,19 +39,25 @@ def create_properties(db: Session, count: int = 20):
         property_type = random.choice(property_types)
         bedrooms = random.randint(1, 5)
         
+        # ADD THESE LINES HERE
+        address_line1 = fake.street_address()
+        address_line2 = fake.secondary_address() if random.choice([True, False]) else None
+        
         # Realistic rent based on bedrooms and city
         base_rent = 800 if city != "London" else 1500
         rent = base_rent + (bedrooms * 200) + random.randint(-100, 300)
         
         property = Property(
-            address=f"{fake.street_address()}, {city}",
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
             postcode=fake.postcode(),
+            status=random.choice(statuses),
             property_type=property_type,
             bedrooms=bedrooms,
             bathrooms=random.randint(1, min(bedrooms, 3)),
             rent=round(rent, 2),
-            status=random.choice(statuses),
-            description=f"Beautiful {property_type.value} in {city} with {bedrooms} bedrooms. "
+            description=f"Beautiful {property_type} in {city} with {bedrooms} bedrooms. "
                     f"{'Modern and spacious' if rent > 1500 else 'Cozy and affordable'} property. "
                     f"{'Close to transport links.' if random.choice([True, False]) else 'Quiet neighborhood.'}"
         )
@@ -97,10 +103,9 @@ def create_landlords(db: Session, count: int = 10):
     return landlords
 
 def create_applicants(db: Session, count: int = 15):
-    """Create realistic applicants"""
     print(f"\n👥 Creating {count} applicants...")
     
-    statuses = list(ApplicantStatus)
+    statuses = ["new", "qualified", "viewing_booked", "offer_submitted", "let_agreed"]
     uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
     
     applicants = []
@@ -114,21 +119,19 @@ def create_applicants(db: Session, count: int = 15):
         move_date = fake.date_between(start_date='today', end_date='+3m')
         
         applicant = Applicant(
-            full_name=fake.name(),
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            bedrooms_min=bedrooms_min,
-            bedrooms_max=bedrooms_max,
+            desired_bedrooms=str(bedrooms_min),
             rent_budget_min=rent_min,
             rent_budget_max=rent_max,
-            desired_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
+            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
             move_in_date=move_date,
             status=random.choice(statuses),
-            references_passed=random.choice([True, False]),
-            right_to_rent_checked=random.choice([True, False]),
-            notes=f"Looking for {bedrooms_min}-{bedrooms_max} bed property. "
-                f"{'First-time renter' if random.choice([True, False]) else 'Experienced tenant'}. "
-                f"{'Has pets' if random.choice([True, False, False]) else 'No pets'}."
+            has_pets=random.choice([True, False, False]),
+            pet_details="Small dog" if random.choice([True, False]) else None,
+            special_requirements=f"Looking for {bedrooms_min} bed property. Near schools." if random.choice([True, False]) else None
         )
         
         db.add(applicant)
