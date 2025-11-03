@@ -21,7 +21,7 @@ class Vendor(BaseModel):
     aml_status = Column(String, default="pending")
     
     # Sales instruction
-    status = Column(String, default=VendorStatus.PENDING_VERIFICATION)
+    status = Column(String, default=VendorStatus.NEW)
     instruction_type = Column(String)  # sole_agency, multi_agency
     agreed_commission = Column(String)  # e.g., "1.5% + VAT"
     minimum_fee = Column(String)
