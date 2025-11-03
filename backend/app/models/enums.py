@@ -112,6 +112,15 @@ class TaskStatus:
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
+class VendorStatus:
+    """Vendor/Sales status"""
+    NEW = "new"
+    INSTRUCTED = "instructed"
+    ACTIVE = "active"
+    SOLD = "sold"
+    WITHDRAWN = "withdrawn"
+    LOST = "lost"
+
 class UserRole:
     """User roles for RBAC"""
     ADMIN = "admin"

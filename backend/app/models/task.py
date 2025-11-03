@@ -8,7 +8,7 @@ class Task(BaseModel):
     
     title = Column(String, nullable=False)
     description = Column(Text)
-    status = Column(String, default=TaskStatus.PENDING)
+    status = Column(String, default=TaskStatus.TODO)
     due_date = Column(DateTime)
     priority = Column(String, default="medium")
     
