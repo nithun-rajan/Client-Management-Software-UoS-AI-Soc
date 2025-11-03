@@ -1,10 +1,10 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import date
-from app.models.applicant import ApplicantStatus
 
 class ApplicantBase(BaseModel):
-    full_name: str
+    first_name: str
+    last_name: str
     email: EmailStr
     phone: Optional[str] = None
     bedrooms_min: Optional[int] = None
@@ -19,7 +19,8 @@ class ApplicantCreate(ApplicantBase):
     pass
 
 class ApplicantUpdate(BaseModel):
-    full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     bedrooms_min: Optional[int] = None
@@ -28,16 +29,12 @@ class ApplicantUpdate(BaseModel):
     rent_budget_max: Optional[float] = None
     desired_locations: Optional[str] = None
     move_in_date: Optional[date] = None
-    status: Optional[ApplicantStatus] = None
-    references_passed: Optional[bool] = None
-    right_to_rent_checked: Optional[bool] = None
+    status: Optional[str] = None
     notes: Optional[str] = None
 
 class ApplicantResponse(ApplicantBase):
-    id: int
-    status: ApplicantStatus
-    references_passed: bool
-    right_to_rent_checked: bool
+    id: str
+    status: str
 
     class Config:
         from_attributes = True

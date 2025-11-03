@@ -244,3 +244,6 @@ app.include_router(applicants.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(kpis.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
+
+#add a router for auth.py (by Anthony)
+# app.include_router(auth.router, prefix="/api/v1")
