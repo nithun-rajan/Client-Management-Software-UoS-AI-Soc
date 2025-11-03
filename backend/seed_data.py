@@ -5,7 +5,6 @@ Run with: python seed_data.py
 
 from faker import Faker
 import random
-import json
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
@@ -48,19 +47,8 @@ def create_properties(db: Session, count: int = 20):
         base_rent = 800 if city != "London" else 1500
         rent = base_rent + (bedrooms * 200) + random.randint(-100, 300)
         
-        # Create full address from components
-        full_address = f"{address_line1}, {city}"
-        if address_line2:
-            full_address = f"{address_line1}, {address_line2}, {city}"
-        
-        # Generate property features for matching
-        feature_options = ['parking', 'garden', 'balcony', 'pets_allowed', 'near_school', 'modern', 'renovated', 'transport_links']
-        num_features = random.randint(2, 5)
-        features = random.sample(feature_options, num_features)
-        features_json = json.dumps(features)
-        
         property = Property(
-            address=full_address,  # Required field
+            address=address_line1, 
             address_line1=address_line1,
             address_line2=address_line2,
             city=city,
@@ -70,8 +58,6 @@ def create_properties(db: Session, count: int = 20):
             bedrooms=bedrooms,
             bathrooms=random.randint(1, min(bedrooms, 3)),
             rent=round(rent, 2),
-            furnished=random.choice([True, False]),
-            features=features_json,
             description=f"Beautiful {property_type} in {city} with {bedrooms} bedrooms. "
                     f"{'Modern and spacious' if rent > 1500 else 'Cozy and affordable'} property. "
                     f"{'Close to transport links.' if random.choice([True, False]) else 'Quiet neighborhood.'}"
@@ -122,8 +108,6 @@ def create_applicants(db: Session, count: int = 15):
     
     statuses = ["new", "qualified", "viewing_booked", "offer_submitted", "let_agreed"]
     uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
-    cities = ["Southampton", "Manchester", "Bristol", "Leeds", "London"]
-    property_types = ["flat", "house", "maisonette"]
     
     applicants = []
     for i in range(count):
@@ -134,16 +118,6 @@ def create_applicants(db: Session, count: int = 15):
         rent_max = rent_min + random.randint(500, 1500)
         
         move_date = fake.date_between(start_date='today', end_date='+3m')
-        has_pets = random.choice([True, False, False])
-        
-        # Generate realistic special requirements
-        requirements = []
-        if random.choice([True, False]):
-            requirements.append("Near schools")
-        if random.choice([True, False]):
-            requirements.append("Parking required")
-        if random.choice([True, False]):
-            requirements.append("Good transport links")
         
         applicant = Applicant(
             first_name=fake.first_name(),
@@ -151,15 +125,14 @@ def create_applicants(db: Session, count: int = 15):
             email=fake.unique.email(),
             phone=fake.phone_number(),
             desired_bedrooms=str(bedrooms_min),
-            desired_property_type=random.choice(property_types),
             rent_budget_min=rent_min,
             rent_budget_max=rent_max,
-            preferred_locations=f"{random.choice(cities)}, {random.choice(cities)}",
+            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
             move_in_date=move_date,
             status=random.choice(statuses),
-            has_pets=has_pets,
-            pet_details="Small dog" if has_pets and random.choice([True, False]) else ("Cat" if has_pets else None),
-            special_requirements=", ".join(requirements) if requirements else None
+            has_pets=random.choice([True, False, False]),
+            pet_details="Small dog" if random.choice([True, False]) else None,
+            special_requirements=f"Looking for {bedrooms_min} bed property. Near schools." if random.choice([True, False]) else None
         )
         
         db.add(applicant)

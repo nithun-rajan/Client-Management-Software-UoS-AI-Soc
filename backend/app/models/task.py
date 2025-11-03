@@ -1,14 +1,13 @@
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
-from app.models.enums import TaskStatus
 
 class Task(BaseModel):
     __tablename__ = "tasks"
     
     title = Column(String, nullable=False)
     description = Column(Text)
-    status = Column(String, default=TaskStatus.TODO)
+    status = Column(String, default="pending")
     due_date = Column(DateTime)
     priority = Column(String, default="medium")
     

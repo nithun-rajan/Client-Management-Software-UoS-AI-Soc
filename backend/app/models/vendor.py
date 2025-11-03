@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String, Date, Text
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
-from app.models.enums import VendorStatus
 
 class Vendor(BaseModel):
     __tablename__ = "vendors"
@@ -21,7 +20,7 @@ class Vendor(BaseModel):
     aml_status = Column(String, default="pending")
     
     # Sales instruction
-    status = Column(String, default=VendorStatus.NEW)
+    status = Column(String, default="pending_verification")
     instruction_type = Column(String)  # sole_agency, multi_agency
     agreed_commission = Column(String)  # e.g., "1.5% + VAT"
     minimum_fee = Column(String)
