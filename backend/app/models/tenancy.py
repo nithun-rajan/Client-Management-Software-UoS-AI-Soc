@@ -1,110 +1,53 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
+from sqlalchemy import Column, String, Float, ForeignKey, Text, DateTime, Date, Boolean, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.models.base import BaseModel
-from app.models.enums import PropertyStatus
+from app.models.enums import TenancyStatus
 
-class Property(BaseModel):
-    __tablename__ = "properties"
+class Tenancy(BaseModel):
+    __tablename__ = "tenancies"
     
-    # Address fields
-    address = Column(String, nullable=False)
-    address_line1 = Column(String)
-    address_line2 = Column(String)
-    city = Column(String, nullable=False)
-    postcode = Column(String, nullable=False, index=True)
+    # Core relationships
+    property_id = Column(String, ForeignKey('properties.id'), nullable=False)
+    property = relationship("Property", back_populates="tenancies")
     
-    # Property details
-    property_type = Column(String, nullable=False)  # flat, house, maisonette
-    bedrooms = Column(Integer, nullable=False)
-    bathrooms = Column(Integer, nullable=False)
-    floor_area_sqft = Column(Float)
-    furnished = Column(Boolean, default=False)
+    # Primary Applicant/Tenant
+    primary_applicant_id = Column(String, ForeignKey('applicants.id'))
+    # primary_applicant = relationship("Applicant", back_populates="tenancies")
     
-    # Pricing - CRITICAL for KPIs
-    asking_rent = Column(Float)  # What we listed it for
-    rent = Column(Float)  # Actual achieved rent
-    deposit = Column(Float)
+    # Financial
+    rent_amount = Column(Float, nullable=False)
+    deposit_amount = Column(Float, nullable=False)
+    deposit_scheme = Column(String)  # DPS, MyDeposits, TDS
+    deposit_scheme_ref = Column(String)
     
-    # Status tracking - CRITICAL for days-on-market calculation
-    status = Column(String, default=PropertyStatus.AVAILABLE)
-    listed_date = Column(DateTime, default=datetime.utcnow)  # When first listed
-    let_agreed_date = Column(DateTime, nullable=True)  # When offer accepted
-    let_date = Column(DateTime, nullable=True)  # When tenancy started
-    last_status_change = Column(DateTime, default=datetime.utcnow)
+    # Dates
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date)
+    notice_period_days = Column(Integer, default=30)
+    notice_given_date = Column(Date)
     
-    # Engagement tracking - for conversion KPIs
-    viewing_count = Column(Integer, default=0)
-    enquiry_count = Column(Integer, default=0)
-    offer_count = Column(Integer, default=0)
+    # Status
+    status = Column(String, default=TenancyStatus.PENDING)
     
-    # Compliance documents - CRITICAL for compliance KPIs
-    epc_rating = Column(String)
-    epc_expiry = Column(Date)
-    gas_cert_expiry = Column(Date)
-    eicr_expiry = Column(Date)
-    hmolicence_expiry = Column(Date)
+    # Progression tracking
+    offer_accepted_date = Column(Date)
+    referencing_completed_date = Column(Date)
+    contract_sent_date = Column(Date)
+    contract_signed_date = Column(Date)
+    keys_collected_date = Column(Date)
     
-    # Additional details
-    description = Column(Text)
-    features = Column(Text)  # JSON string: ["parking", "garden", "pets_allowed"]
-    council_tax_band = Column(String)
+    # Compliance
+    right_to_rent_verified = Column(Boolean, default=False)
+    right_to_rent_verified_date = Column(Date)
+    inventory_completed = Column(Boolean, default=False)
+    inventory_completed_date = Column(Date)
     
-    # Photos
-    main_photo_url = Column(String)
-    photo_urls = Column(Text)  # JSON array of URLs
+    # Additional occupants
+    additional_occupants = Column(Text)  # JSON: [{name, email, phone}]
     
-    # Landlord relationship
-    landlord_id = Column(String, ForeignKey('landlords.id'))
-    landlord = relationship("Landlord", back_populates="properties")
+    # Notes
+    notes = Column(Text)
     
-    # Tenancies relationship
-    tenancies = relationship("Tenancy", back_populates="property")
-    
-    # Analytics tracking
-    portal_views = Column(Integer, default=0)
-    last_viewed_at = Column(DateTime)
-    
-    @property
-    def days_on_market(self):
-        """Calculate days on market - CRITICAL KPI"""
-        if self.let_date:
-            return (self.let_date - self.listed_date).days
-        return (datetime.utcnow() - self.listed_date).days if self.listed_date else 0
-    
-    @property
-    def price_achievement_rate(self):
-        """Calculate percentage of asking price achieved - CRITICAL KPI"""
-        if self.asking_rent and self.rent:
-            return (self.rent / self.asking_rent) * 100
-        return None
-    
-    @property
-    def is_compliant(self):
-        """Check if all documents are valid"""
-        today = datetime.now().date()
-        checks = [
-            self.epc_expiry and self.epc_expiry > today,
-            self.gas_cert_expiry and self.gas_cert_expiry > today,
-            self.eicr_expiry and self.eicr_expiry > today,
-        ]
-        return all(checks)
-    
-    @property
-    def expiring_documents(self):
-        """Get list of expiring/expired documents"""
-        from datetime import timedelta
-        today = datetime.now().date()
-        soon = today + timedelta(days=30)
-        
-        expiring = []
-        if self.epc_expiry and self.epc_expiry < soon:
-            expiring.append({"type": "EPC", "expiry": self.epc_expiry})
-        if self.gas_cert_expiry and self.gas_cert_expiry < soon:
-            expiring.append({"type": "Gas Safety", "expiry": self.gas_cert_expiry})
-        if self.eicr_expiry and self.eicr_expiry < soon:
-            expiring.append({"type": "EICR", "expiry": self.eicr_expiry})
-        if self.hmolicence_expiry and self.hmolicence_expiry < soon:
-            expiring.append({"type": "HMO Licence", "expiry": self.hmolicence_expiry})
-            
-        return expiring
+    # Tasks
+    tasks = relationship("Task", back_populates="tenancy")
