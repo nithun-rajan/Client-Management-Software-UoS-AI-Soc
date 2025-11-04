@@ -4,7 +4,6 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from slowapi import Limiter
-from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.middleware.rate_limit import RateLimitMiddleware, get_identifier, get_limiter
@@ -50,7 +49,9 @@ def test_get_identifier_extracts_forwarded_for(test_app):
     """Test that get_identifier extracts X-Forwarded-For header."""
     with TestClient(test_app) as client:
         # Create mock request with X-Forwarded-For
-        response = client.get("/test", headers={"X-Forwarded-For": "192.168.1.100, 10.0.0.1"})
+        response = client.get(
+            "/test", headers={"X-Forwarded-For": "192.168.1.100, 10.0.0.1"}
+        )
         assert response.status_code == 200
 
 
@@ -111,7 +112,9 @@ def test_retry_after_header_on_429_response(client):
     )
     retry_after_int = int(retry_after)
     assert retry_after_int > 0, "Retry-After should be positive"
-    assert retry_after_int <= 60, "Retry-After should be reasonable (<= 60 seconds for minute-based limit)"
+    assert retry_after_int <= 60, (
+        "Retry-After should be reasonable (<= 60 seconds for minute-based limit)"
+    )
 
     # Additional check: X-RateLimit-Reset header should also be present
     assert "X-RateLimit-Reset" in response.headers, (
@@ -151,7 +154,9 @@ def test_unlimited_endpoint_not_rate_limited():
     # Make many requests - should not be rate limited
     for _ in range(10):
         response = client.get("/unlimited")
-        assert response.status_code == 200, "Endpoint without decorator should not be rate limited"
+        assert response.status_code == 200, (
+            "Endpoint without decorator should not be rate limited"
+        )
 
 
 def test_get_limiter_returns_singleton():

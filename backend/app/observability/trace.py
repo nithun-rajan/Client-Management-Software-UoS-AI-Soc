@@ -7,7 +7,7 @@ Should only be enabled in development/staging environments.
 
 import os
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import Request
 
@@ -24,7 +24,7 @@ class RequestTracer:
         return environment != "production"
 
     @staticmethod
-    async def trace_request(request: Request) -> Dict[str, Any]:
+    async def trace_request(request: Request) -> dict[str, Any]:
         """
         Get detailed trace information for a request.
 
@@ -49,7 +49,9 @@ class RequestTracer:
                 "url": str(request.url),
                 "path": request.url.path,
                 "query_params": dict(request.query_params),
-                "path_params": dict(request.path_params) if hasattr(request, "path_params") else {},
+                "path_params": dict(request.path_params)
+                if hasattr(request, "path_params")
+                else {},
                 "client": {
                     "host": request.client.host if request.client else None,
                     "port": request.client.port if request.client else None,
@@ -73,7 +75,7 @@ class RequestTracer:
         return trace_info
 
     @staticmethod
-    def _safe_headers(headers: Dict[str, str]) -> Dict[str, str]:
+    def _safe_headers(headers: dict[str, str]) -> dict[str, str]:
         """
         Sanitize headers to remove sensitive information.
 
@@ -101,7 +103,7 @@ class RequestTracer:
         return safe_headers
 
     @staticmethod
-    def _get_middleware_info(request: Request) -> List[str]:
+    def _get_middleware_info(request: Request) -> list[str]:
         """
         Get information about middleware stack.
 
@@ -124,7 +126,7 @@ class RequestTracer:
         return middleware_info
 
     @staticmethod
-    def get_context_variables() -> Dict[str, Any]:
+    def get_context_variables() -> dict[str, Any]:
         """
         Get current context variables.
 
@@ -141,7 +143,7 @@ class RequestTracer:
             return {"error": "No context variables set (outside request context)"}
 
     @staticmethod
-    def get_stack_trace() -> List[str]:
+    def get_stack_trace() -> list[str]:
         """
         Get current stack trace for debugging.
 

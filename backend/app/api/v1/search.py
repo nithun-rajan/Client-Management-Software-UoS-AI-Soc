@@ -1,14 +1,18 @@
-
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.enums import PropertyStatus
 from app.models.property import Property
 from app.schemas.property import PropertyResponse
+from app.security.input_validation import (
+    detect_command_injection,
+    detect_sql_injection,
+    sanitize_search_query,
+)
 
 
 router = APIRouter(prefix="/search", tags=["search"])
+
 
 @router.get("/properties", response_model=list[PropertyResponse])
 def search_properties(
@@ -17,21 +21,34 @@ def search_properties(
     bedrooms_max: int | None = Query(None, description="Maximum bedrooms"),
     rent_min: float | None = Query(None, description="Minimum rent"),
     rent_max: float | None = Query(None, description="Maximum rent"),
-    property_type: str | None = Query(None, description="Property type (flat/house/maisonette)"),
+    property_type: str | None = Query(
+        None, description="Property type (flat/house/maisonette)"
+    ),
     postcode: str | None = Query(None, description="Postcode (partial match)"),
-    status: PropertyStatus | None = Query(None, description="Property status"),
+    city: str | None = Query(None, description="City (partial match)"),
+    status: str | None = Query(None, description="Property status"),
     skip: int = Query(0, description="Skip N results"),
     limit: int = Query(100, description="Limit results"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Search properties with multiple filters.
-    
+
     Examples:
     - /search/properties?bedrooms=2
     - /search/properties?bedrooms_min=2&bedrooms_max=4&rent_max=2000
     - /search/properties?postcode=SO15&property_type=flat
     """
+
+    # Validate and sanitize
+    if postcode:
+        if detect_sql_injection(postcode) or detect_command_injection(postcode):
+            raise HTTPException(status_code=400, detail="Invalid postcode")
+        postcode = sanitize_search_query(postcode)
+    if city:
+        if detect_command_injection(city) or detect_sql_injection(city):
+            raise HTTPException(status_code=400, detail="Invalid city")
+        city = sanitize_search_query(city)
 
     # Start with base query
     query = db.query(Property)
@@ -59,13 +76,14 @@ def search_properties(
         # Partial postcode match (e.g., "SO15" matches "SO15 2AB")
         query = query.filter(Property.postcode.ilike(f"%{postcode}%"))
 
+    if city is not None:
+        query = query.filter(Property.city.ilike(f"%{city}%"))
+
     if status is not None:
         query = query.filter(Property.status == status)
 
     # Get results with pagination
-    properties = query.offset(skip).limit(limit).all()
-
-    return properties
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/properties/count")
@@ -77,13 +95,20 @@ def count_search_results(
     rent_max: float | None = None,
     property_type: str | None = None,
     postcode: str | None = None,
-    status: PropertyStatus | None = None,
-    db: Session = Depends(get_db)
+    city: str | None = None,
+    status: str | None = None,
+    db: Session = Depends(get_db),
 ):
     """
     Count how many properties match the search criteria.
     Useful for pagination.
     """
+
+    # Validate
+    if postcode and (detect_sql_injection(postcode) or detect_command_injection(postcode)):
+        raise HTTPException(status_code=400, detail="Invalid postcode")
+    if city and (detect_command_injection(city) or detect_sql_injection(city)):
+        raise HTTPException(status_code=400, detail="Invalid city")
 
     # Start with base query
     query = db.query(Property)
@@ -108,4 +133,11 @@ def count_search_results(
         query = query.filter(Property.property_type == property_type)
 
     if postcode is not None:
-        query = query.filter
+        query = query.filter(Property.postcode.ilike(f"%{postcode}%"))
+    if city is not None:
+        query = query.filter(Property.city.ilike(f"%{city}%"))
+
+    if status is not None:
+        query = query.filter(Property.status == status)
+
+    return {"count": query.count()}

@@ -3,8 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
+from fastapi import Request
 
 from app.security.events import (
     SecurityEventSeverity,

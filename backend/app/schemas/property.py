@@ -1,7 +1,4 @@
-
 from pydantic import BaseModel, ConfigDict, Field
-
-from app.models.enums import PropertyStatus
 
 
 class PropertyBase(BaseModel):
@@ -13,8 +10,10 @@ class PropertyBase(BaseModel):
     rent: float | None = None
     description: str | None = None
 
+
 class PropertyCreate(PropertyBase):
     pass
+
 
 class PropertyUpdate(BaseModel):
     address: str | None = None
@@ -23,11 +22,12 @@ class PropertyUpdate(BaseModel):
     bedrooms: int | None = None
     bathrooms: int | None = None
     rent: float | None = None
-    status: PropertyStatus | None = None
+    status: str | None = None
     description: str | None = None
 
+
 class PropertyResponse(PropertyBase):
-    id: int
-    status: PropertyStatus
+    id: str
+    status: str
 
     model_config = ConfigDict(from_attributes=True)

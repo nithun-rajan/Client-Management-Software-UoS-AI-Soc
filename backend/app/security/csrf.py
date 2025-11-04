@@ -8,7 +8,6 @@ Uses double-submit cookie pattern for stateless CSRF protection.
 import hashlib
 import hmac
 import secrets
-from typing import Optional
 
 from fastapi import Header, HTTPException, Request, status
 
@@ -88,7 +87,7 @@ class CSRFProtection:
     async def validate_csrf(
         self,
         request: Request,
-        csrf_token: Optional[str] = Header(None, alias="X-CSRF-Token"),
+        csrf_token: str | None = Header(None, alias="X-CSRF-Token"),
     ) -> None:
         """
         Validate CSRF token from request.

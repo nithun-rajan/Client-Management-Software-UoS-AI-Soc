@@ -14,7 +14,6 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional
 
 
 class SLOType(str, Enum):
@@ -62,7 +61,7 @@ class ErrorBudget:
     status: str  # "healthy", "warning", "critical"
     burn_rate: float  # Current burn rate
     burn_rate_level: BurnRateLevel
-    time_to_exhaustion_hours: Optional[float] = None  # Hours until budget exhausted
+    time_to_exhaustion_hours: float | None = None  # Hours until budget exhausted
 
 
 class ErrorBudgetCalculator:
@@ -79,7 +78,8 @@ class ErrorBudgetCalculator:
         SLOConfig(
             name="API Latency P95",
             slo_type=SLOType.LATENCY,
-            target=float(os.getenv("SLO_LATENCY_P95_MS", "500")) / 1000,  # Convert to seconds
+            target=float(os.getenv("SLO_LATENCY_P95_MS", "500"))
+            / 1000,  # Convert to seconds
             window_days=30,
         ),
         SLOConfig(
@@ -94,8 +94,8 @@ class ErrorBudgetCalculator:
     def calculate_error_budget(
         slo_config: SLOConfig,
         actual_value: float,
-        window_start: Optional[datetime] = None,
-        window_end: Optional[datetime] = None,
+        window_start: datetime | None = None,
+        window_end: datetime | None = None,
     ) -> ErrorBudget:
         """
         Calculate error budget for a given SLO.
@@ -129,13 +129,21 @@ class ErrorBudgetCalculator:
             budget_consumed = max(0.0, slo_config.target - actual_value)
 
         budget_remaining = max(0.0, budget_total - budget_consumed)
-        budget_remaining_pct = (budget_remaining / budget_total * 100) if budget_total > 0 else 100.0
+        budget_remaining_pct = (
+            (budget_remaining / budget_total * 100) if budget_total > 0 else 100.0
+        )
 
         # Calculate burn rate
         elapsed_days = (window_end - window_start).total_seconds() / 86400
         expected_consumption_rate = budget_total / slo_config.window_days
-        actual_consumption_rate = budget_consumed / elapsed_days if elapsed_days > 0 else 0
-        burn_rate = actual_consumption_rate / expected_consumption_rate if expected_consumption_rate > 0 else 0
+        actual_consumption_rate = (
+            budget_consumed / elapsed_days if elapsed_days > 0 else 0
+        )
+        burn_rate = (
+            actual_consumption_rate / expected_consumption_rate
+            if expected_consumption_rate > 0
+            else 0
+        )
 
         # Classify burn rate
         if burn_rate < 1.0:
@@ -150,7 +158,11 @@ class ErrorBudgetCalculator:
         # Calculate time to exhaustion
         time_to_exhaustion_hours = None
         if burn_rate > 0 and budget_remaining > 0:
-            days_to_exhaustion = budget_remaining / actual_consumption_rate if actual_consumption_rate > 0 else float('inf')
+            days_to_exhaustion = (
+                budget_remaining / actual_consumption_rate
+                if actual_consumption_rate > 0
+                else float("inf")
+            )
             time_to_exhaustion_hours = days_to_exhaustion * 24
 
         # Determine status
@@ -180,21 +192,22 @@ class ErrorBudgetCalculator:
         )
 
     @staticmethod
-    def format_time_to_exhaustion(hours: Optional[float]) -> str:
+    def format_time_to_exhaustion(hours: float | None) -> str:
         """Format time to exhaustion in human-readable format."""
-        if hours is None or hours == float('inf'):
+        if hours is None or hours == float("inf"):
             return "N/A (budget healthy)"
 
         if hours < 1:
             return f"{int(hours * 60)} minutes"
-        elif hours < 24:
+        if hours < 24:
             return f"{hours:.1f} hours"
-        else:
-            days = hours / 24
-            return f"{days:.1f} days"
+        days = hours / 24
+        return f"{days:.1f} days"
 
     @staticmethod
-    def calculate_allowed_downtime(slo_target: float, window_days: int = 30) -> Dict[str, float]:
+    def calculate_allowed_downtime(
+        slo_target: float, window_days: int = 30
+    ) -> dict[str, float]:
         """
         Calculate allowed downtime for a given SLO target.
 
@@ -219,17 +232,17 @@ class ErrorBudgetCalculator:
         }
 
     @classmethod
-    def get_default_slos(cls) -> List[SLOConfig]:
+    def get_default_slos(cls) -> list[SLOConfig]:
         """Get default SLO configurations from environment."""
         return cls.DEFAULT_SLOS
 
     @classmethod
     def get_error_budget_summary(
         cls,
-        metrics: Dict[str, float],
-        window_start: Optional[datetime] = None,
-        window_end: Optional[datetime] = None,
-    ) -> List[ErrorBudget]:
+        metrics: dict[str, float],
+        window_start: datetime | None = None,
+        window_end: datetime | None = None,
+    ) -> list[ErrorBudget]:
         """
         Calculate error budgets for all default SLOs.
 

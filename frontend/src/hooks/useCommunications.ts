@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = "http://localhost:8000/api/v1";
 
 export interface Communication {
   id: number;
@@ -60,16 +60,18 @@ export function useCommunications() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.entity_type) params.append('entity_type', filters.entity_type);
-      if (filters?.entity_id) params.append('entity_id', filters.entity_id.toString());
-      if (filters?.is_important !== undefined) params.append('is_important', filters.is_important.toString());
-      if (filters?.is_read !== undefined) params.append('is_read', filters.is_read.toString());
+      if (filters?.type) params.append("type", filters.type);
+      if (filters?.entity_type) params.append("entity_type", filters.entity_type);
+      if (filters?.entity_id) params.append("entity_id", filters.entity_id.toString());
+      if (filters?.is_important !== undefined)
+        params.append("is_important", filters.is_important.toString());
+      if (filters?.is_read !== undefined)
+        params.append("is_read", filters.is_read.toString());
 
       const response = await axios.get(`${API_URL}/messaging?${params.toString()}`);
       setCommunications(response.data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch communications');
+      setError(err.message || "Failed to fetch communications");
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ export function useCommunications() {
       const response = await axios.get(`${API_URL}/messaging/stats/summary`);
       setStats(response.data);
     } catch (err: any) {
-      console.error('Failed to fetch stats:', err);
+      console.error("Failed to fetch stats:", err);
     }
   };
 
@@ -92,7 +94,7 @@ export function useCommunications() {
       await fetchCommunications();
       await fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create communication');
+      setError(err.response?.data?.detail || "Failed to create communication");
       throw err;
     } finally {
       setLoading(false);
@@ -105,7 +107,7 @@ export function useCommunications() {
       await fetchCommunications();
       await fetchStats();
     } catch (err: any) {
-      console.error('Failed to mark as read:', err);
+      console.error("Failed to mark as read:", err);
     }
   };
 
@@ -115,7 +117,7 @@ export function useCommunications() {
       await fetchCommunications();
       await fetchStats();
     } catch (err: any) {
-      console.error('Failed to delete communication:', err);
+      console.error("Failed to delete communication:", err);
     }
   };
 
@@ -174,4 +176,3 @@ export function useCommunications() {
     getApplicantCommunications,
   };
 }
-

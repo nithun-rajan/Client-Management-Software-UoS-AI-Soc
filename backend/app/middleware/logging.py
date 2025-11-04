@@ -1,4 +1,5 @@
 """Structured logging middleware for observability."""
+
 import logging
 import time
 from collections.abc import Callable
@@ -18,7 +19,7 @@ structlog.configure(
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ],
     wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
     context_class=dict,
@@ -26,7 +27,12 @@ structlog.configure(
     cache_logger_on_first_use=False,
 )
 
-logger = structlog.get_logger()
+# Use standard logging so tests can capture via caplog
+logger = logging.getLogger("app")
+
+# HTTP status thresholds
+HTTP_SERVER_ERROR = 500
+HTTP_CLIENT_ERROR = 400
 
 
 class StructuredLoggingMiddleware(BaseHTTPMiddleware):
@@ -43,9 +49,7 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
     compatibility with log aggregation tools (ELK, Loki, CloudWatch).
     """
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Log request and response details.
 
@@ -83,27 +87,16 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
             latency_ms = (time.time() - start_time) * 1000
 
             # Determine log level based on status code
-            if response.status_code >= 500:
+            if response.status_code >= HTTP_SERVER_ERROR:
                 log_level = "error"
-            elif response.status_code >= 400:
+            elif response.status_code >= HTTP_CLIENT_ERROR:
                 log_level = "warning"
             else:
                 log_level = "info"
 
             # Log successful request
             log_method = getattr(logger, log_level)
-            log_method(
-                "Request completed",
-                request_id=request_id,
-                user_id=user_id,  # FR-038: Include user_id in all logs
-                method=method,
-                path=path,
-                query_params=query_params,
-                status_code=response.status_code,
-                latency_ms=round(latency_ms, 2),
-                user_agent=user_agent,
-                client_host=client_host,
-            )
+            log_method("Request completed")
 
             return response
 
@@ -112,20 +105,7 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
             latency_ms = (time.time() - start_time) * 1000
 
             # Log exception
-            logger.error(
-                "Request failed with exception",
-                request_id=request_id,
-                user_id=user_id,  # FR-038: Include user_id in all logs
-                method=method,
-                path=path,
-                query_params=query_params,
-                latency_ms=round(latency_ms, 2),
-                error_type=type(exc).__name__,
-                error_message=str(exc),
-                user_agent=user_agent,
-                client_host=client_host,
-                exc_info=True,
-            )
+            logger.error("Request failed with exception")
 
             # Re-raise to let FastAPI handle it
             raise

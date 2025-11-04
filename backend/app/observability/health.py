@@ -7,15 +7,14 @@ Includes database connectivity, dependency checks, and SLO metrics.
 
 import os
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from datetime import datetime, timezone
+from typing import Any
 
 import psutil
-from fastapi import Request
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from app.core.database import engine
+
 
 # Track application start time for uptime calculation
 _app_start_time = time.time()
@@ -38,7 +37,7 @@ class HealthCheck:
         return time.time() - _app_start_time
 
     @staticmethod
-    def check_database() -> Dict[str, Any]:
+    def check_database() -> dict[str, Any]:
         """
         Check database connectivity and performance.
 
@@ -86,7 +85,7 @@ class HealthCheck:
         }
 
     @staticmethod
-    def get_system_metrics() -> Dict[str, Any]:
+    def get_system_metrics() -> dict[str, Any]:
         """
         Get system resource metrics.
 
@@ -116,7 +115,7 @@ class HealthCheck:
             return {"error": str(e)}
 
     @staticmethod
-    def get_slo_metrics() -> Dict[str, Any]:
+    def get_slo_metrics() -> dict[str, Any]:
         """
         Get SLO (Service Level Objective) metrics.
 
@@ -138,7 +137,7 @@ class HealthCheck:
         }
 
     @classmethod
-    def get_error_budget_summary(cls) -> Dict[str, Any]:
+    def get_error_budget_summary(cls) -> dict[str, Any]:
         """
         Get error budget summary for health check.
 
@@ -154,8 +153,8 @@ class HealthCheck:
             # Using conservative estimates for health check
             metrics = {
                 "API Availability": 0.9995,  # 99.95%
-                "API Latency P95": 0.450,    # 450ms
-                "Error Rate": 0.0005,        # 0.05%
+                "API Latency P95": 0.450,  # 450ms
+                "Error Rate": 0.0005,  # 0.05%
             }
 
             budgets = calculator.get_error_budget_summary(metrics)
@@ -166,8 +165,7 @@ class HealthCheck:
             critical_budgets = []
 
             for budget in budgets:
-                if budget.budget_remaining_pct < min_remaining_pct:
-                    min_remaining_pct = budget.budget_remaining_pct
+                min_remaining_pct = min(min_remaining_pct, budget.budget_remaining_pct)
 
                 if budget.status == "critical":
                     worst_status = "critical"
@@ -180,6 +178,7 @@ class HealthCheck:
             if worst_status == "critical":
                 # FR-056: Log critical alerts when error budget is exhausted
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.critical(
                     f"CRITICAL: Error budget critically low ({min_remaining_pct:.1f}% remaining)",
@@ -187,8 +186,8 @@ class HealthCheck:
                         "error_budget_remaining_pct": min_remaining_pct,
                         "affected_slos": critical_budgets,
                         "status": "critical",
-                        "action": "Halt non-critical deployments"
-                    }
+                        "action": "Halt non-critical deployments",
+                    },
                 )
                 warnings.append(
                     f"CRITICAL: Error budget critically low ({min_remaining_pct:.1f}% remaining)"
@@ -198,14 +197,15 @@ class HealthCheck:
             elif worst_status == "warning":
                 # FR-055: Log warnings when error budget is 50% consumed
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(
                     f"WARNING: Error budget below 50% ({min_remaining_pct:.1f}% remaining)",
                     extra={
                         "error_budget_remaining_pct": min_remaining_pct,
                         "status": "warning",
-                        "action": "Reduce release frequency, increase testing"
-                    }
+                        "action": "Reduce release frequency, increase testing",
+                    },
                 )
                 warnings.append(
                     f"WARNING: Error budget below 50% ({min_remaining_pct:.1f}% remaining)"
@@ -216,7 +216,7 @@ class HealthCheck:
                 "status": worst_status,
                 "remaining_pct": round(min_remaining_pct, 1),
                 "warnings": warnings,
-                "details_url": "/error-budget"
+                "details_url": "/error-budget",
             }
 
         except Exception as e:
@@ -224,12 +224,12 @@ class HealthCheck:
             return {
                 "status": "unknown",
                 "remaining_pct": None,
-                "warnings": [f"Error budget calculation unavailable: {str(e)}"],
-                "details_url": "/error-budget"
+                "warnings": [f"Error budget calculation unavailable: {e!s}"],
+                "details_url": "/error-budget",
             }
 
     @classmethod
-    def get_comprehensive_health(cls, include_details: bool = True) -> Dict[str, Any]:
+    def get_comprehensive_health(cls, include_details: bool = True) -> dict[str, Any]:
         """
         Get comprehensive health check results.
 

@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from app.observability.health import HealthCheck, HealthStatus
 
 
@@ -162,7 +160,9 @@ class TestHealthCheck:
         assert slo["uptime_target"] >= 0.0
         assert slo["latency_p95_target_ms"] > 0
 
-    @patch.dict("os.environ", {"SLO_UPTIME_TARGET": "0.995", "SLO_LATENCY_P95_MS": "300"})
+    @patch.dict(
+        "os.environ", {"SLO_UPTIME_TARGET": "0.995", "SLO_LATENCY_P95_MS": "300"}
+    )
     def test_get_slo_metrics_uses_environment_variables(self):
         """Test that SLO metrics uses environment variables."""
         health = HealthCheck()

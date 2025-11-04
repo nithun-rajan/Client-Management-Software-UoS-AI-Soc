@@ -1,14 +1,18 @@
 # app/schemas/organization.py
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
+
 
 # Schemas for your new models
 class BranchBase(BaseModel):
     name: str
     address: str | None = None
 
+
 class BranchCreate(BranchBase):
     pass
+
 
 class BranchRead(BranchBase):
     id: uuid.UUID
@@ -17,11 +21,14 @@ class BranchRead(BranchBase):
     class Config:
         from_attributes = True
 
+
 class OrganizationBase(BaseModel):
     name: str
 
+
 class OrganizationCreate(OrganizationBase):
     pass
+
 
 class OrganizationRead(OrganizationBase):
     id: uuid.UUID

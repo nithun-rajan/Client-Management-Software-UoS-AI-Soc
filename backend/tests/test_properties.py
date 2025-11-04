@@ -10,7 +10,7 @@ def test_create_property(client):
         "bedrooms": 2,
         "bathrooms": 1,
         "rent": 1200.00,
-        "description": "Beautiful test property"
+        "description": "Beautiful test property",
     }
 
     response = client.post("/api/v1/properties/", json=property_data)
@@ -32,7 +32,7 @@ def test_list_properties(client):
         "property_type": "house",
         "bedrooms": 3,
         "bathrooms": 2,
-        "rent": 1500.00
+        "rent": 1500.00,
     }
     client.post("/api/v1/properties/", json=property_data)
 
@@ -54,7 +54,7 @@ def test_get_property(client):
         "property_type": "maisonette",
         "bedrooms": 2,
         "bathrooms": 1,
-        "rent": 1000.00
+        "rent": 1000.00,
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]
@@ -77,16 +77,13 @@ def test_update_property(client):
         "property_type": "flat",
         "bedrooms": 1,
         "bathrooms": 1,
-        "rent": 900.00
+        "rent": 900.00,
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]
 
     # Update the property
-    update_data = {
-        "rent": 950.00,
-        "status": "let_by"
-    }
+    update_data = {"rent": 950.00, "status": "let_by"}
     response = client.put(f"/api/v1/properties/{property_id}", json=update_data)
 
     assert response.status_code == status.HTTP_200_OK
@@ -104,7 +101,7 @@ def test_delete_property(client):
         "property_type": "house",
         "bedrooms": 4,
         "bathrooms": 2,
-        "rent": 2000.00
+        "rent": 2000.00,
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]

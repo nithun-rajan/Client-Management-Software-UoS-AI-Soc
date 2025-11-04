@@ -1,4 +1,5 @@
 """Tests for request ID middleware."""
+
 import uuid
 
 import pytest
@@ -47,10 +48,7 @@ def test_request_id_extracted_from_header(client):
     """Test that request ID is extracted from X-Request-ID header."""
     test_request_id = str(uuid.uuid4())
 
-    response = client.get(
-        "/test",
-        headers={"X-Request-ID": test_request_id}
-    )
+    response = client.get("/test", headers={"X-Request-ID": test_request_id})
 
     assert response.status_code == 200
     assert response.headers["X-Request-ID"] == test_request_id
@@ -69,10 +67,7 @@ def test_get_request_id_returns_current_request_id(client):
     """Test that get_request_id() returns the current request ID."""
     test_request_id = str(uuid.uuid4())
 
-    response = client.get(
-        "/test",
-        headers={"X-Request-ID": test_request_id}
-    )
+    response = client.get("/test", headers={"X-Request-ID": test_request_id})
 
     assert response.status_code == 200
     assert response.json()["request_id"] == test_request_id
@@ -109,10 +104,7 @@ def test_custom_header_name():
     client = TestClient(app)
     test_trace_id = str(uuid.uuid4())
 
-    response = client.get(
-        "/test",
-        headers={"X-Trace-ID": test_trace_id}
-    )
+    response = client.get("/test", headers={"X-Trace-ID": test_trace_id})
 
     assert response.status_code == 200
     assert response.headers["X-Trace-ID"] == test_trace_id

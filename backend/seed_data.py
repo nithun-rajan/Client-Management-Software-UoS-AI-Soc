@@ -18,7 +18,8 @@ from app.models.property import Property
 
 # Ensure all mapped classes are loaded; avoid importing unused models directly
 
-fake = Faker('en_GB')
+fake = Faker("en_GB")
+
 
 def clear_database():
     """Clear all existing data"""
@@ -27,14 +28,26 @@ def clear_database():
     Base.metadata.create_all(bind=engine)
     print("✅ Database cleared and recreated")
 
+
 def create_properties(db: Session, count: int = 20):
     """Create realistic properties"""
     print(f"\n🏠 Creating {count} properties...")
 
     property_types = ["flat", "house", "maisonette"]
-    statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
+    statuses = [
+        PropertyStatus.AVAILABLE,
+        PropertyStatus.LET_BY,
+        PropertyStatus.TENANTED,
+    ]
 
-    uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
+    uk_cities = [
+        "Southampton",
+        "London",
+        "Manchester",
+        "Birmingham",
+        "Leeds",
+        "Bristol",
+    ]
 
     properties = []
     for i in range(count):
@@ -43,7 +56,9 @@ def create_properties(db: Session, count: int = 20):
         bedrooms = random.randint(1, 5)
 
         address_line1 = fake.street_address()
-        address_line2 = fake.secondary_address() if random.choice([True, False]) else None
+        address_line2 = (
+            fake.secondary_address() if random.choice([True, False]) else None
+        )
         property = Property(
             address_line1=address_line1,
             address_line2=address_line2,
@@ -52,7 +67,7 @@ def create_properties(db: Session, count: int = 20):
             status=random.choice(statuses),
             property_type=property_type,
             bedrooms=str(bedrooms),
-            bathrooms=str(random.randint(1, min(bedrooms, 3)))
+            bathrooms=str(random.randint(1, min(bedrooms, 3))),
         )
 
         db.add(property)
@@ -65,6 +80,7 @@ def create_properties(db: Session, count: int = 20):
     print(f"✅ Created {count} properties")
     return properties
 
+
 def create_landlords(db: Session, count: int = 10):
     """Create realistic landlords"""
     print(f"\n👔 Creating {count} landlords...")
@@ -75,14 +91,16 @@ def create_landlords(db: Session, count: int = 10):
             full_name=fake.name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            address=fake.address().replace('\n', ', '),
+            address=fake.address().replace("\n", ", "),
             aml_verified=random.choice([True, True, True, False]),  # 75% verified
-            aml_verification_date=fake.date_between(start_date='-1y', end_date='today') if random.choice([True, False]) else None,
+            aml_verification_date=fake.date_between(start_date="-1y", end_date="today")
+            if random.choice([True, False])
+            else None,
             bank_account_name=fake.name(),
-            sort_code=f"{random.randint(10,99)}-{random.randint(10,99)}-{random.randint(10,99)}",
-            account_number=f"{random.randint(10000000,99999999)}",
+            sort_code=f"{random.randint(10, 99)}-{random.randint(10, 99)}-{random.randint(10, 99)}",
+            account_number=f"{random.randint(10000000, 99999999)}",
             notes=f"{'Experienced' if random.choice([True, False]) else 'New'} landlord. "
-                f"Owns {random.randint(1, 8)} properties."
+            f"Owns {random.randint(1, 8)} properties.",
         )
 
         db.add(landlord)
@@ -94,6 +112,7 @@ def create_landlords(db: Session, count: int = 10):
     db.commit()
     print(f"✅ Created {count} landlords")
     return landlords
+
 
 def create_applicants(db: Session, count: int = 15):
     """Create realistic applicants"""
@@ -109,14 +128,14 @@ def create_applicants(db: Session, count: int = 15):
         desired_bedrooms = f"{bedrooms_min}-{bedrooms_max}"
         rent_min = random.randint(800, 1500)
         rent_max = rent_min + random.randint(500, 1500)
-        move_date = fake.date_between(start_date='today', end_date='+3m')
+        move_date = fake.date_between(start_date="today", end_date="+3m")
         has_pets = random.choice([True, False])
         applicant = Applicant(
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            date_of_birth=fake.date_between(start_date='-40y', end_date='-18y'),
+            date_of_birth=fake.date_between(start_date="-40y", end_date="-18y"),
             status=random.choice(statuses),
             desired_bedrooms=desired_bedrooms,
             desired_property_type=random.choice(["flat", "house", "maisonette"]),
@@ -126,7 +145,9 @@ def create_applicants(db: Session, count: int = 15):
             move_in_date=move_date,
             has_pets=has_pets,
             pet_details=("Has a small dog" if has_pets else None),
-            special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
+            special_requirements=(
+                "Ground floor preferred" if random.choice([True, False]) else None
+            ),
         )
 
         db.add(applicant)
@@ -139,11 +160,12 @@ def create_applicants(db: Session, count: int = 15):
     print(f"✅ Created {count} applicants")
     return applicants
 
+
 def main():
     """Main seed function"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🌱 TEAM 67 CRM - DATABASE SEEDING SCRIPT")
-    print("="*60)
+    print("=" * 60)
 
     # Create database session
     db = SessionLocal()
@@ -158,22 +180,23 @@ def main():
         applicants = create_applicants(db, count=15)
 
         # Summary
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("✅ SEEDING COMPLETE!")
-        print("="*60)
+        print("=" * 60)
         print("📊 Summary:")
         print(f"   • {len(properties)} Properties")
         print(f"   • {len(landlords)} Landlords")
         print(f"   • {len(applicants)} Applicants")
         print("\n🚀 Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
     except Exception as e:
         print(f"\n❌ Error during seeding: {e}")
         db.rollback()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

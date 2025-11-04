@@ -1,7 +1,5 @@
 """Tests for input validation and sanitization utilities."""
 
-import pytest
-
 from app.security.input_validation import (
     detect_sql_injection,
     detect_xss,
@@ -19,7 +17,10 @@ class TestSanitizeHTML:
 
     def test_sanitize_html_escapes_basic_tags(self):
         """Test that basic HTML tags are escaped."""
-        assert sanitize_html("<script>alert('xss')</script>") == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
+        assert (
+            sanitize_html("<script>alert('xss')</script>")
+            == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
+        )
         assert sanitize_html("<b>bold</b>") == "&lt;b&gt;bold&lt;/b&gt;"
 
     def test_sanitize_html_escapes_special_characters(self):
@@ -102,7 +103,9 @@ class TestDetectXSS:
         """Test that safe input is not flagged."""
         assert detect_xss("normal text") is False
         assert detect_xss("user@example.com") is False
-        assert detect_xss("This is a <safe> description") is False  # Note: < and > alone aren't flagged
+        assert (
+            detect_xss("This is a <safe> description") is False
+        )  # Note: < and > alone aren't flagged
 
     def test_with_non_string_input(self):
         """Test with non-string input."""
@@ -118,8 +121,10 @@ class TestSanitizeFilename:
         result1 = sanitize_filename("../../../etc/passwd")
         result2 = sanitize_filename("..\\windows\\system32")
         # Slashes are replaced with underscores
-        assert "/" not in result1 and "\\" not in result1
-        assert ".." not in result1 and ".." not in result2
+        assert "/" not in result1
+        assert "\\" not in result1
+        assert ".." not in result1
+        assert ".." not in result2
 
     def test_removes_special_characters(self):
         """Test removal of special characters."""
@@ -258,34 +263,19 @@ class TestSanitizeDict:
 
     def test_sanitizes_nested_dicts(self):
         """Test recursive sanitization of nested dictionaries."""
-        data = {
-            "user": {
-                "name": "<b>John</b>",
-                "email": "john@example.com"
-            }
-        }
+        data = {"user": {"name": "<b>John</b>", "email": "john@example.com"}}
         result = sanitize_dict(data)
         assert "&lt;b&gt;" in result["user"]["name"]
 
     def test_sanitizes_lists_with_dicts(self):
         """Test sanitization of lists containing dictionaries."""
-        data = {
-            "users": [
-                {"name": "<script>hack</script>"},
-                {"name": "safe name"}
-            ]
-        }
+        data = {"users": [{"name": "<script>hack</script>"}, {"name": "safe name"}]}
         result = sanitize_dict(data)
         assert "&lt;script&gt;" in result["users"][0]["name"]
 
     def test_preserves_non_string_values(self):
         """Test that non-string values are preserved."""
-        data = {
-            "count": 42,
-            "active": True,
-            "score": 3.14,
-            "tags": ["tag1", "tag2"]
-        }
+        data = {"count": 42, "active": True, "score": 3.14, "tags": ["tag1", "tag2"]}
         result = sanitize_dict(data)
         assert result["count"] == 42
         assert result["active"] is True

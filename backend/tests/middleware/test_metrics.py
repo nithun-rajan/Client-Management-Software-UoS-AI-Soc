@@ -1,4 +1,5 @@
 """Tests for Prometheus metrics middleware."""
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -147,8 +148,7 @@ def test_metrics_labels_include_method_endpoint_status(client):
     assert response.status_code == 200
 
     # Verify labels exist in metrics
-    metrics_response = client.get("/metrics")
-    content = metrics_response.text
+    client.get("/metrics")
 
     # Check for label presence (method, endpoint, status)
     # Note: Actual format depends on Prometheus client output

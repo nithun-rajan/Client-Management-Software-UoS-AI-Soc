@@ -2,77 +2,89 @@
 Communication Schemas - Pydantic models for API validation
 """
 
-from pydantic import BaseModel, Field, validator
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel, Field
+from pydantic import ConfigDict
+from pydantic import field_validator, model_validator
 
 
 class CommunicationBase(BaseModel):
     """Base schema with common fields"""
-    type: str = Field(..., description="Type of communication (email, call, sms, note, task, meeting, viewing)")
-    subject: Optional[str] = Field(None, max_length=255, description="Optional subject line")
+
+    type: str = Field(
+        ...,
+        description="Type of communication (email, call, sms, note, task, meeting, viewing)",
+    )
+    subject: str | None = Field(
+        None, max_length=255, description="Optional subject line"
+    )
     content: str = Field(..., description="Main content/body/notes")
-    direction: Optional[str] = Field(None, description="Communication direction (inbound, outbound)")
-    created_by: Optional[str] = Field(None, description="User who created this entry")
+    direction: str | None = Field(
+        None, description="Communication direction (inbound, outbound)"
+    )
+    created_by: str | None = Field(None, description="User who created this entry")
     is_important: bool = Field(False, description="Flag for priority communications")
     is_read: bool = Field(False, description="Track if communication has been reviewed")
-    
+
     # Entity associations (at least one required)
-    property_id: Optional[int] = Field(None, description="Link to property")
-    landlord_id: Optional[int] = Field(None, description="Link to landlord")
-    applicant_id: Optional[int] = Field(None, description="Link to applicant")
+    property_id: int | None = Field(None, description="Link to property")
+    landlord_id: int | None = Field(None, description="Link to landlord")
+    applicant_id: int | None = Field(None, description="Link to applicant")
 
 
 class CommunicationCreate(CommunicationBase):
     """Schema for creating a new communication log entry"""
-    
-    @validator('type')
-    def validate_type(cls, v):
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
         """Validate communication type"""
-        valid_types = ['email', 'call', 'sms', 'note', 'task', 'meeting', 'viewing']
+        valid_types = ["email", "call", "sms", "note", "task", "meeting", "viewing"]
         if v not in valid_types:
             raise ValueError(f"Type must be one of: {', '.join(valid_types)}")
         return v
-    
-    @validator('direction')
-    def validate_direction(cls, v):
+
+    @field_validator("direction")
+    @classmethod
+    def validate_direction(cls, v: str | None) -> str | None:
         """Validate communication direction"""
-        if v is not None and v not in ['inbound', 'outbound']:
+        if v is not None and v not in ["inbound", "outbound"]:
             raise ValueError("Direction must be 'inbound' or 'outbound'")
         return v
-    
-    @validator('content')
-    def validate_content(cls, v):
+
+    @field_validator("content")
+    @classmethod
+    def validate_content(cls, v: str) -> str:
         """Ensure content is not empty"""
         if not v or not v.strip():
             raise ValueError("Content cannot be empty")
         return v.strip()
-    
-    @validator('applicant_id', always=True)
-    def validate_entity_link(cls, v, values):
+
+    @model_validator(mode="after")
+    def validate_entity_link(self):
         """Ensure at least one entity is linked"""
-        property_id = values.get('property_id')
-        landlord_id = values.get('landlord_id')
-        
-        if not any([property_id, landlord_id, v]):
-            raise ValueError("At least one entity (property, landlord, or applicant) must be linked")
-        return v
+        if not any([self.property_id, self.landlord_id, self.applicant_id]):
+            raise ValueError(
+                "At least one entity (property, landlord, or applicant) must be linked"
+            )
+        return self
 
 
 class CommunicationUpdate(BaseModel):
     """Schema for updating an existing communication"""
-    subject: Optional[str] = Field(None, max_length=255)
-    content: Optional[str] = None
-    is_important: Optional[bool] = None
-    is_read: Optional[bool] = None
+
+    subject: str | None = Field(None, max_length=255)
+    content: str | None = None
+    is_important: bool | None = None
+    is_read: bool | None = None
 
 
 class CommunicationResponse(CommunicationBase):
     """Schema for API responses"""
+
     id: int
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
+    updated_at: datetime | None = None
 
+    model_config = ConfigDict(from_attributes=True)

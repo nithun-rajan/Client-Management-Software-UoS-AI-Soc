@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # External API keys (optional; required for specific features)
+    OPENAI_API_KEY: str | None = None
+    DATA_STREET_API_KEY: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env")  # NEW WAY
+
 
 settings = Settings()

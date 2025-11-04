@@ -1,25 +1,47 @@
-import { useState } from 'react';
-import { Search as SearchIcon, Building2, Bed, Bath, PoundSterling } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import Header from '@/components/layout/Header';
-import StatusBadge from '@/components/shared/StatusBadge';
-import { usePropertySearch, usePropertySearchCount, SearchFilters } from '@/hooks/useSearch';
+import { useState } from "react";
+import {
+  Search as SearchIcon,
+  Building2,
+  Bed,
+  Bath,
+  PoundSterling,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import Header from "@/components/layout/Header";
+import StatusBadge from "@/components/shared/StatusBadge";
+import {
+  usePropertySearch,
+  usePropertySearchCount,
+  SearchFilters,
+} from "@/hooks/useSearch";
 
 export default function Search() {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [hasSearched, setHasSearched] = useState(false);
-  
+
   const { data: properties, isLoading } = usePropertySearch(filters, hasSearched);
   const { data: countData } = usePropertySearchCount(filters, hasSearched);
 
   const handleFilterChange = (key: keyof SearchFilters, value: string | number) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [key]: value === 'all' ? undefined : value
+      [key]: value === "all" ? undefined : value,
     }));
   };
 
@@ -35,7 +57,7 @@ export default function Search() {
   return (
     <div>
       <Header title="Property Search" />
-      <div className="p-6 space-y-6">
+      <div className="space-y-6 p-6">
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle>Find Properties</CardTitle>
@@ -44,53 +66,61 @@ export default function Search() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Min Bedrooms</label>
-                <Input 
-                  type="number" 
-                  placeholder="e.g., 2" 
-                  value={filters.bedrooms_min || ''}
-                  onChange={(e) => handleFilterChange('bedrooms_min', parseInt(e.target.value) || '')}
+                <Input
+                  type="number"
+                  placeholder="e.g., 2"
+                  value={filters.bedrooms_min || ""}
+                  onChange={(e) =>
+                    handleFilterChange("bedrooms_min", parseInt(e.target.value) || "")
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Max Bedrooms</label>
-                <Input 
-                  type="number" 
-                  placeholder="e.g., 4" 
-                  value={filters.bedrooms_max || ''}
-                  onChange={(e) => handleFilterChange('bedrooms_max', parseInt(e.target.value) || '')}
+                <Input
+                  type="number"
+                  placeholder="e.g., 4"
+                  value={filters.bedrooms_max || ""}
+                  onChange={(e) =>
+                    handleFilterChange("bedrooms_max", parseInt(e.target.value) || "")
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Rent Range (Min)</label>
-                <Input 
-                  type="number" 
-                  placeholder="£ min" 
-                  value={filters.rent_min || ''}
-                  onChange={(e) => handleFilterChange('rent_min', parseFloat(e.target.value) || '')}
+                <Input
+                  type="number"
+                  placeholder="£ min"
+                  value={filters.rent_min || ""}
+                  onChange={(e) =>
+                    handleFilterChange("rent_min", parseFloat(e.target.value) || "")
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Rent Range (Max)</label>
-                <Input 
-                  type="number" 
-                  placeholder="£ max" 
-                  value={filters.rent_max || ''}
-                  onChange={(e) => handleFilterChange('rent_max', parseFloat(e.target.value) || '')}
+                <Input
+                  type="number"
+                  placeholder="£ max"
+                  value={filters.rent_max || ""}
+                  onChange={(e) =>
+                    handleFilterChange("rent_max", parseFloat(e.target.value) || "")
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Postcode</label>
-                <Input 
-                  placeholder="e.g., SO15" 
-                  value={filters.postcode || ''}
-                  onChange={(e) => handleFilterChange('postcode', e.target.value)}
+                <Input
+                  placeholder="e.g., SO15"
+                  value={filters.postcode || ""}
+                  onChange={(e) => handleFilterChange("postcode", e.target.value)}
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Property Type</label>
-                <Select 
-                  value={filters.property_type || 'all'} 
-                  onValueChange={(value) => handleFilterChange('property_type', value)}
+                <Select
+                  value={filters.property_type || "all"}
+                  onValueChange={(value) => handleFilterChange("property_type", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
@@ -105,9 +135,9 @@ export default function Search() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>
-                <Select 
-                  value={filters.status || 'all'} 
-                  onValueChange={(value) => handleFilterChange('status', value)}
+                <Select
+                  value={filters.status || "all"}
+                  onValueChange={(value) => handleFilterChange("status", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
@@ -124,7 +154,7 @@ export default function Search() {
             </div>
             <div className="flex gap-2">
               <Button onClick={handleSearch} className="flex-1 md:flex-none">
-                <SearchIcon className="h-4 w-4 mr-2" />
+                <SearchIcon className="mr-2 h-4 w-4" />
                 Search Properties
               </Button>
               {hasSearched && (
@@ -140,7 +170,9 @@ export default function Search() {
           <>
             {countData && (
               <div className="text-sm text-muted-foreground">
-                Found <span className="font-semibold text-foreground">{countData.count}</span> {countData.count === 1 ? 'property' : 'properties'}
+                Found{" "}
+                <span className="font-semibold text-foreground">{countData.count}</span>{" "}
+                {countData.count === 1 ? "property" : "properties"}
               </div>
             )}
 
@@ -153,24 +185,29 @@ export default function Search() {
             ) : properties && properties.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {properties.map((property) => (
-                  <Card key={property.id} className="shadow-card hover:shadow-elevated transition-shadow">
+                  <Card
+                    key={property.id}
+                    className="shadow-card transition-shadow hover:shadow-elevated"
+                  >
                     <CardHeader className="relative">
-                      <div className="absolute top-4 right-4 z-10">
+                      <div className="absolute right-4 top-4 z-10">
                         <StatusBadge status={property.status} />
                       </div>
-                      <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                      <div className="flex aspect-video items-center justify-center rounded-lg bg-muted">
                         <Building2 className="h-16 w-16 text-muted-foreground" />
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold text-lg leading-tight">{property.address_line1}</h3>
+                          <h3 className="text-lg font-semibold leading-tight">
+                            {property.address_line1}
+                          </h3>
                           <p className="text-sm text-muted-foreground">
                             {property.city}, {property.postcode}
                           </p>
                         </div>
-                        <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded capitalize">
+                        <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                           {property.property_type}
                         </span>
                       </div>
@@ -195,20 +232,24 @@ export default function Search() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <SearchIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No properties found</h3>
-                <p className="text-muted-foreground">Try adjusting your search filters</p>
+              <div className="py-12 text-center">
+                <SearchIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-semibold">No properties found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search filters
+                </p>
               </div>
             )}
           </>
         )}
 
         {!hasSearched && (
-          <div className="text-center py-12">
-            <SearchIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Start your search</h3>
-            <p className="text-muted-foreground">Use the filters above to find properties</p>
+          <div className="py-12 text-center">
+            <SearchIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">Start your search</h3>
+            <p className="text-muted-foreground">
+              Use the filters above to find properties
+            </p>
           </div>
         )}
       </div>

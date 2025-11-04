@@ -1,13 +1,29 @@
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
-from app.core.database import Base, engine, get_db
+from fastapi import Depends, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, Response
+from sqlalchemy.orm import Session
+
 import app.models  # ensure all models are registered before table creation
-from app.api.v1 import properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy
-from app.models import Property, Landlord, Applicant
+from app.api.v1 import (
+    applicants,
+    events,
+    kpis,
+    land_registry,
+    landlords,
+    messaging,
+    properties,
+    property_matching,
+    search,
+    tenancy,
+)
+from app.core.database import Base, engine, get_db
+from app.middleware.metrics import MetricsMiddleware, metrics_endpoint
+from app.middleware.request_id import RequestIDMiddleware
+from app.models import Applicant, Landlord, Property
+from app.observability.trace import RequestTracer
 
 
 @asynccontextmanager
@@ -22,12 +38,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="🏢 UoS Scouting Challenge",
+    title="🏢 Team 67 Estate Agency CRM",
     description="""
     ## 🚀 UoS Scouting Challenge API
-    
+
     Built by **Team 67** for the University of Southampton AI Society hackathon.
-    
+
     ### Features:
     * 🏠 **Properties** - Complete property management
     * 👔 **Landlords** - Landlord records with AML compliance
@@ -35,51 +51,46 @@ app = FastAPI(
     * 🔍 **Search** - Advanced property search with filters
     * 📊 **KPIs** - Real-time business metrics dashboard
     * 📝 **Events** - Event logging and tracking
-    
+
     ### Endpoints by Category:
-    
+
     #### 🏠 Properties
     - `POST /api/v1/properties` - Create new property
     - `GET /api/v1/properties` - List all properties
     - `GET /api/v1/properties/{id}` - Get property details
     - `PUT /api/v1/properties/{id}` - Update property
     - `DELETE /api/v1/properties/{id}` - Delete property
-    
+
     #### 👔 Landlords
     - Complete CRUD operations for landlord management
     - AML verification tracking
     - Banking details (secure)
-    
+
     #### 👥 Applicants
     - Tenant applicant registration
     - Search criteria tracking
     - Reference & right-to-rent checks
-    
+
     #### 🔍 Search
     - Multi-filter property search
     - Filter by: bedrooms, rent, type, postcode, status
     - Result count endpoint for pagination
-    
+
     #### 📊 KPIs
     - Real-time dashboard metrics
     - Property, landlord, and applicant analytics
-    
+
     #### 📝 Events
     - Event logging system
     - Activity tracking
-    
+
     ---
-    **Team 67** | Hackathon 2025
+    **Team 67** | Estate Agency CRM API
     """,
     version="1.0.0",
-    contact={
-        "name": "Team 67",
-        "email": "ali.marzooq13@outlook.com"
-    },
-    license_info={
-        "name": "MIT"
-    },
-    lifespan=lifespan
+    contact={"name": "Team 67", "email": "ali.marzooq13@outlook.com"},
+    license_info={"name": "MIT"},
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -89,23 +100,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(MetricsMiddleware)
 
 
 @app.get("/", response_class=HTMLResponse)
 def root(db: Session = Depends(get_db)):
     """Landing page with dynamic stats"""
-    
+
     # Get real counts from database
     property_count = db.query(Property).count()
     landlord_count = db.query(Landlord).count()
     applicant_count = db.query(Applicant).count()
     endpoint_count = len([r for r in app.routes if hasattr(r, "methods")])
-    
+
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>UoS Scouting Challenge API</title>
+        <title>Team 67 Estate Agency CRM API</title>
         <style>
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -186,9 +199,9 @@ def root(db: Session = Depends(get_db)):
     <body>
         <div class="container">
             <div class="emoji">🏢</div>
-            <h1>UoS Scouting Challenge</h1>
+            <h1>Team 67 Estate Agency CRM API</h1>
             <div class="subtitle">API by Team 67</div>
-            
+
             <div class="stats">
                 <div class="stat">
                     <div class="stat-number">{endpoint_count}</div>
@@ -207,16 +220,15 @@ def root(db: Session = Depends(get_db)):
                     <div class="stat-label">Applicants</div>
                 </div>
             </div>
-            
+
             <div class="buttons">
                 <a href="/docs" class="button">📖 API Documentation</a>
                 <a href="/api/v1/kpis/" class="button">📊 KPI Dashboard</a><a href="/health" class="button">💚 Health Check</a>
-                
+
             </div>
-            
+
             <div class="footer">
-                Built with FastAPI • Python • SQLAlchemy<br>
-                Hackathon 2025
+                Built with FastAPI • Python • SQLAlchemy
             </div>
         </div>
     </body>
@@ -224,15 +236,31 @@ def root(db: Session = Depends(get_db)):
     """
 
 
-@app.get("/health")
+@app.get("/health", summary="Service health probe", tags=["operations"])
 def health_check():
     return {
         "status": "healthy",
-        "service": "UoS Scouting Challenge API",
+        "service": "Team 67 CRM API",
         "version": "1.0.0",
         "team": "Team 67",
-        "organization": "University of Southampton AI Society"
+        "organization": "University of Southampton AI Society",
     }
+
+
+@app.get("/metrics", summary="Prometheus metrics", tags=["observability"])
+def metrics() -> Response:
+    """Expose Prometheus metrics for scraping."""
+    return metrics_endpoint()
+
+
+@app.get("/trace", summary="Request trace (dev only)", tags=["observability"])
+async def trace(request: Request):
+    """Return request tracing details for debugging (disabled in production)."""
+    tracer = RequestTracer()
+    info = await tracer.trace_request(request)
+    # Add an RFC 3339 timestamp
+    info["timestamp"] = datetime.now(tz=timezone.utc).isoformat()
+    return info
 
 
 # Register all routers
@@ -242,10 +270,18 @@ app.include_router(applicants.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(kpis.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
-app.include_router(property_matching.router, prefix="/api/v1")  # 🤖 AI Property Matching
-app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Registry Integration (FREE!)
-app.include_router(messaging.router, prefix="/api/v1")  # 💬 Communication Log / Activity Feed
-app.include_router(tenancy.router, prefix="/api/v1")  # 🏠 Tenancy Management (by Abdullah)
+app.include_router(
+    property_matching.router, prefix="/api/v1"
+)  # 🤖 AI Property Matching
+app.include_router(
+    land_registry.router, prefix="/api/v1"
+)  # 🏡 HM Land Registry Integration (FREE!)
+app.include_router(
+    messaging.router, prefix="/api/v1"
+)  # 💬 Communication Log / Activity Feed
+app.include_router(
+    tenancy.router, prefix="/api/v1"
+)  # 🏠 Tenancy Management (by Abdullah)
 
-#add a router for auth.py (by Anthony)
+# add a router for auth.py (by Anthony)
 # app.include_router(auth.router, prefix="/api/v1")

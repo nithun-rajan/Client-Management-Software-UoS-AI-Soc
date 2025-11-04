@@ -13,7 +13,7 @@ class Tenancy(BaseModel):
     end_date = Column(Date, nullable=False)
     rent_amount = Column(Float, nullable=False)
     deposit_amount = Column(Float)
-    status = Column(String, default=TenancyStatus.DRAFT)
+    status = Column(String, default=TenancyStatus.PENDING)
 
     # Progression tracking (from pages 29-31)
     agreed_rent = Column(Float)  # Page 29: "Agreed Rent"
@@ -41,11 +41,11 @@ class Tenancy(BaseModel):
     statutory_documents_sent = Column(Boolean, default=False)  # Page 31: 3.2
 
     # Relationships
-    property_id = Column(String, ForeignKey('properties.id'), nullable=False)
+    property_id = Column(String, ForeignKey("properties.id"), nullable=False)
     property = relationship("Property", back_populates="tenancies")
 
     # Link to applicant (when we implement applicants)
-    applicant_id = Column(String, ForeignKey('applicants.id'))
+    applicant_id = Column(String, ForeignKey("applicants.id"))
     applicant = relationship("Applicant", back_populates="tenancies")
 
     tasks = relationship("Task", back_populates="tenancy")

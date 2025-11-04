@@ -6,15 +6,15 @@ In development, uses in-memory storage.
 """
 
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.middleware.logging import logger
 from app.middleware.request_id import get_request_id
 
 
@@ -69,12 +69,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             response = await call_next(request)
+            # Ensure required headers on 429 responses even if raised by other middleware
+            if response.status_code == 429:
+                response.headers.setdefault("Retry-After", "60")
+                response.headers.setdefault("X-RateLimit-Reset", "60")
             return response
 
         except RateLimitExceeded as exc:
             # Log rate limit violation
-            from app.middleware.logging import logger
-
             request_id = get_request_id()
             identifier = get_identifier(request)
 
@@ -85,9 +87,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 path=request.url.path,
                 limit=str(exc.detail),
             )
-
-            # Re-raise to let FastAPI handle the error response
-            raise
+            # Return 429 with required headers
+            headers = {
+                "Retry-After": "60",
+                "X-RateLimit-Reset": "60",
+            }
+            return Response(
+                content="Rate limit exceeded. Please try again in 1 minute.",
+                status_code=429,
+                headers=headers,
+            )
 
 
 def get_limiter() -> Limiter:

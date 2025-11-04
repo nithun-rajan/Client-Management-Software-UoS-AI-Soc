@@ -22,15 +22,15 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import contextlib
+
 from app.observability.error_budget import (
     ErrorBudgetCalculator,
-    SLOConfig,
-    SLOType,
 )
 
 
@@ -52,7 +52,7 @@ class LogMetricsCalculator:
         self.total_requests = 0
         self.successful_requests = 0
         self.error_requests = 0
-        self.latencies: List[float] = []
+        self.latencies: list[float] = []
         self.status_codes = defaultdict(int)
 
     def parse_log_file(self, log_file_path: str) -> None:
@@ -63,7 +63,7 @@ class LogMetricsCalculator:
             log_file_path: Path to log file containing JSON logs
         """
         try:
-            with open(log_file_path, 'r') as f:
+            with open(log_file_path) as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
@@ -73,7 +73,10 @@ class LogMetricsCalculator:
                         log_entry = json.loads(line)
                         self._process_log_entry(log_entry)
                     except json.JSONDecodeError:
-                        print(f"Warning: Skipping invalid JSON at line {line_num}", file=sys.stderr)
+                        print(
+                            f"Warning: Skipping invalid JSON at line {line_num}",
+                            file=sys.stderr,
+                        )
                         continue
 
         except FileNotFoundError:
@@ -83,7 +86,7 @@ class LogMetricsCalculator:
             print(f"Error: Permission denied reading: {log_file_path}", file=sys.stderr)
             sys.exit(1)
 
-    def _process_log_entry(self, log_entry: Dict) -> None:
+    def _process_log_entry(self, log_entry: dict) -> None:
         """
         Process a single log entry.
 
@@ -91,23 +94,23 @@ class LogMetricsCalculator:
             log_entry: Parsed JSON log entry
         """
         # Check if this is a request log (has status_code)
-        if 'status_code' not in log_entry:
+        if "status_code" not in log_entry:
             return
 
         # Check if within time window
-        timestamp_str = log_entry.get('timestamp')
+        timestamp_str = log_entry.get("timestamp")
         if timestamp_str:
             try:
                 # Parse ISO timestamp
-                timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
                 if timestamp < self.window_start or timestamp > self.window_end:
                     return  # Outside window
             except (ValueError, TypeError):
                 pass  # Continue without timestamp filtering
 
         # Extract metrics
-        status_code = log_entry.get('status_code')
-        latency_ms = log_entry.get('latency_ms')
+        status_code = log_entry.get("status_code")
+        latency_ms = log_entry.get("latency_ms")
 
         if status_code is not None:
             self.total_requests += 1
@@ -121,10 +124,8 @@ class LogMetricsCalculator:
                 self.error_requests += 1
 
         if latency_ms is not None:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 self.latencies.append(float(latency_ms))
-            except (ValueError, TypeError):
-                pass
 
     def calculate_availability(self) -> float:
         """
@@ -162,11 +163,15 @@ class LogMetricsCalculator:
 
         sorted_latencies = sorted(self.latencies)
         p95_index = int(len(sorted_latencies) * 0.95)
-        p95_ms = sorted_latencies[p95_index] if p95_index < len(sorted_latencies) else sorted_latencies[-1]
+        p95_ms = (
+            sorted_latencies[p95_index]
+            if p95_index < len(sorted_latencies)
+            else sorted_latencies[-1]
+        )
 
         return p95_ms / 1000.0  # Convert to seconds
 
-    def get_metrics_summary(self) -> Dict[str, any]:
+    def get_metrics_summary(self) -> dict[str, any]:
         """
         Get summary of calculated metrics.
 
@@ -192,7 +197,7 @@ class LogMetricsCalculator:
         }
 
 
-def format_text_report(metrics: Dict, budgets: List) -> str:
+def format_text_report(metrics: dict, budgets: list) -> str:
     """
     Format burn rate report as text.
 
@@ -226,8 +231,12 @@ def format_text_report(metrics: Dict, budgets: List) -> str:
 
     # Metrics
     lines.append("Calculated Metrics:")
-    lines.append(f"  Availability: {metrics['availability']:.4f} ({metrics['availability']*100:.2f}%)")
-    lines.append(f"  Error Rate: {metrics['error_rate']:.6f} ({metrics['error_rate']*100:.4f}%)")
+    lines.append(
+        f"  Availability: {metrics['availability']:.4f} ({metrics['availability'] * 100:.2f}%)"
+    )
+    lines.append(
+        f"  Error Rate: {metrics['error_rate']:.6f} ({metrics['error_rate'] * 100:.4f}%)"
+    )
     lines.append(f"  Latency P95: {metrics['latency_p95_ms']:.2f} ms")
     lines.append("")
 
@@ -236,23 +245,35 @@ def format_text_report(metrics: Dict, budgets: List) -> str:
     lines.append("-" * 80)
 
     for budget in budgets:
-        status_emoji = "✅" if budget.status == "healthy" else "⚠️" if budget.status == "warning" else "🔴"
+        status_emoji = (
+            "✅"
+            if budget.status == "healthy"
+            else "⚠️"
+            if budget.status == "warning"
+            else "🔴"
+        )
         lines.append(f"\n{status_emoji} {budget.slo_name}")
-        lines.append(f"  Target: {budget.target:.4f} ({budget.target*100:.2f}%)")
-        lines.append(f"  Actual: {budget.actual:.4f} ({budget.actual*100:.2f}%)")
+        lines.append(f"  Target: {budget.target:.4f} ({budget.target * 100:.2f}%)")
+        lines.append(f"  Actual: {budget.actual:.4f} ({budget.actual * 100:.2f}%)")
         lines.append(f"  Status: {budget.status.upper()}")
         lines.append(f"  Budget Remaining: {budget.budget_remaining_pct:.1f}%")
-        lines.append(f"  Burn Rate: {budget.burn_rate:.2f}x ({budget.burn_rate_level.value})")
+        lines.append(
+            f"  Burn Rate: {budget.burn_rate:.2f}x ({budget.burn_rate_level.value})"
+        )
 
         if budget.time_to_exhaustion_hours:
-            tte_str = ErrorBudgetCalculator.format_time_to_exhaustion(budget.time_to_exhaustion_hours)
+            tte_str = ErrorBudgetCalculator.format_time_to_exhaustion(
+                budget.time_to_exhaustion_hours
+            )
             lines.append(f"  Time to Exhaustion: {tte_str}")
 
         # Add recommendations
         if budget.status == "critical":
             lines.append("  🚨 ACTION REQUIRED: Halt non-critical deployments!")
         elif budget.status == "warning":
-            lines.append("  ⚠️  RECOMMENDATION: Reduce release frequency, increase testing")
+            lines.append(
+                "  ⚠️  RECOMMENDATION: Reduce release frequency, increase testing"
+            )
 
     lines.append("")
     lines.append("=" * 80)
@@ -260,7 +281,7 @@ def format_text_report(metrics: Dict, budgets: List) -> str:
     return "\n".join(lines)
 
 
-def format_json_report(metrics: Dict, budgets: List) -> str:
+def format_json_report(metrics: dict, budgets: list) -> str:
     """
     Format burn rate report as JSON.
 
@@ -273,17 +294,19 @@ def format_json_report(metrics: Dict, budgets: List) -> str:
     """
     budget_data = []
     for budget in budgets:
-        budget_data.append({
-            "slo_name": budget.slo_name,
-            "slo_type": budget.slo_type.value,
-            "target": budget.target,
-            "actual": budget.actual,
-            "status": budget.status,
-            "budget_remaining_pct": budget.budget_remaining_pct,
-            "burn_rate": budget.burn_rate,
-            "burn_rate_level": budget.burn_rate_level.value,
-            "time_to_exhaustion_hours": budget.time_to_exhaustion_hours,
-        })
+        budget_data.append(
+            {
+                "slo_name": budget.slo_name,
+                "slo_type": budget.slo_type.value,
+                "target": budget.target,
+                "actual": budget.actual,
+                "status": budget.status,
+                "budget_remaining_pct": budget.budget_remaining_pct,
+                "burn_rate": budget.burn_rate,
+                "burn_rate_level": budget.burn_rate_level.value,
+                "time_to_exhaustion_hours": budget.time_to_exhaustion_hours,
+            }
+        )
 
     report = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -309,26 +332,23 @@ Examples:
 
   # Output as JSON for alerting
   python scripts/calculate_burn_rate.py logs/app.log --output json
-        """
+        """,
     )
 
-    parser.add_argument(
-        "log_file",
-        help="Path to structured JSON log file"
-    )
+    parser.add_argument("log_file", help="Path to structured JSON log file")
 
     parser.add_argument(
         "--window-hours",
         type=int,
         default=24,
-        help="Time window in hours for analysis (default: 24)"
+        help="Time window in hours for analysis (default: 24)",
     )
 
     parser.add_argument(
         "--output",
         choices=["text", "json"],
         default="text",
-        help="Output format (default: text)"
+        help="Output format (default: text)",
     )
 
     args = parser.parse_args()
