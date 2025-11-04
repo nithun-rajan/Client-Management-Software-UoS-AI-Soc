@@ -1,34 +1,40 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Mail, Phone, PoundSterling, Calendar, ArrowLeft, Home } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
-import Header from '@/components/layout/Header';
-import StatusBadge from '@/components/shared/StatusBadge';
-import api from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Users,
+  Mail,
+  Phone,
+  PoundSterling,
+  Calendar,
+  ArrowLeft,
+  Home,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import Header from "@/components/layout/Header";
+import StatusBadge from "@/components/shared/StatusBadge";
+import api from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ApplicantDetails() {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    console.log('ApplicantDetails rendering, id:', id);
-
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  console.log("ApplicantDetails rendering, id:", id);
 
   const { data: applicant, isLoading } = useQuery({
-    queryKey: ['applicant', id],
+    queryKey: ["applicant", id],
     queryFn: async () => {
       const response = await api.get(`/api/v1/applicants/${id}/`);
       return response.data;
     },
   });
   const handleSendEmail = () => {
-    console.log('📧 Sending email for property:', applicant.id);
-    toast({ 
-      title: 'Email Sent', 
+    console.log("📧 Sending email for property:", applicant.id);
+    toast({
+      title: "Email Sent",
       description: `Property details sent to interested parties`,
     });
   };
@@ -48,10 +54,10 @@ export default function ApplicantDetails() {
       <div>
         <Header title="Applicant Details" />
         <div className="p-6">
-          <div className="text-center py-12">
-            <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Applicant not found</h3>
-            <Button onClick={() => navigate('/applicants')}>Back to Applicants</Button>
+          <div className="py-12 text-center">
+            <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">Applicant not found</h3>
+            <Button onClick={() => navigate("/applicants")}>Back to Applicants</Button>
           </div>
         </div>
       </div>
@@ -65,13 +71,13 @@ export default function ApplicantDetails() {
   return (
     <div>
       <Header title="Applicant Details" />
-      <div className="p-6 space-y-6">
-        <Button variant="outline" onClick={() => navigate('/applicants')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="space-y-6 p-6">
+        <Button variant="outline" onClick={() => navigate("/applicants")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Applicants
         </Button>
         <Button onClick={handleSendEmail}>
-          <Mail className="h-4 w-4 mr-2" />
+          <Mail className="mr-2 h-4 w-4" />
           Send Details
         </Button>
 
@@ -79,12 +85,14 @@ export default function ApplicantDetails() {
           <Card className="md:col-span-2">
             <CardHeader>
               <div className="flex items-start gap-4">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-secondary text-white font-bold text-3xl shrink-0">
+                <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
                   {getInitials(applicant.first_name, applicant.last_name)}
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl">{applicant.first_name} {applicant.last_name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2">
+                  <CardTitle className="text-2xl">
+                    {applicant.first_name} {applicant.last_name}
+                  </CardTitle>
+                  <div className="mt-2 flex items-center gap-2">
                     <StatusBadge status={applicant.status} />
                   </div>
                 </div>
@@ -92,7 +100,7 @@ export default function ApplicantDetails() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-semibold mb-3">Contact Information</h3>
+                <h3 className="mb-3 font-semibold">Contact Information</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
@@ -114,8 +122,12 @@ export default function ApplicantDetails() {
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <div className="text-sm text-muted-foreground">Date of Birth</div>
-                        <div className="font-medium">{new Date(applicant.date_of_birth).toLocaleDateString()}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Date of Birth
+                        </div>
+                        <div className="font-medium">
+                          {new Date(applicant.date_of_birth).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -123,29 +135,35 @@ export default function ApplicantDetails() {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-3">Property Requirements</h3>
+                <h3 className="mb-3 font-semibold">Property Requirements</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {applicant.desired_bedrooms && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="rounded-lg bg-muted p-3">
                       <div className="text-sm text-muted-foreground">Bedrooms</div>
                       <div className="font-medium">{applicant.desired_bedrooms}</div>
                     </div>
                   )}
                   {applicant.desired_property_type && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="rounded-lg bg-muted p-3">
                       <div className="text-sm text-muted-foreground">Property Type</div>
-                      <div className="font-medium capitalize">{applicant.desired_property_type}</div>
+                      <div className="font-medium capitalize">
+                        {applicant.desired_property_type}
+                      </div>
                     </div>
                   )}
                   {applicant.move_in_date && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="rounded-lg bg-muted p-3">
                       <div className="text-sm text-muted-foreground">Move-in Date</div>
-                      <div className="font-medium">{new Date(applicant.move_in_date).toLocaleDateString()}</div>
+                      <div className="font-medium">
+                        {new Date(applicant.move_in_date).toLocaleDateString()}
+                      </div>
                     </div>
                   )}
                   {applicant.preferred_locations && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <div className="text-sm text-muted-foreground">Preferred Locations</div>
+                    <div className="rounded-lg bg-muted p-3">
+                      <div className="text-sm text-muted-foreground">
+                        Preferred Locations
+                      </div>
                       <div className="font-medium">{applicant.preferred_locations}</div>
                     </div>
                   )}
@@ -154,16 +172,22 @@ export default function ApplicantDetails() {
 
               {(applicant.has_pets || applicant.special_requirements) && (
                 <div>
-                  <h3 className="font-semibold mb-3">Additional Information</h3>
+                  <h3 className="mb-3 font-semibold">Additional Information</h3>
                   <div className="space-y-2">
                     {applicant.has_pets && (
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">Has Pets</Badge>
-                        {applicant.pet_details && <span className="text-sm text-muted-foreground">{applicant.pet_details}</span>}
+                        {applicant.pet_details && (
+                          <span className="text-sm text-muted-foreground">
+                            {applicant.pet_details}
+                          </span>
+                        )}
                       </div>
                     )}
                     {applicant.special_requirements && (
-                      <p className="text-muted-foreground">{applicant.special_requirements}</p>
+                      <p className="text-muted-foreground">
+                        {applicant.special_requirements}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -205,7 +229,9 @@ export default function ApplicantDetails() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium capitalize">{applicant.status.replace('_', ' ')}</span>
+                  <span className="font-medium capitalize">
+                    {applicant.status.replace("_", " ")}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -216,7 +242,7 @@ export default function ApplicantDetails() {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <Home className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                  <Home className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
                   <div className="text-3xl font-bold">0</div>
                   <p className="text-sm text-muted-foreground">Matches</p>
                 </div>
