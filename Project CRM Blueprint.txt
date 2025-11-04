@@ -1,0 +1,1938 @@
+﻿Project CRM Blueprint -
+
+
+The next several pages are dedicated to providing a holistic and comprehensive overview of everything that a new CRM build with revolutionary agentic AI at its core can and should be able to do. 
+
+
+Firstly, however, it is crucial to paint the picture and divulge exactly what the issues in the industry currently are. That is to say the significant gaps in the market which are costing estate agents and the property industry as a whole which being a fragmented industry - tens of thousands of estate agents across the nation - often lacks the concentrations of power and the necessary broad overview of the industry to take action and take advantage of paradigm shifts in technology. I want to change this and firmly believe that with the help of an excellent team of AI engineers a blueprint for this mission - a living CRM - can be built. 
+
+
+It is important to understand how CRM’s and estate agencies are linked. Currently most CRM’s such as Alto Software (who manage 1 in 4 UK estate agents) are legacy systems whose only purpose is storing data. You can think of Alto as an old fashioned Argos catalogue where all the information crucial to the estate agent and collected and decades of business is held. This includes all the information about the properties of their clients about their diaries and appointments. The greatest strength of these legacy CRMs is a long history where they have cultivated trust from estate agents. However, paradoxically this has led to the opportunity worth discussing in this document and worth pulling off for the hackathon. 
+
+
+Legacy CRMs are unable and unwilling to reinvent a successful product using AI; this would be too costly and too risky. What's more, the knowledge and detailed understanding of LLM’s and generative AI skews to a younger demographic of coders and AI engineers, many of whom are still in university!!
+
+
+Please see below the wholistic roadmap for everything a modern AI powered CRM should have based on my experience in the weeds of the industry; 
+
+
+There are six key areas that an estate agents CRM should focus on at the highest level these are as follows.
+
+
+* Key business KPI’s drawn through the data inputted to the CRM
+* The front end of the lettings cycle 
+* The back end of the lettings cycle
+* Property management
+* The front end of the sales cycle 
+* The back end of the sales cycle
+
+
+
+
+
+
+
+
+Lets first discuss the Key KPI’s (key performance indicators) for any estate agent.
+
+
+The reason businesses use KPI’s is so that managers can get a clear picture of the health of their business - what's working well and what potential improvements can be worked on. Generating KPI’s can be very time consuming and is often done in the industry via manually inputting raw data into separate spreadsheets. I envisage that through an intelligent CRM key data could be picked up and automatically organised into key easy to reference data points. 
+
+
+What are the Key KPI’s -
+
+
+* Average Sales price per bedroom - comparing also to the asking price as in what the average sales price achieved is and what percentage of the asking price this would represent. This is a vital KPI because by understanding the average prices achieved at a high level based on bedrooms estate agents can quickly and more reliably estimate potential values of new properties. Understanding how the achieved prices compare to the asking prices is crucial as this indicates which party has the power in the market. For instance in a buyers market where buyers have more influence we would expect the asking prices to be higher than the achieved prices whereas in a sellers market we would expect that asking or near asking price achieved prices could be maintained. Gauging who has the power in a market is important information for estate agents as this allows them to more easily manage the expectations of buyers and sellers. 
+* Average let agreed price - comparing also to the asking price as in what the average rent achieved is and what percentage of the asking price this would represent. This is a vital KPI because by understanding the average prices achieved at a high level based on bedrooms estate agents can quickly and more reliably estimate potential values of new properties. Understanding how the achieved prices compare to the asking prices is crucial as this indicates which party has the power in the market. For instance in a renters market where renters have more influence we would expect the asking prices to be higher than the achieved prices whereas in a landlords market we would expect that asking or near asking price achieved prices could be maintained. Gauging who has the power in a market is important information for estate agents as this allows them to more easily manage the expectations of renters and landlords. 
+* Listing to sales ratio, with a detailed breakdown of why listings are lost. This is a crucial KPI because before earning any commission estate agents have to complete on properties and exchange or on the rental side have tenants move in. Quickly understanding what the conversion rate from the pipeline of available properties to sold or rented properties is important as this helps the agency understand roughly what percentage of their available stock will be turned to cash. For the sake of an example imagine an estate agent had 10 properties worth 1 million pounds each and charged a 1% fee. This would mean a pipeline worth £100,000. If it was established that that agent had a conversion rate or a listing to sales ratio of 90% the manager of the branch could forecast an income of £90,000 for the branch from the existing pipeline. 
+* Days on the market, as mentioned, estate agents only get paid on successful completion of the transaction. This means that there is often a long tailwind between doing the work and getting paid; this can lead to cashflow problems. Understanding the time properties spend on the market helps directors and managers forecast and account for cashflow problems. 
+
+
+* Fees generated - through commissions (selling and letting properties) aswell as miscellaneous income through things like upselling cleaners a piechart showing monthly revenue would be the best way forward here.
+* Customer satisfaction - this is a KPI for the property management team. Property management is a job that estate agents do primarily to keep business (margins are low) and the main indicator of success in property management is whether tenants and landlords feel happy with that estate agent. Typically customer feedback forms are sent out periodically (quarterly would be a good length of time) to landlords and tenants to gauge how happy tenants and landlord are and subtly find out if there are any issues with the ongoing service. The AI based CRM should do this automatically, reaching out to tenants and landlords and requesting their feedback. From the data collected here a temperature gauge can be built on the KPI indicator page in the CRM indicating how happy and satisfied customers are
+  
+
+
+
+This is roughly how I envisage the KPI page looking.
+
+
+
+
+
+
+
+
+The front end of the lettings cycle 
+
+
+Each estate agent will organise the tasks to be completed differently, however, for the sake of our CRM and it’s UI the front end of the lettings cycle will refer to everything that is done between a landlord first deciding to instruct the estate agent to the offer from the prospective tenant being accepted. 
+
+
+Lets dive into an overview of all the possible tasks that could be involved and where I trust AI can be embedded to improve the process. 
+
+
+First we will go over the landlord's perspective and what the agent and subsequently the CRM needs to do here then we will go over what the tenants perspective is and what needs to be done on this side of the equation. 
+
+
+The main ways a landlord reaches out to an estate agent are as follows - through calling the office - through a valuation request via email from one of the property portals or simply by walking into the office. It is my view that this stage of the process is not yet automatable through AI. This is because valuations are more tailored and situation specific than viewings. However, the CRM should be able to automatically provide the agent with a valuation pack.
+
+
+Here is an example valuation pack I have made for a property in Southampton using Gemini, the CRM should be able to make valuation packs like the below for estate agents completely hands free and accurately.
+
+
+Subject Property Details
+Feature
+	Detail
+	Source
+	Address
+	Court Road, Southampton, SO15
+	Rightmove Link
+	Asking Price
+	Guide Price £195,000 (Reduced on 30/07/2025)
+	Rightmove Listing
+	Property Type
+	Flat
+	Rightmove Listing
+	Bedrooms
+	2 (Double)
+	Rightmove Listing
+	Bathrooms
+	2 (Master En-suite and Family Bathroom)
+	Rightmove Listing
+	Tenure
+	Leasehold (Long Lease: End date 29/12/2177)
+	Rightmove Listing
+	Council Tax
+	Band C
+	Rightmove Listing
+	Key Selling Points
+	Walking Distance to Town Centre, No Chain, Off-Road Parking, Master En-Suite, Spacious Layout, Gas Central Heating, Double Glazing.
+	Rightmove Listing
+	________________
+
+
+Comparative Sales (Sold Prices)
+The following recent sold prices for 2-bedroom leasehold flats in the immediate SO15 area, specifically on Court Road or similar adjacent streets, have been used as primary comparable evidence.
+Address
+	Bedrooms/Bathrooms
+	Sold Price
+	Sold Date
+	Source Link
+	Flat 6, Banister Court, Court Road, SO15 2JS
+	Unknown (Typical 2-bed block)
+	£185,000
+	Apr 2025
+	Zoopla/Rightmove Data
+	Flat 2, Oakley House, Court Road, SO15 2JR
+	Unknown (Typical 2-bed block)
+	£161,000
+	Dec 2023
+	Rightmove Data
+	Flat 14, Oakley House, Court Road, SO15 2JR
+	Unknown (Typical 2-bed block)
+	£155,000
+	Oct 2022
+	Rightmove Data
+	Flat 1, Gwen Rhian Court, Court Road, SO15 2JR
+	Unknown (Typical 2-bed block)
+	£188,000
+	Dec 2021
+	Rightmove Data
+	Key takeaway: The recent sale of Flat 6, Banister Court for £185,000 (April 2025) is the strongest comparable, indicating the maximum achieved price for a standard flat on Court Road itself. The subject property, with its desirable feature of a second bathroom (en-suite), should command a premium over this value.
+________________
+
+
+Active Market Comparables (Currently For Sale)
+The following properties are currently listed for sale in the nearby SO15 postcode and represent the current competition.
+Address
+	Bedrooms/Bathrooms
+	Asking Price
+	Key Features / Notes
+	Source Link
+	9 Warnford Court, 5 Archers Road, SO15 2LQ
+	2 Bed, 2 Bath
+	£215,000 (Guide Price)
+	Good size (731 sq ft), First Floor, Allocated Parking, Walking distance to City Centre/Common.
+	Rightmove
+	Hill Lane, Southampton, SO15
+	2 Bed, 2 Bath
+	£220,000
+	Ground floor, Two double bedrooms, Convenient location.
+	Rightmove
+	Hulse Road, Southampton
+	2 Bed, 2 Bath
+	£210,000
+	Apartment, 2 Bathrooms, similar internal specification profile to the subject property.
+	Rightmove (Found in 'Similar' section of the original listing)
+	________________
+
+
+Recommended Valuation and Price Range
+Based on the market analysis, we would suggest marketing the property within the following price range:
+Price Range
+	£190,000 - £205,000
+	Given the current Guide Price is £195,000 (and has been reduced, suggesting it was likely initially marketed higher), this range supports the existing strategy but offers a clear upper limit.
+________________
+
+
+Valuation Logic and Reasoning
+1. Comparable Property Analysis (Core Value)
+* Baseline Value: The strongest local comparable, Flat 6, Banister Court, sold for £185,000 in April 2025. This sets a firm base for the property's value on Court Road.
+* Premium for En-Suite: The subject property stands out by having two bathrooms (an en-suite plus a family bathroom), whereas many comparable flats in older blocks only have one. In the immediate area, the active comparables that also feature two bathrooms (Archers Road at £215k, Hulse Road at £210k) are asking for prices significantly higher than the Court Road baseline. This feature is highly desirable, especially for sharers or couples, and justifies a premium of £10,000 - £15,000 over the £185,000 baseline, placing the value around £195,000 - £200,000.
+* Off-Road Parking: The inclusion of an allocated off-road parking space is a major benefit in this central location and further enhances value.
+* "Updated Flat" Status: The listing mentions a "Spacious updated flat with new lease," indicating a good internal presentation and low maintenance for the buyer, supporting a value at the upper end of the local range.
+2. Location and Infrastructure
+* Train Station Proximity: The property is excellently located for commuters, being approximately:
+   * 0.8 miles to Southampton Central Train Station.
+   * 0.9 miles to St Denys Train Station.
+   * This "walking distance" access to a major hub like Southampton Central is a key value driver in the SO15 postcode.
+* Amenities and City Centre: The flat is located within a 5-minute drive of the City Centre and is advertised as being "Walking Distance to Town Centre," which appeals strongly to first-time buyers, investors, and city workers.
+* Schools: The area benefits from local schools such as Banister Primary School and Shirley Junior School nearby, which maintains appeal for small families.
+3. Market Conditions (UK/Southampton)
+* Interest Rate Environment: The current UK property market is sensitive to high interest rates, which typically dampen buyer demand and reduce bidding wars, particularly for flats that often attract first-time buyers relying on mortgages. This factor suggests that achieving a price significantly over the Guide Price may be challenging without exceptional demand.
+* Local Market Trends: While national data shows some pressure, the immediate area around Court Road has seen a steadying of prices. The properties in nearby buildings (Gwen Rhian Court) had an average value of £156,763 as of August 2025, but the recent sale of a similar flat for £185,000 (Apr 2025) demonstrates that well-presented units are still achieving strong prices, especially those with modern features like the subject property's en-suite.
+* Investor Appeal: With strong rental growth predicted (average rental price in the area is around £1,032 pcm), the property has high appeal for investors, which creates a second pool of motivated buyers and helps underpin the valuation.
+Conclusion
+The subject property is superior to the £185,000 sold comparable due to its key advantage of having two bathrooms and good presentation. It competes directly with the asking prices of comparable 2-bedroom/2-bathroom units on Archers and Hill Lane, which are asking £215,000-£220,000 but may be in more premium apartment blocks.
+The estimated market price of £195,000 is a fair and achievable target, aligning it with its original guide price and reflecting a reasonable premium for the en-suite and parking, while acknowledging the £185,000 local sale baseline and current market caution. A motivated buyer or investor could push the price towards the upper range of £205,000.
+
+
+After the valuation is completed and the landlord has agreed to list the property onto the market with the estate agent the agent needs a way to record two things - all of the detail about the property under a section on the UI called properties this section will be divided up into different groups including - properties to let (still available and on the market) - properties let by (where offers have been accepted and the properties are in the progressions tab) - properties managed (where all the managed properties are).
+The necessary information for the property that estate agents need to record and the crm would need to include are as follows, 
+A. Core identity & location
+1. Property ID
+
+2. Full address (line1, line2, city, postcode)
+
+3. Property type (flat/maisonette/house/room)
+
+4. Tenure type (freehold / leasehold) — if leasehold → link to freeholder/management co details
+
+5. Unit identifier (for multi-unit properties such as converted houses)
+
+6. Geo coordinates (lat/lon) — for maps, catchment analytics
+
+B. Basic public/marketing info
+   7. Number of bedrooms / bathrooms / receptions
+
+   8. Furnishing state (furnished / part-furnished / unfurnished)
+
+   9. Floorplan(s) link / layout (images + downloadable svg/pdf)
+
+   10. Property photos gallery (primary image + thumbnails / image meta: uploaded_by, date, caption)
+
+   11. Short description / marketing blurb / features (e.g., “close to station”)
+
+   12. EPC rating & EPC document (expiry / reference) — legally required to show to prospective tenants.
+
+
+
+C. Financial & rent settings
+      13. Asking rent (per calendar month) + currency
+
+      14. Rent agreed / let-agreed price (if progressed)
+
+      15. Rent frequency & due day (monthly/weekly)
+
+      16. Deposit amount & deposit protection scheme (provider + scheme reference + protection date) — must be recorded.
+
+      17. Service charge / ground rent (if leasehold) + frequency
+
+      18. Council tax band & who pays (tenant/landlord)
+
+      19. Bills responsibility (who pays utilities, broadband, standing charges)
+
+      20. Rent collection method (GoCardless/Bank Transfer/Standing Order/Online gateway) + reconciliation status
+
+      21. Management fee rules (if managed property) – % or fixed fee + invoice schedule
+
+D. Tenancy / occupancy status
+         22. Current status (Available / Let / Under Offer / Blocked / Maintenance)
+
+         23. Current tenancy record pointer (link to active tenancy object)
+
+         24. Tenancy start & end date (planned or active)
+
+         25. Notice / break clause flags (if applicable)
+
+         26. Maximum permitted occupants / permitted uses (e.g., no subletting, no business use)
+
+E. Compliance & safety certificates
+            27. Gas Safety Certificate (GSC) date, expiry, upload (GasSafe engineer, certificate id). Required annually if gas appliances present
+
+            28. Electrical safety (EICR) date, expiry, upload.
+
+            29. Smoke alarm & CO alarm checks (dates, installed locations).
+
+            30. Legionella / water safety notes (if present)
+
+            31. Fire risk assessment (for HMOs / multi-occupancy) + licence flags
+
+            32. HMO license (if required) — license number, expiry, issuing council, notes. 
+
+F. Legal / leasehold management (for flats)
+               33. Freeholder / managing agent details (name, contact, management co portal link)
+
+               34. Lease info: lease start, length, ground rent, service charge cycle, key covenants
+
+               35. Management pack / leasehold pack upload & expiry/review date
+
+G. Documents & attachments (Key Documents)
+                  36. Master documents section (upload / versioned): tenancy agreement templates, inventory, check-in report, gas cert, EPC, EICR, landlord ID/proof, landlord insurance certificate, landlord authorisation, energy bills if requested, PAT test, guarantees/warranties. (Make each doc searchable & taggable.)
+
+H. Inventory & condition history
+                     37. Inventory reference(s) (pre-move in) with PDF + photos + signatures
+
+                     38. Check-in and check-out reports (with damage notes)
+
+                     39. Inspection history (dates, notes, photos, inspector user id)
+
+I. Viewing & access logistics
+                        40. Viewing availability slots (calendar integration)
+
+                        41. Lockbox / key register: key IDs, location, who holds keys, last issued date
+
+                        42. Access notes (how to access, buzzer codes — encrypt or mask sensitive info in UI)
+
+                        43. Showing feedback history (prospect name, date, notes, rating)
+
+J. Maintenance & operations
+                           44. Current maintenance tickets (open/closed) linked to property
+
+                           45. Preferred contractors list (trade, contact, SLA)
+
+                           46. Planned works / refurbishment schedule + capex budgets
+
+                           47. Insurance claims history (date, loss, insurer, status)
+
+K. Analytics & performance metadata
+                              48. Date listed, date removed, days on market history (historical snapshots)
+
+                              49. Viewings count, offers count, offers accepted (history)
+
+                              50. Sourcing: which branch/listing agent uploaded it / marketing channels used
+
+L. Stakeholders & contacts
+                                 51. Landlord/owner record (link, payout instructions, KYC/AML docs)
+
+                                 52. Managing agent contact (if different)
+
+                                 53. Head tenant / authorised occupier (contact details if let to company or multi-tenant)
+
+M. Risk & flags / admin
+                                    54. Flags (e.g., “Requires accessible adaptations”, “Difficult access”, “Veteran landlord”, “Dispute ongoing”)
+
+                                    55. GDPR consent flags for tenant communications (if you store prospect preferences)
+
+                                    56. Audit log of changes (who changed what & when)
+
+
+
+
+  
+ 
+Taking all this in I believe that the UI for the property page should look something like this front end. Clean easy to interpret and with the key documentation easy to access/interpret and a detailed notes section where records can be kept.
+Following a successful valuation the second task of the estate agent is to record and make a card for the landlord. To record all of the landlords key information, this should be as follows;
+
+
+Each landlord record should be a central node linked to:
+                                       * Properties owned
+
+                                       * Tenancies (via property ownership)
+
+                                       * Documents (KYC, ID, contracts)
+
+                                       * Financial transactions (rents received, fees, invoices)
+
+
+🧩 2. Comprehensive Field & Feature List for the Landlord Record
+A. Basic Identity & Contact Information
+                                          1. Full Name / Trading Name (if company landlord)
+
+                                          2. Entity type: Individual / Company / Trust
+
+                                          3. Date of birth (if individual)
+
+                                          4. Contact numbers: mobile, landline, WhatsApp
+
+                                          5. Email address(es)
+
+                                          6. Correspondence address (if different from property address)
+
+                                          7. Registered business address (for company landlords)
+
+                                          8. Preferred contact method (call, email, SMS, post)
+
+                                          9. Nationality / Residency status (for right-to-rent and AML context)
+
+                                          10. Emergency contact / secondary contact (e.g., co-landlord or spouse)
+
+
+
+B. Verification & Compliance (AML / KYC)
+These are crucial — UK agents have strict Money Laundering Regulations (MLR) obligations under HMRC and the Right to Rent framework.
+                                             11. AML check status (Pass / Fail / Pending / Expired)
+
+                                             12. AML verification date & expiry date
+
+                                             13. Proof of ID uploaded (passport / driving licence / company director ID)
+
+                                             14. Proof of address uploaded (utility bill, council tax, bank statement)
+
+                                             15. Proof of property ownership (Land Registry title, mortgage statement)
+
+                                             16. Politically Exposed Person (PEP) flag
+
+                                             17. Sanctions list check flag (and reference ID)
+
+                                             18. Company verification number (Companies House)
+
+                                             19. AML agent name (who performed check)
+
+                                             20. AML provider used (e.g., SmartSearch, Credas, Onfido)
+
+                                             21. Notes from AML officer
+
+🟦 Automation tip: System auto-flags any AML doc expiring within 12 months and creates a “Reverify AML” task. - this is key I want automated reminders for as much as possible this should be the most user friendly CRM on the market.
+
+
+C. Banking & Payment Settings
+                                                22. Bank account name
+
+                                                23. Sort code / Account number (masked view for staff)
+
+                                                24. Preferred payment method (Bank transfer / Client account / Wise / Stripe Connect)
+
+                                                25. Payment frequency (per tenancy payment schedule or monthly batch)
+
+                                                26. Split payments (for joint landlords) — yes/no, split ratio %
+
+                                                27. Client account ledger ID / statement history link
+
+                                                28. Outstanding balances / arrears
+
+                                                29. Statement delivery preference (PDF email / CRM portal download)
+                                                30. It is important to note that the CRM will not be taking or making payments just recording them.
+
+D. Portfolio Overview
+                                                   30. Number of properties owned / managed
+
+                                                   31. Total monthly rent roll (aggregate from tenancies)
+
+                                                   32. Vacancy rate (X% of properties currently empty)
+
+                                                   33. Active maintenance issues (open ticket count)
+
+                                                   34. Upcoming compliance expiries (e.g., 2 EPCs expiring in 30 days)
+
+                                                   35. Landlord profitability snapshot (optional, if you integrate rent vs cost)
+
+UX idea: Display these as dashboard KPIs at the top of the landlord record, just like for the CRM homepage.
+
+
+E. Communication & Relationship Management
+                                                      36. Landlord status (Active / Inactive / Archived)
+
+                                                      37. Landlord tier (Gold / Silver / Bronze client ranking)
+
+                                                      38. Experience level (New / Intermediate / Professional landlord)
+
+                                                      39. Notes field (for internal remarks — e.g., “responds slowly”, “prefers WhatsApp”)
+
+                                                      40. CRM activity feed (emails sent, calls logged, meeting notes, tasks)
+
+                                                      41. Preferred rent amount range / areas of investment interest (for repeat business)
+
+                                                      42. Marketing consent flags (GDPR) — can receive offers / newsletters
+
+                                                      43. Communication log — auto-synced from email or SMS
+
+                                                      44. Customer satisfaction score (from periodic landlord surveys)
+
+                                                      45. Linked users (e.g., assistant or accountant contact)
+
+
+
+F. Legal & Property Management Information
+                                                         46. Ownership structure: Sole / Joint / Company / Trust
+
+                                                         47. Co-landlords list (linked records with ownership percentages)
+
+                                                         48. Landlord insurance provider + renewal date
+
+                                                         49. Client money protection scheme membership (if relevant)
+
+                                                         50. Landlord licence / HMO licence number + expiry date (if required by council)
+
+                                                         51. Landlord authorisation form / instruction letter (upload)
+
+                                                         52. Right to rent compliance sign-off (tick box when verified)
+
+                                                         53. Deposit handling preference: Agency handles / landlord holds / custodial
+
+                                                         54. Maintenance authorisation limit: £X threshold before agent must call
+
+                                                         55. Repair preferences: Use preferred contractors / agent discretion
+
+                                                         56. Preferred contractor list (linked to maintenance module)
+
+                                                         57. Gas / EICR reminder preferences (auto-notify landlord Y/N)
+
+
+
+
+
+G. Documentation
+                                                            58. Proof of ID
+
+                                                            59. Proof of Address
+
+                                                            60. Proof of Ownership (Land Registry)
+
+                                                            61. Landlord insurance certificate
+
+                                                            62. Bank details confirmation form
+
+                                                            63. Signed Terms of Business / Management Agreement
+
+                                                            64. HMO licence (if applicable)
+
+                                                            65. AML certificate / report
+
+                                                            66. Landlord authorisation for deposit scheme
+
+                                                            67. Landlord tax form (W-8BEN for non-UK resident landlords)
+
+                                                            68. Copy of property insurance schedule (optional)
+
+                                                            69. Signed maintenance agreement (optional)
+
+H. Financial Reporting & History
+                                                               70. Landlord statement history (monthly PDFs)
+
+                                                               71. Total fees charged (lifetime & YTD)
+
+                                                               72. Outstanding invoices / payments
+
+                                                               73. Rent arrears per property
+
+                                                               74. Maintenance spend (YTD)
+
+                                                               75. Commission breakdown (letting vs management vs renewal)
+
+                                                               76. Year-end summary for tax (exportable)
+
+                                                               77. Automatic tax withholding (for non-resident landlords) just make a note to the agents - we noticed that this landlord lives overseas we may need to hold rent to cover the NRL payment.
+
+I. Integrations / Automation Fields
+                                                                  78. Linked accountant contact (email for automatic statement CC)
+
+                                                                  79. Landlord portal login link (if using self-service portal)
+
+                                                                  80. Notification preferences: email, SMS, push (for works orders, payments, renewals)
+
+________________
+
+
+J. Audit & Security
+                                                                     82. Created by / date
+
+                                                                     83. Last updated by / date
+
+                                                                     84. Audit trail of key changes (bank details, AML, ownership)
+
+                                                                     85. Access control (which user roles can edit financial info)
+
+________________
+
+
+🧭 3. Suggested UI Layout (for when we move to the design stage)
+Use a similar visual language to your KPI dashboard and property card:
+                                                                        * Top header: Landlord name, status ribbon (Active/Under AML review), key KPIs (properties, rent roll, open issues).
+
+                                                                        * Left column: Contact & compliance summary.
+
+                                                                        * Right column: Bank details, AML check widget, document checklist (with expiry badges).
+
+                                                                        * Tabs / Cards:
+
+                                                                           * Overview (summary KPIs, relationship notes)
+
+                                                                           * Properties (linked records table)
+
+                                                                           * Financials (statements, balances)
+
+                                                                           * Compliance & Docs (upload + expiry)
+
+                                                                           * Communication (emails, calls, notes)
+
+Color cues:
+🟩 Green – up to date AML/documents
+🟧 Amber – due soon
+🟥 Red – expired or missing document
+
+
+  
+
+
+
+This is how I think the UI could look to cover the above points in terms of registering the landlord. 
+
+
+Now we have built a way for landlords and properties to be registered and the data inputted to our CRM we need to look at the other aspect of the front end job of an estate agency. This is registering prospective tenants, commonly referred to as applicants and this will be how I refer to them in this document. 
+The first stage of an applicant's life cycle is the initial conversation with the estate agent called the registration. This is where the key details are gathered so that the estate agent can best assist on the property search. The key here is to uncover as much data and information about the applicant as possible so that you can tailor your pitches (as the agent) and suggest the best possible properties for the applicant. The key here is to ask great questions, however, as almost all registration conversations are the same this presents our CRM an opportunity to step in and register applicants on the behalf of the estate agent through AI. Recording and transcribing the details of its conversations on the applicant tab saving the agents a huge amount of time and giving them a great first impression and collecting the key information to help their ongoing property search. Adding good and accurate relevant information to the CRM is key as more often than not the first property applicants enquire about does not end up being the property they move into so often estate agents have to show the same applicants multiple properties before that applicant finds the right home. 
+Please see below the key applicant registration questions on the lettings side - these are the same questions I asked applicants and that helped me let 12 properties in one month. 
+What is your ideal move date?, why
+Who will be living with you at the property?
+Do you have any pets?
+What budget were you looking up to?
+How will you be funding the rent?
+Are there any other key criteria or must haves for you in your new home - things like a south facing garden, any schools you’d want to be near?
+
+
+The automated response should cover and ask these questions automatically adding this to the CRM.
+
+
+Going to the CRM applicant cards will be needed in a similar manner to the landlord and property cards we have described above. 
+Please see below a comprehensive list of what needs to be on the applicants card on the CRM,
+Great — here’s a detailed breakdown of how the applicants (prospective tenants) side of the lettings module should work, based on what leading UK CRMs (Alto, Reapit, Jupix) currently offer and best-practice for estate agents. This will help your developers build a robust “Applicant Record” module.
+________________
+
+
+✅ What leading CRMs do for Applicant/Prospective Tenant records
+Here are a few features from the market:
+                                                                              * Reapit describes the “Applicant Record” as “all applicant info on single-screen … from marketing consent and key requirements to offers and applicant status. Easily match applicants with suitable properties.” reapit.com+1
+
+                                                                              * Jupix supports “Property matching from the applicant screen … modify criteria, send matches to applicant” for both sales and lettings. support.jupix.com+1
+
+                                                                              * Alto offers “Applicant matching” in their Lettings CRM (smart match engine, match emails, quick search) and a portal where applicants book viewings and have some self-service. Alto Software+1
+
+                                                                              * Many systems integrate communications (email/SMS), automatic matching, property sending, viewing scheduling and applicant status management.
+
+So the CRM should cover all these core applicant workflows.
+🧮 Comprehensive list of Applicant-Record fields & features (for lettings)
+A. Basic identity & contact
+                                                                                 1. Applicant ID (internal UUID)
+
+                                                                                 2. Full name (title, first name, last name)
+
+                                                                                 3. Date of birth
+
+                                                                                 4. Contact numbers: mobile, landline
+
+                                                                                 5. Email address(es)
+
+                                                                                 6. Postal / correspondence address
+
+                                                                                 7. Current address (if different)
+
+                                                                                 8. Preferred contact method (email / SMS / phone)
+
+                                                                                 9. Nationality / residency status (for Right to Rent checks)
+
+                                                                                 10. Preferred language (if relevant)
+
+B. Applicant status & lifecycle
+                                                                                    11. Applicant status (New → Qualified → Viewing Booked → Offer Submitted → References → Let Agreed → Tenancy Started / Archived)
+
+                                                                                    12. Date of registration / first contact
+
+                                                                                    13. Assigned agent or team member (owner)
+
+                                                                                    14. Source of applicant (portal, website, referral, lead campaign)
+
+                                                                                    15. Priority level (High / Medium / Low)
+
+                                                                                    16. Pipeline or segment tag (e.g., “2-bed student”, “professional couple”, “pet friendly”)
+
+C. Property requirements / match criteria
+                                                                                       17. Type of property wanted (flat/house, furnished/unfurnished)
+
+                                                                                       18. Desired number of bedrooms/bathrooms
+
+                                                                                       19. Desired rent budget (minimum, preferred, maximum)
+
+                                                                                       20. Preferred locations / postcodes / areas of interest
+
+                                                                                       21. Move-in date / earliest availability
+
+                                                                                       22. Lease term preferred (6 months, 12 months etc)
+
+                                                                                       23. Special criteria: pets allowed / smoking / sharers / guarantor required
+
+                                                                                       24. Viewing availability times (agent-accessible times)
+
+                                                                                       25. Marketing permissions & consent (GDPR) – tick boxes for “agree to receive property details”, “agree to marketing”
+
+D. Matching & property notifications
+                                                                                          26. Property matches list (linked properties that fit criteria)
+
+                                                                                          27. Match send history (when/which property details sent)
+
+                                                                                          28. Applicant feedback on matches (accepted/declined, notes)
+
+                                                                                          29. Viewing scheduling from applicant record (book viewing, send invites, reminders) — Jupix supports this. support.jupix.com+1
+
+                                                                                          30. Quick search / “find matching properties” button using criteria.
+
+E. Offers & tenancy progress (pre-tenancy)
+                                                                                             31. Offer submitted – property, rent, term, conditions
+
+                                                                                             32. Offer accepted date (if applicable)
+
+                                                                                             33. Holding deposit paid (amount, date, status)
+
+                                                                                             34. Reference status (tenant, guarantor) – pass/fail/pending
+
+                                                                                             35. Right to Rent check status & date
+
+                                                                                             36. Move-in date agreed
+
+                                                                                             37. Contract signing status
+
+                                                                                             38. Tenancy record link (when moved in)
+
+F. Documents & attachments
+                                                                                                39. Proof of ID uploaded (passport/driving licence)
+
+                                                                                                40. Proof of address uploaded (utility bill, bank statement)
+
+                                                                                                41. Reference/credit check documents
+
+                                                                                                42. Guarantor details & documents (if applicable)
+
+                                                                                                43. Agreement/contract documents (draft, final)
+
+                                                                                                44. Uploaded other documents (pets agreement, inventory receipt)
+
+                                                                                                45. Document expiry or review dates (if applicable)
+
+G. Communication & activity tracking
+                                                                                                   46. Notes field (internal agent notes: e.g., "prefers Saturday viewings")
+
+                                                                                                   47. Activity feed: calls logged, emails sent, SMS messages, tasks created
+
+                                                                                                   48. Viewing feedback entered (by agent after viewing)
+
+                                                                                                   49. Email/SMS templates used / repeated tasks (e.g., “send new matches” mail)
+
+                                                                                                   50. Portal invitation status (if applicant has login to applicant portal) — Alto’s Applicant Portal supports it. support.altosoftware.co.uk
+
+H. Marketing & analytics metadata
+                                                                                                      51. Date last matched / date last contacted
+
+                                                                                                      52. Number of properties sent in last 30/60/90 days
+
+                                                                                                      53. Number of viewings attended / offers made / offers accepted
+
+                                                                                                      54. Conversion % from registration → application → tenancy
+
+                                                                                                      55. Drop-off reason (if applicant leaves: no longer needs, found elsewhere, budget changed)
+
+                                                                                                      56. Source campaign code (for reporting)
+
+I. Compliance & flags
+                                                                                                         57. AML check required (for letting agencies this may apply depending on landlord licencing)
+
+                                                                                                         58. Safeguarding/guardianship flags (if minors, international students)
+
+                                                                                                         59. Special needs / accessibility requirements (if property must adapt)
+
+                                                                                                         60. GDPR marketing opt-in/out status
+
+🧭 Workflow & UI features (for developers/designers)
+                                                                                                            * Single-view Applicant Record screen, combining all the above into a clear page with tabs or collapsible cards: “Overview”, “Requirements”, “Matches & Viewings”, “Offers & References”, “Documents”, “Activity”.
+
+                                                                                                            * Quick action buttons: “Add Property Match”, “Send Matches”, “Book Viewing”, “Upload Documents”, “Start Reference”, “Move to Let Agreed”.
+
+                                                                                                            * Matching engine widget: the applicant record shows “Suggested Properties” list live, with ability to filter/modify criteria and send to applicant. Jupix supports “Run Property Match” from applicant screen
+
+                                                                                                            * Portal for applicant (self-service): allow applicant to log in, update requirements, see viewings, accept matches. Alto’s Applicant Portal does this.
+
+                                                                                                            * Automated reminders / tasks: e.g., send new matches weekly, send follow-up after viewing, notify agent when reference fails or due.
+
+                                                                                                            * Consent & marketing flags visible prominently.
+
+                                                                                                            * Analytics snapshot: display key applicant metrics (viewings booked, offers made, status).
+
+                                                                                                            * Mobile friendly: applicants may update availability via mobile, agent can view on mobile.
+
+                                                                                                            * Integration: referencing partner API (Alto integrates with multiple reference partners).
+
+🎯 Key differences compared to Property & Landlord modules
+                                                                                                               * Applicant data is demand side (tenant) rather than supply side (property/landlord). So emphasis is on requirements, matching, status progression, offers, references — whereas properties emphasise attributes, compliance, rent, documents, landlord emphasises ownership & bank details.
+
+                                                                                                               * The applicant workflow is shorter and more dynamic: registration → matching → viewing → offer → reference → tenancy.
+
+                                                                                                               * Matching engine and communication workflows are more important on applicant side.
+
+                                                                                                               * Consent/marketing and preference data are more critical for applicants (GDPR, property alerts).
+
+                                                                                                               * Viewings scheduling and feedback loops are heavily applicant-centric.
+
+                                                                                                               * Status tracking matters: you’ll want to easily see where in the pipeline each applicant is (e.g., “Waiting references”, “Offer accepted”, “Tenancy started”).
+
+  
+
+This is what we should work towards when building the UI for the applicants side.
+We have now peaced together the entire process of the front end of lettings. Except for the necessity of the CRM to send out matches. As mentioned earlier good registration is key because more often than not applicants need to go to multiple viewings before deciding on a property. This creates a need for estate agents to be constantly following up on applicants. For instance as a negotiator I used to spend one day a week calling through applicants and one morning a week sending out “property match” emails to my applicants. This represents about 15-20% of my time as an estate agent and the CRM should be capable of sending matches automatically using AI. Either through phone calls emails or whatsapp. The matches should be personalised and should use the information gathered in the registration phase to hook the applicants. For instance if the applicant mentions they have a dog named fluffy the AI matching agent should automatically reach out and send a personal note inside the match saying something like I think Fluffy would love this 80 foot south facing back garden. The more personal the match the more likely the agent is to engage the applicant. This is why data on the properties and data on the applicants is SO important and we need the applicant and property cards to store a lot of key information. Matches should be sent at timed intervals. I liked to do them once a week!
+
+
+The Back End of the Lettings Cycle - 
+The back end of the lettings cycle refers to everything that happens once the offer is accepted. This means we go from a property to let to a property let be all the way to potentially a managed property. The applicant meanwhile transitions from a prospective tenant to a tenant.
+Here is a detailed break down of the steps involved in the lettings progression stage,
+
+
+1.1
+	Log Offer Details to CRM
+	Update Applicant Record (E) with: Property ID, Agreed Rent, Tenancy Term, Proposed Start Date, and any Special Conditions (e.g., Pet Clause).
+	Records the key commercial terms.
+	1.2
+	Log Offer as Accepted
+	Change Applicant Status (B) to "Offer Accepted." Change Property Status to "Let by"
+	Triggers the start of the progression timeline.
+	1.3
+	Mark Property as Let Agreed
+	Change Property Status to "Let Agreed." This should automatically push an update to portals (Rightmove/Zoopla) to show the property is no longer available.
+	Ensures property is taken off the market.
+	1.4
+	Collect & Track Holding Deposit
+	Log Holding Deposit Paid (E): Amount, Date Paid, Payment Method. Finance Module: Create a deposit liability record.
+	Complies with the Tenant Fees Act 2019. The property is formally reserved.
+	1.5
+	Send Offer Confirmation Emails
+	Activity Feed (G): Log sent emails. Email Templates (G): Use templates to send formal confirmation to the Tenant and the Landlord.
+	Sets expectations, confirms agreement, and outlines next steps (referencing/deposit deduction terms).
+	1.6
+	Generate Pre-Tenancy Statement
+	Finance Module: Auto-calculate the remaining balance due before move-in (First Month's Rent + Security Deposit - Holding Deposit).
+	Provides tenants with a clear financial roadmap.
+	2. Referencing and Compliance (The "Verification" Stage)
+#
+	Action/Task
+	CRM Function/Data Field
+	Compliance/Rationale
+	2.1
+	Start Referencing Process
+	Quick Action Button (Jupix/Alto style): "Start Referencing." Integration: API call to referencing partner (e.g., Goodlord) to send applicant data.
+	Outsourced verification of income, employment, and credit history.
+	2.2
+	Track Reference Status
+	Reference Status Field (E): Updated automatically via API/Manually (Pending $\rightarrow$ Pass $\rightarrow$ Fail / Pass with Conditions).
+	Ensures all tenants meet the financial and background criteria.
+	2.3
+	Right to Rent Check
+	Right to Rent Status Field (E): Status and date verified. Document Storage (F): Store copies of ID/visas.
+	MANDATORY UK LEGAL COMPLIANCE. Failure to check leads to fines.
+	2.4
+	Store Referencing Documents
+	Document Storage (F): Upload: Applicant IDs (Passport/Driving Licence), Proof of Address, Full Referencing Report (e.g., Goodlord PDF).
+	Evidential compliance for audits and dispute resolution.
+	2.5
+	AML/Guardianship Flags Check
+	Compliance Flags (I): Confirm no Anti-Money Laundering flags (if required) or safeguarding issues.
+	Ensures legal and ethical standards are met.
+	3. Tenancy Documentation and Final Finances
+#
+	Action/Task
+	CRM Function/Data Field
+	Compliance/Rationale
+	3.1
+	Draft Tenancy Agreement (AST)
+	Document Drafting Module: Auto-populate AST template using data from the Applicant Record (1.1).
+	Creates the legally binding contract.
+	3.2
+	Send Statutory Documents to Tenant
+	Document History (G): Log confirmed delivery of: How to Rent Guide (mandatory) and Energy Performance Certificate (EPC).
+	MANDATORY UK LEGAL COMPLIANCE. Must be provided before tenancy starts.
+	3.3
+	Collect Remaining Move-in Monies
+	Finance Module: Send automated payment request for the balance (1.6). Status Update: "Full Move-In Monies Received."
+	Ensures all rent/deposit is cleared before handing over keys.
+	3.4
+	Register Security Deposit
+	Finance Module/Integration: Transfer security deposit funds to a scheme (DPS, TDS) and issue the Prescribed Information (PI) to the tenant.
+	MANDATORY UK LEGAL COMPLIANCE. Must be done within 30 days of receipt.
+	3.5
+	Sign Tenancy Agreement
+	Document Signing Module: Send draft to all parties (Tenants, Landlord/Agent) for electronic signature. Document Storage (F): Store the final signed contract.
+	Formalizes the agreement.
+	4. Logistics & Move-In Preparation
+#
+	Action/Task
+	CRM Function/Data Field
+	Compliance/Rationale
+	4.1
+	Arrange Professional Clean
+	Task Creation (G): Book and log clean with preferred supplier.
+	Ensures the property is fit for a new tenancy (standard industry practice).
+	4.2
+	Arrange Inventory Check-in
+	Task Creation (G): Book and log inventory clerk for check-in on move-in day. Document Storage (F): Upload final inventory report.
+	Essential legal evidence for the deposit dispute process.
+	4.3
+	Utility & Council Tax Notification
+	Quick Action: "Notify Utilities." Generate automated emails/API transfers to the Council, water, gas, and electricity providers with move-in dates and new tenant names.
+	MANDATORY AGENCY TASK. Ensures smooth transition of bills and accurate billing.
+	4.4
+	Key Update/Arrangement
+	Property Record: Update Key Codes/Access Notes. Task: Arrange for keys to be cut and ready for collection/handover.
+	Logistical essential.
+	4.5
+	Final Progression Check
+	Automated Checklist: A system checklist must be 100% complete before the "Move-In" button can be clicked.
+	Guards against compliance failures (e.g., ensuring PI and How to Rent Guide are sent).
+	5. Move-In Day & Transition to Management
+#
+	Action/Task
+	CRM Function/Data Field
+	Compliance/Rationale
+	5.1
+	Execute Move-In
+	Quick Action Button: "Move-In/Tenancy Start." This is the final step.
+	Formal start of the legal tenancy.
+	5.2
+	Create Tenancy Record
+	Automated Action: The CRM must archive the Applicant Record and generate a new Active Tenancy Record with all inherited data (rent, term, tenant names).
+	Essential for rent collection and property management.
+	5.3
+	Set Property to Managed Status
+	Property Record: Status updated to "Tenanted - Fully Managed" (or appropriate management level). Assigned Agent (B): Owner changed from Lettings Negotiator to Property Manager.
+	Transition of responsibility to the property management team.
+	5.4
+	Schedule First Rent & Management Tasks
+	Finance/Task Module: Schedule the first rent payment and set up management tasks (e.g., mid-term inspection in 3 months).
+	Ensures immediate start of the management cycle.
+	
+
+  
+
+This is what the tenancy progressor should see on their side. We need to make it easy to use and easy to understand with automated reminders and pointers. This section of the lettings process is harder to automate ideas to help automate could be through AI written emails. 
+
+
+
+
+
+
+
+
+Property Management Aspect - 
+Property management refers to everything that happens after the new tenant/s move in to the day that they leave. Property management is a job often insulated from technological change, however, I believe this is the aspect of estate agency that we can most heavily disrupt using AI. 
+Please see below a list of all the jobs done by property managers, they are stratified into 
+
+
+I. Financial Management & Rent Control
+Category
+	Task/Job Description
+	What the CRM Should do 
+	Rent Collection
+	Track and process monthly rent payments from tenants.
+	Finance/Rent Ledger: Auto-generated rent due dates; tracking of payments received.
+	Arrears Management
+	Identify late payments, log communications (calls/emails), issue formal Late Rent/Arrears notices (automated generation).
+	Arrears Workflow: Automated task generation on missed payment; standardised arrears letter templates.
+	Landlord Payments
+	Process and remit monthly rental income to the landlord, deducting management fees, maintenance costs, and other charges.
+	Finance/Landlord Statements: Automated calculation of net rent; generation of detailed monthly Landlord Statements.
+	Invoicing & Fees
+	Raise and track invoices for management fees, renewal fees, and ad-hoc charges (e.g., call-out fees).
+	Invoicing & Billing: Tracking fee agreements against properties; automated invoice generation.
+	Financial Reporting
+	Produce end-of-year or quarterly financial summaries for the landlord for tax purposes.
+	Reporting/Analytics: Financial reports module with income/expense breakdown - generated automatically and quarterly
+	II. Maintenance & Repairs (Reactive and Planned)
+Category
+	Task/Job Description
+	CRM Module Requirement
+	Reactive Repairs
+	Receive and log tenant maintenance requests (via portal, phone, email). Triage urgency (Emergency/Urgent/Routine).
+	Maintenance Portal/Job Tracking: Centralized logging; status pipeline (New $\rightarrow$ Quoted $\rightarrow$ Assigned $\rightarrow$ Complete); urgency flags.
+	Contractor Management
+	Source and assign the appropriate contractor based on trade, location, and rating. Send work orders/Job Sheets.
+	Contractor Database: Vetting/insurance expiry tracking; automated work order dispatch.
+	Repair Authorisation
+	Obtain explicit Landlord authorisation for repairs over an agreed spending limit (e.g., over £150).
+	Workflow Automation: Automated email/SMS prompt to Landlord for approval, with cost/quote attached.
+	Planned Maintenance
+	Schedule routine servicing (e.g., boiler service, fire alarm checks, smoke/CO alarm maintenance).
+	Task/Schedule Management: Recurring task creation (e.g., every 12 months for boiler).
+	Emergency Response
+	Manage 24/7 contact/out-of-hours service for emergency calls (e.g., burst pipes, major leaks).
+	Emergency Log/Alert System: Prominent flagging of active emergencies and out-of-hours contractor lists. An AI could pick up out of hours calls and contact the emergency contractor to explain the problem?
+	III. Compliance & Legal Obligations (Safety & Documentation)
+Category
+	Task/Job Description
+	CRM Module Requirement
+	Certificate Tracking
+	Track expiry dates and arrange renewals for mandatory certificates: Gas Safety Certificate (CP12) (Annual), Electrical Installation Condition Report (EICR) (Every 5 years), Energy Performance Certificate (EPC).
+	Compliance Dashboard: Visual alerts (Red/Amber/Green) for upcoming/overdue certificates; auto-creation of renewal tasks.
+	Alarm Testing
+	Ensure smoke and carbon monoxide alarms are present and functioning at the start of the tenancy and logged as tested on the inventory/periodic visits.
+	Property Asset Register: Logging alarm types and locations; task reminders for regular testing.
+	Fire Safety
+	Advise on and ensure compliance with Furniture and Furnishings (Fire Safety) Regulations and HMO fire safety (if applicable).
+	Property Attributes: Flag for HMO status; checklist for fire safety features (blankets, extinguishers, escape routes).
+	Deposit Protection
+	Ensure the deposit remains protected and issue all Prescribed Information (PI) for renewal tenancies.
+	Deposit Management: Integration with TDS/DPS; PI issuance history log.
+	HMO Licensing
+	Track the required license renewal date for Houses in Multiple Occupation (HMOs) and manage Council inspections.
+	Licensing Module: License expiry date tracking; document storage for license certificates.
+	Landlord Insurance
+	Log and track landlord building and contents insurance policies to ensure coverage is current.
+	Document Storage/Expiry: Track insurance expiry date and policy documentation.
+	IV. Tenancy Management & Inspections
+Category
+	Task/Job Description
+	CRM Module Requirement
+	Property Visits
+	Schedule and conduct routine mid-term (or periodic) property inspections (e.g., quarterly or biannually).
+	Scheduling/Task Management: Automated scheduling of inspections with 24-hour notice reminders to tenant.
+	Inspection Reporting
+	Generate detailed reports following inspections, including time-stamped photographs, notes on condition, and any required actions (repairs/cleaning).
+	Mobile Inspection App (Linked): Ability to capture data/photos offline; automatic report generation for Landlord review.
+	Tenant Liaison
+	Act as the primary point of contact for all non-emergency tenant queries, complaints, and general communication.
+	Communication Log (G): Centralized thread for all tenant communication (email/SMS/call).
+	Tenancy Renewals
+	Initiate the renewal process: contact Landlord (6-3 months before expiry), negotiate new rent, draft new contract/addendum.
+	Renewal Workflow: Automated reminders based on tenancy end date; rent review tracking.
+	Changes Mid-Tenancy
+	Process requests for changes: adding/removing a tenant, pet requests, re-referencing required individuals.
+	Applicant/Tenancy Update Workflow: Formal request logging and associated task checklist.
+	V. End of Tenancy & Transition
+Category
+	Task/Job Description
+	CRM Module Requirement
+	Notice Processing
+	Process and log formal notices from either party (Section 21, Section 8, or Tenant's Notice to Quit).
+	Legal Workflow: Tracking legal notice dates; automated task creation for check-out process.
+	Check-Out Inspection
+	Arrange and conduct the final check-out inspection, comparing the property condition against the initial Inventory/Check-in Report.
+	Inventory Module: Check-out report generation against check-in baseline; damage logging with photo evidence.
+	Deposit Reconciliation
+	Negotiate deposit deductions with the tenant and landlord based on the check-out report. Submit evidence to the Deposit Scheme for release/arbitration.
+	Deposit Management: Deduction proposal tracking; evidence storage; link to TDS arbitration portal.
+	Property Re-marketing
+	Hand over the property to the Lettings team for re-marketing (if required). Arrange professional photography and viewings.
+	Status Change: Property status moved to "Vacant - Ready to Re-Let." Task to re-market.
+	Final Admin
+	Take final meter readings, transfer utilities back to the Landlord/Agent, and notify the local Council Tax authority of the tenancy end.
+	Check-Out Checklist: Mandatory fields for final meter readings; automated email notification templates.
+	  
+
+Here is an example of how the UI should look for a property manager - effectively an automated to do list. I am keen to explore the possibility of using AI to interact with customers and serving as the middle man between tenants, landlords and contractors.
+Property managers should be able to have their own separate portfolio - branches often have multiple property managers and the UI for each property manager should be specific and generated to reflect the tasks to be done for that specific property manager's portfolio. 
+They should also be able to open specific property cards where key data could be stored such as the EPC documents. 
+This covers the entire estate agency lettings business. From start to the finish!
+
+
+Let’s look into the sales process 
+Sales Front End
+The process for the front end of sales is fortunately relatively similar to the front end of lettings. This is to say that in principle all of the key events map almost perfectly. Largely the only difference is in the terminologies used. For example landlords are vendors and applicants refers now to buyers not tenants. 
+The front end of the sales process starts with the vendor/seller side. The first step here is that the prospective vendor will contact the estate agent to discuss a property they would like to put onto the market; this will lead to a valuation of the property. Our CRM should be able to automatically create valuation packs on the behalf of estate agents pulling together information found online and details about prices achieved for comparable properties held by the estate agent. The valuation pack should be detailed and explain briefly the current market situation based on our KPI’s and provide a range of potential prices suggesting a price at which the property should go quickly and the price which a vendor may be able to hold out for. The valuation pack should be easy to interpret and include suggestions on things the vendor could do to influence the price.
+Here is how AI generated Valuation packs should look on the sales side, 
+________________
+
+
+Subject Property Details
+Feature
+	Detail
+	Source
+	Address
+	Moore Close, Banister Park, Southampton, SO15
+	Zoopla Listing Zoopla
+	Rightmove/Zoopla Link
+	https://www.zoopla.co.uk/for-sale/details/69693855/?search_identifier=02e726ef4fb87319fadab9dc347081b09a45443a1158a822e690336b19cf4c88
+	Zoopla Listing Zoopla
+	Property Type
+	Flat (Purpose-built apartment)
+	Zoopla Listing Zoopla
+	Bedrooms
+	2
+	Zoopla Listing Zoopla
+	Bathrooms
+	2 (Master En-Suite + Family Bathroom)
+	Zoopla Listing Zoopla
+	Tenure
+	Leasehold (built c.2017; remainder NHBC)
+	Zoopla Listing Zoopla
+	Council Tax Band
+	Band C
+	Zoopla Listing Zoopla
+	Key Selling Points
+	Modern build (2017), low maintenance, allocated parking, balcony, two bathrooms, walking distance to city centre & Southampton Common
+	Zoopla Listing + local market commentary OnTheMarket+2Zoopla+2
+	________________
+
+
+Comparative Sales (Sold Prices)
+ The following recent sold prices for 2-bed, 2-bath leasehold flats in the Moore Close / Banister Park / SO15 area have been used as primary comparable evidence.
+Address
+	Bedrooms / Bathrooms
+	Sold Price
+	Sold Date
+	Source
+	6 Moore Close, SO15 2RS
+	2 bed
+	£210,000
+	19 Jan 2024
+	StreetCheck / OnTheMarket StreetCheck+2OnTheMarket+2
+	15 Moore Close, SO15 2RS
+	2 bed
+	£250,000
+	15 Sep 2022
+	StreetCheck / OnTheMarket StreetCheck+1
+	16 Moore Close, SO15 2RS
+	2 bed
+	£247,500
+	05 Aug 2022
+	StreetCheck / OnTheMarket StreetCheck+1
+	1 Moore Close, SO15 2RS
+	2 bed
+	£260,000
+	09 Dec 2022
+	StreetCheck / OnTheMarket StreetCheck+1
+	Key takeaway: The baseline recent sale for a unit very similar (6 Moore Close at £210k in Jan 2024) sets a conservative anchor. The higher values (£247k-£260k) show what the top-units have achieved in the same development/street when condition/size/lease are favourable.
+________________
+
+
+Active Market Comparables (Currently For Sale)
+ The following properties are currently listed and represent the competitive market.
+Address
+	Bedrooms / Bathrooms
+	Asking Price
+	Key Features / Notes
+	Source
+	Moore Close, SO15
+	2 bed, 2 bath
+	£235,000
+	Second floor, modern build, allocated parking, balcony – similar spec. PrimeLocation+1
+	
+
+	Moore Close, SO15
+	2 bed, 2 bath
+	£220,000
+	Fixed price, modern apartment, good presentation. PrimeLocation+1
+	
+
+	Nearby Archers Road, SO15
+	2 bed, 2 bath
+	£220,000
+	Well-presented road adjacent to Banister Park – competitive alternative. PrimeLocation
+	
+
+	________________
+
+
+Recommended Valuation and Price Range
+ Based on the market analysis above, we suggest marketing the property in the following range:
+Price Range
+	Strategy
+	£205,000 - £215,000
+	Quick-sale price band — fair value to generate strong enquiry and faster exchange.
+	£220,000 (Guide Price)
+	Balanced pricing: aligns with active market and allows room for negotiation; realistic for the property given its features.
+	£240,000 - £250,000+
+	Aspirational price band — achievable only if the property is in excellent condition, larger size (above average for the block), lease length favourable, low charges and exemplary presentation.
+	________________
+
+
+Valuation Logic and Reasoning
+                                                                                                                  1. Comparable Property Analysis (Core Value)
+
+                                                                                                                     * The strongest recent transaction: 6 Moore Close at £210k (Jan-24). This provides a solid foundation for value.
+
+                                                                                                                     * Units of similar size/spec in the same development achieved £247k-£260k in 2022 — indicating upside for premium units.
+
+                                                                                                                     * Active listings at £220k-£235k signify current market appetite.
+
+                                                                                                                        2. Premium for Two Bathrooms & Condition
+
+                                                                                                                           * The subject property’s second bathroom/en-suite adds a premium relative to many flats in older blocks with one bath.
+
+                                                                                                                           * Allocated parking + modern build (2017) boost appeal and value.
+
+                                                                                                                              3. Location & Infrastructure
+
+                                                                                                                                 * Moore Close (Banister Park) is highly accessible: walking distance to city centre, good transport, leisure amenities and Southampton Common — strong locational datapoint.
+
+                                                                                                                                 * Newer build, low maintenance appeal vs older stock in SO15.
+
+                                                                                                                                    4. Market Conditions
+
+                                                                                                                                       * Flat/apartment markets are generally more sensitive to interest-rates and mortgage availability compared to houses — while demand remains, buyer caution can affect top bands.
+
+                                                                                                                                       * Given the flat is in a strong micro-location, the recommended guide centre price (£220k) is realistic.
+
+________________
+
+
+Conclusion
+ The subject property is slightly superior to the benchmark £210k sale due to its two-bathrooms, modern build and parking. A marketing strategy centred around £220,000 gives a realistic target with the potential to achieve offers in the £210k-£235k band if presentation is strong. Should the property meet all top-unit criteria (larger size, excellent condition, favourable lease & charges) then the £240k-£250k+ range becomes plausible.
+
+
+
+
+
+
+Following a successful valuation the next step is to register the details of the vendor onto the CRM if this has not been done. 
+Please see a list of everything the CRM needs to hold informationwise for the vendor,
+📝 Vendor (Seller) Record: Data Fields (Exhaustive List)
+👤 1. Core Contact & Identity
+Field
+	Description
+	Data Type / UI Element
+	Notes
+	Vendor ID
+	Unique CRM identifier
+	Auto-Generated Field
+	Internal use (links to Property and Applicant records).
+	Vendor Type
+	Individual / Company / Trust / Executors
+	Dropdown
+	Crucial for AML checks.
+	Title
+	Mr, Mrs, Ms, Dr, etc.
+	Dropdown
+	
+
+	First Name
+	Legal first name(s)
+	Text Field
+	Mandatory.
+	Last Name
+	Legal last name
+	Text Field
+	Mandatory.
+	Primary Phone
+	Best number for immediate contact
+	Text Field
+	Mandatory.
+	Secondary Phone
+	Home/work/mobile number
+	Text Field
+	
+
+	Email Address
+	Primary communication email
+	Text Field
+	Mandatory.
+	Current Address
+	Vendor's current place of residence
+	Address Lookup / Text Field
+	Mandatory for AML/KYC (Know Your Customer) and legal correspondence.
+	Date of Birth
+	Vendor's date of birth
+	Date Picker
+	Mandatory for AML/KYC compliance.
+	Nationality
+	Vendor's nationality
+	Dropdown
+	Required for international AML/PEP screening.
+	Assigned Agent
+	The staff member responsible for the relationship
+	Agent Dropdown
+	Accountability and task assignment.
+	________________
+
+
+🏛️ 2. Compliance & Verification (Mandatory)
+These fields are required to meet UK legal obligations, primarily Anti-Money Laundering (AML) Regulations and GDPR.
+Field
+	Description
+	Data Type / UI Element
+	Notes
+	AML Status
+	Pending, Verified, Failed
+	Status Tag / Dropdown
+	Crucial Compliance Status.
+	ID Document Type
+	Passport, Driving Licence
+	Dropdown
+	Proof of Identity (POI).
+	ID Document Upload
+	Digital scan or photo of ID
+	File Upload
+	Mandatory - kept securely.
+	Proof of Address Type
+	Utility Bill, Bank Statement
+	Dropdown
+	Proof of Address (POA).
+	Proof of Address Upload
+	Digital scan of POA
+	File Upload
+	Mandatory - kept securely.
+	Date AML Completed
+	Date verification was last completed
+	Date Picker
+	Audit trail for regulatory bodies.
+	Politically Exposed Person (PEP) Check
+	Result of screening
+	Checkbox / Dropdown
+	Required as part of AML.
+	Source of Funds/Wealth Declaration
+	Vendor's written declaration
+	Text Field / File Upload
+	Best practice for AML due diligence.
+	________________
+
+
+📝 3. Sales Instruction & Terms
+These details formalise the business relationship and are often documented in the Agency Agreement.
+Field
+	Description
+	Data Type / UI Element
+	Notes
+	Instructed Property
+	Link to the specific Property Record
+	Search/Link Field
+	Mandatory one-to-one link.
+	Instruction Date
+	Date the agency agreement was signed
+	Date Picker
+	Used to calculate the contract period.
+	Instruction Type
+	Sole Agency, Joint Sole, Multi-Agency
+	Dropdown
+	Affects fee/marketing strategy.
+	Contract Length (Weeks)
+	The agreed duration of the contract
+	Numeric Field
+	
+
+	Termination/Expiry Date
+	Automatic calculation based on start date
+	Auto-Calculated
+	For proactive renewal/chasing.
+	Agreed Commission
+	The agreed fee structure
+	Numeric (%) / Text Field
+	e.g., 1.5% + VAT.
+	Minimum Fee (£)
+	Agreed minimum fee payable to the agency
+	Numeric (£)
+	Protects against a low sales price.
+	Agency Agreement Upload
+	Scanned copy of the signed contract
+	File Upload
+	Mandatory for audit.
+	________________
+
+
+⚙️ 4. Relationship & Notes
+Field
+	Description
+	Data Type / UI Element
+	Notes
+	Relationship Status
+	New Lead, Valuation Booked, Instructed, Sold, Completed, Past Client, Lost
+	Status Tag / Dropdown
+	Tracks engagement pipeline.
+	Source of Lead
+	Portal, Referral, Board, Past Client
+	Dropdown
+	For marketing ROI tracking.
+	Marketing Consent
+	Opt-in for future marketing materials
+	Checkbox (GDPR)
+	Mandatory explicit consent (e.g., 'Do you wish to receive future market updates?').
+	Vendor Notes
+	Important personal or property-related notes
+	Multi-line Text
+	Internal agent notes (e.g., 'Only call after 6 pm,' 'Works abroad often').
+	Conveyancer Link
+	Link to the Vendor's Conveyancer/Solicitor record
+	Search/Link Field
+	Crucial for Sales Progression.
+	________________
+
+
+🖥️ User Interface (UI) Mock-up: Vendor Record
+This suggested layout prioritises compliance status and key communication details at the top, ensuring the agent never overlooks mandatory checks.
+Vendor: Johnathan Smith
+Status & Compliance
+	Contact & Identity
+	Current Status: Instructed (Linked to 1 Property)
+	Agent: Sarah Davies (ext. 402)
+	AML Verification: ✅ Verified (Completed 15/10/2025)
+	Primary Phone: 07700 900800
+	ID Upload: ✅ 2 Docs Uploaded
+	Email: johnathan.smith@email.com
+	Instruction Date: 01/10/2025
+	Address: 12 The Mews, Eastville, ES1 2AB
+	Contract Expiry: 01/01/2026 (12 Weeks)
+	Date of Birth: 10/04/1975
+	________________
+
+
+Sales Instruction & Terms
+Instruction Type
+	Agreed Commission
+	Property
+	Conveyancer
+	Sole Agency
+	1.8% + VAT (Min. £3,500)
+	14 Willow Road, Eastville, ES1 2AA
+	Taylor & Co Solicitors
+	Contract Docs: [View Signed Agreement] [View Proof of ID/POA]
+	AML Docs: [View AML Check Report] [View PEP Screen]
+	View Property Record »
+	View Conveyancer Contact »
+	________________
+
+
+Activity History & Marketing
+                                                                                                                                          * 15/10/2025: AML/ID verified and marked as compliant.
+                                                                                                                                          * 01/10/2025: Signed Sole Agency Agreement. Commission 1.8% + VAT.
+                                                                                                                                          * 25/09/2025: Valuation conducted by Agent Sarah Davies.
+                                                                                                                                          * 01/01/2024: Marketing Opt-In: Yes (Receives Monthly Market Updates).
+                                                                                                                                          * Internal Notes: Prefers email contact for routine updates. Mention his dog, 'Buddy,' if calling home.
+  
+
+Here is a moc UI that explains how this could look in the end.
+
+
+Much like at the front end of the lettings process. It is often the case that applicants need multiple viewings before deciding and finalising on a property. To be a successful sales agent you need to therefore understand what your buyers are looking for. This means registration is crucial and asking the right questions to understand your buyers needs is a vital job which the CRM can and should automate in a similar fashion. Here are some key buyer registration questions that can help estate agents learn about their clients and find more people the right properties faster.
+Have you got an ideal timeframe for moving? 
+What's prompting the move?
+What price are you looking up to?
+What condition are you looking for done up or are you willing to take on more of a project?
+What tenure are you looking for, leaseholds or freeholds?
+Have you got a property to sell before buying?
+If yes then is your current property already on the market or under offer?
+Are you a first time buyer?
+Have you got a mortgage in principle or will this be a cash purchase?
+Are there any other key criteria such as being near certain schools or parking?
+
+
+Correctly implementing an automated call back agent for the sales side would be very impressive - this is often more technical than the registration of tenants because there are more technicalities like how the property will be paid for if there will be a chain etc that these questions try to get to the bottom of. 
+The details of the phone call should be automatically transcribed to the CRM. And used to send automatic matches to that applicant.
+Sending automatic property matches is important as this is a huge time drain on estate agents. A big part of the job is making people aware of properties coming onto the market and drumming up interest to arrange viewings and open houses which get stock sold! 
+Currently much like letting agents estate agents on the sales side spend hours matching properties each week manually sending emails manually dialling potential clients. This should all be automated and clients should be reached out automatically and personally via email and text with the potential for viewings being booked in automatically based on negotiators availability. 
+Automatic property matches should be personalised to the specific applicant based off of the registration questions such as if the applicant mentions on registration that they are a young family the automatic email/text should mention something like Only a 5 minute walk to X primary school!! (should this be true of course).
+
+
+
+
+In terms of producing the applicant card where the data and information for the prospective buyer is stored the information that is required to be easily accessed/inputted is as follows.
+
+
+TOP-LEVEL OBJECTS & RELATIONSHIPS
+                                                                                                                                          * Buyer (primary object) — main record
+
+                                                                                                                                          * Contacts — allow linked contacts (partner, financial contact, solicitor, broker)
+
+                                                                                                                                          * Linked Properties — matched properties, previously viewed properties, saved favourites
+
+                                                                                                                                          * Offers — list of offers made by this buyer (linked)
+
+                                                                                                                                          * Viewings — scheduled and completed viewings
+
+                                                                                                                                          * Documents — uploads (AIP, Proof of Funds, ID)
+
+                                                                                                                                          * Activity Log — calls, emails, notes, tasks
+
+                                                                                                                                          * Pipeline / Sales Stage — e.g., Registered → Viewing → Interested → Offer → Offer Accepted → Exchanged → Completed
+
+                                                                                                                                          * Alerts / Saved Searches — user-configurable criteria and alerts per buyer (matching engine)
+(These relationships are standard in purpose-built CRMs and implied by features in Reapit/Alto/Jupix). reapit.com+1
+
+________________
+
+
+1) CORE IDENTIFIERS & ADMIN
+                                                                                                                                             * Buyer ID — system auto-generated (string) – unique.
+
+                                                                                                                                             * Record created / last updated / created by / last updated by — timestamps & user IDs (audit).
+
+                                                                                                                                             * Status / Stage — enum: Registered, Active, Dormant, Hot/Warm/Cold, Archived.
+
+                                                                                                                                             * Source — enum/text: Portal (Rightmove/Zoopla), Branch Walk-In, Referral, Social, Advertising (store lead source).
+
+                                                                                                                                                * Why: Conversion analytics & lead source ROI.
+
+                                                                                                                                                   * Tags / Labels — free tags for segmentation (e.g., “First-time buyer”, “Investor”, “Relocation”).
+Dev note: index tags for fast search.
+
+________________
+
+
+2) CONTACT & IDENTITY
+                                                                                                                                                      * Primary contact name (first / last) — required.
+
+                                                                                                                                                      * Title / Preferred name — optional.
+
+                                                                                                                                                      * Alternate contacts — partner, parent, guarantor (each as contact sub-record with relationship type).
+
+                                                                                                                                                      * Phone(s) — primary, mobile, secondary (with call/SMS capability).
+
+                                                                                                                                                      * Email(s) — primary, secondary (validated).
+
+                                                                                                                                                      * Preferred contact method & time — enum.
+
+                                                                                                                                                      * Current correspondence address — with postcode lookup (autocomplete).
+
+                                                                                                                                                      * Current property status — Renting / Owner / Living with family / Vacant (helps chain logic).
+
+                                                                                                                                                      * Nationality / DOB (optional, for AML/identity) — only if required and with privacy handling.
+
+Why: basic contacting, AML and chain assessment.
+________________
+
+
+3) FINANCIAL & AFFORDABILITY (CRITICAL)
+                                                                                                                                                         * Budget Range (min / max) — numeric.
+
+                                                                                                                                                         * Maximum spend / Flexibility — numeric + boolean (negotiable).
+
+                                                                                                                                                         * Buyer type — Cash / Mortgage / Part-exchange / Shared ownership / Help to Buy.
+
+                                                                                                                                                         * Agreement in Principle (AIP) — boolean + upload (PDF) + AIP amount + lender name + AIP date.
+
+                                                                                                                                                         * Proof of Funds — upload(s), type (savings/sale/gift), amount, verified boolean and verifier.
+
+                                                                                                                                                         * Deposit source — savings / sale of property / equity release / gift (string).
+
+                                                                                                                                                         * Monthly household income — number (optional) and employment status.
+
+                                                                                                                                                         * Mortgage broker details — link to broker contact (name, firm, phone, email).
+
+                                                                                                                                                         * Affordability notes — text (any special financial arrangements).
+
+                                                                                                                                                         * AML / KYC status — enum: Not checked / In progress / Verified / Failed; link to verification provider result (Thirdfort, Credas, etc.).
+
+                                                                                                                                                            * Why: Reapit and other CRMs emphasise AML & verification workflows; capture result and date. reapit.com
+
+Validation / UX: require either AIP or Proof of Funds for “Hot” buyer classification. Allow document expiry reminders (AIP expires).
+________________
+
+
+4) BUYER STATUS & READINESS
+                                                                                                                                                               * Buying Timeline / Desired Move Date — date or relative text (ASAP / 1–3 months / 3–6 months / 6+ months).
+
+                                                                                                                                                               * Readiness level — Hot / Warm / Cold (agent-assigned).
+
+                                                                                                                                                               * Has property to sell? — boolean + link to vendor property record if same agency.
+
+                                                                                                                                                               * Is there a chain? — text description / chain id (link).
+
+                                                                                                                                                               * Solicitor / Conveyancer details — name, firm, phone, email (optional).
+
+                                                                                                                                                               * Decision maker(s) — who signs / approves (contact link).
+
+                                                                                                                                                               * Commitment level — willing to offer, needs mortgage, viewing only (enum/notes).
+
+Why: prioritisation & scheduling.
+________________
+
+
+5) SEARCH CRITERIA (structured & searchable)
+                                                                                                                                                                  * Primary Locations (list) — each with radius (e.g., Southampton, 2 miles).
+
+                                                                                                                                                                  * Secondary Areas — list.
+
+                                                                                                                                                                  * Property Type — Flat / Terraced / Semi / Detached / Bungalow / New Build / Conversion.
+
+                                                                                                                                                                  * Bedrooms — min / preferred / max.
+
+                                                                                                                                                                  * Bathrooms — min.
+
+                                                                                                                                                                  * Outdoor Space — Garden / Balcony / None.
+
+                                                                                                                                                                  * Parking — Essential / Nice to have / Not needed.
+
+                                                                                                                                                                  * Accessibility / Special needs — step-free access / lift / wheelchair access.
+
+                                                                                                                                                                  * Tenure Preference — Freehold / Leasehold / No preference (for flats).
+
+                                                                                                                                                                  * Age / Condition Preference — New build / Modern / Period / Renovation acceptable.
+
+                                                                                                                                                                  * Key Features required — checkboxes: Ensuite, Energy performance, EPC rating, Home office, Open-plan kitchen, Floorplan size, Garage.
+
+                                                                                                                                                                  * School catchment importance — boolean + school names (string).
+
+                                                                                                                                                                  * Commute criteria — maximum commute time or station name.
+
+                                                                                                                                                                  * Minimum property size — sqft or sqm numeric.
+
+                                                                                                                                                                  * Budget flexibility note — text.
+
+Why: drives matching / saved search engine and alerts (many CRMs include matching features). reapit.com+1
+________________
+
+
+6) MATCHING & ALERTS
+                                                                                                                                                                     * Saved searches — saved filter criteria + name + last-run timestamp.
+
+                                                                                                                                                                     * Auto-match score / match history — calculated score for each linked property (show top N matches).
+
+                                                                                                                                                                     * Alert preferences — frequency (instant/daily/weekly), channel (email/sms).
+
+                                                                                                                                                                     * Excluded properties — list of any properties buyer rejects (helps re-filter).
+
+Why: automated lead-to-property matching is core CRM functionality (Reapit & Alto emphasise prospecting & matching tools). Alto Software+1
+________________
+
+
+7) VIEWINGS & INTERACTIONS
+                                                                                                                                                                        * Viewing availability — days/times (structured).
+
+                                                                                                                                                                        * Viewing type preference — in-person / virtual / both.
+
+                                                                                                                                                                        * Viewings scheduled — table: property, date/time, attending (contacts), outcome, feedback.
+
+                                                                                                                                                                        * Viewing feedback history — aggregated notes and scoring (likes/dislikes).
+
+                                                                                                                                                                        * Property tour history — which properties viewed, dates, duration, agent performing.
+
+                                                                                                                                                                        * Virtual tour links watched — boolean + watch timestamp.
+
+Why: match user journey and close faster; agents need to see what buyer has seen and thought.
+________________
+
+
+8) OFFERS & NEGOTIATION
+                                                                                                                                                                           * Offers made — table with property id, offer amount, date, conditions (subject to), expiry, status (pending/accepted/rejected).
+
+                                                                                                                                                                           * Offer source — direct / via broker / online portal.
+
+                                                                                                                                                                           * Price flexibility — numeric / percent buffer (willing to go X% above budget).
+
+                                                                                                                                                                           * Preferred negotiation style — “lowest cash offer”, “sealed offers”, “open negotiation” (agent notes).
+
+                                                                                                                                                                           * Offer approvals — who is authorised to accept (contact).
+
+                                                                                                                                                                           * Offer documents — uploaded proof of funds, lender communication.
+
+Why: keep audit trail & status for compliance and progression.
+________________
+
+
+9) DOCUMENTS & UPLOADS (DOCUMENT MANAGEMENT)
+                                                                                                                                                                              * Identity docs — passport / driving licence (uploads with expiry metadata).
+
+                                                                                                                                                                              * Proof of funds / bank statements — uploads + verified flag.
+
+                                                                                                                                                                              * AIP / mortgage offer — upload + expiry.
+
+                                                                                                                                                                              * Proof of address — utility/council tax (uploads).
+
+                                                                                                                                                                              * Other supporting docs — power of attorney, company docs (if buying via company).
+
+                                                                                                                                                                              * Document expiry reminders — automated notifications for timebound docs.
+
+Security note: store sensitive docs encrypted, with role-based access and retention policies per GDPR.
+________________
+
+
+10) COMMUNICATIONS & ACTIVITY
+                                                                                                                                                                                 * Activity timeline — chronological feed (calls, emails, SMS, notes). Auto-log email threads and integrate with calendar.
+
+                                                                                                                                                                                 * Templates used — record which email templates have been sent (valuation, follow-up, legal info).
+
+                                                                                                                                                                                 * Agent assignments — primary agent, negotiator, viewing agent.
+
+                                                                                                                                                                                 * Tasks & Reminders — follow-ups, AIP expiry checks, viewing confirmations.
+
+                                                                                                                                                                                 * Call recordings / notes — text summary + optional recording link.
+
+Why: visibility and auditability of all contact, and automation of follow-ups (common in Alto & Reapit). Alto Software+1
+________________
+
+
+11) GDPR / CONSENTS / PERMISSIONS
+                                                                                                                                                                                    * Marketing consents — email/sms/phone (with timestamp & method of collection).
+
+                                                                                                                                                                                    * Third-party sharing consent — boolean + timestamp.
+
+                                                                                                                                                                                    * Data retention expiry — auto-calc based on consent/policy.
+
+                                                                                                                                                                                    * Right to Erasure / Data Access requests — logged with status.
+
+                                                                                                                                                                                    * Communication opt-outs — boolean flags.
+
+Why: legal requirement; provide UI to capture and display consent for agents. (Reapit docs emphasise compliance features.) reapit.com
+________________
+
+
+12) REPORTING / KPIs ON THE CARD
+                                                                                                                                                                                       * Buyer score / likelihood to convert — composite score (AIP, readiness, viewing count).
+
+                                                                                                                                                                                       * Time registered — days since registration.
+
+                                                                                                                                                                                       * Number of viewings / offers / matches — quick stats.
+
+                                                                                                                                                                                       * Last contact date — quick glance.
+(Useful for dashboards and prioritisation features.)
+
+________________
+
+
+13) BACKEND / TECH & INTEGRATION NOTES (for developers)
+                                                                                                                                                                                          * APIs & Portal Feeds: store portal reference IDs (Rightmove, Zoopla) for any leads & link to listing IDs. (Alto/others provide portal integration.) Alto Software
+
+                                                                                                                                                                                          * Webhooks: push new property matches & viewings to buyer notifications.
+
+                                                                                                                                                                                          * Document store: S3-style file store with metadata (type, uploadedBy, verifiedBy, expiry).
+
+                                                                                                                                                                                          * Search & Filters: full-text search on notes + indexed fields for location, budget, tags.
+
+                                                                                                                                                                                          * Custom fields: allow agency-specific fields; store as key/value pairs.
+
+                                                                                                                                                                                          * Security: encrypt PII at rest, RBAC for sensitive docs, audit logging for all edits.
+
+                                                                                                                                                                                          * AML Integration: option to call external AML providers and persist results (Reapit/Alto integrations are common). reapit.com+1
+
+________________
+
+
+14) UI / UX Recommendations (developer-friendly)
+                                                                                                                                                                                             * Tabbed form: Buyer Details / Financials / Search Criteria / Viewings / Offers / Documents / Activity / GDPR. (Matches modern CRM UI patterns used by Alto/Reapit.) Alto Software+1
+
+                                                                                                                                                                                             * Progress / completeness bar: show % of mandatory fields completed (AIP/docs etc.).
+
+                                                                                                                                                                                             * Smart validation: e.g., if buyer says “cash” then AIP not required but Proof of Funds required.
+
+                                                                                                                                                                                             * Quick-Qualify button: sets buyer to Hot when AIP + Proof of Funds present.
+
+                                                                                                                                                                                             * Inline tooltips: explain why each financial field is asked (for non-agent developers to understand context).
+
+                                                                                                                                                                                             * Activity feed cards: allow filtering by type (calls, emails, viewings) and quick action shortcuts (create viewing, send email).
+
+                                                                                                                                                                                             * Mobile responsive: essential for on-the-road agents to capture info during viewings.
+
+________________
+
+
+15) Example Minimal Required Fields to Record at Registration (quick checklist)
+                                                                                                                                                                                                1. Full name, primary phone, primary email (contact)
+
+                                                                                                                                                                                                2. Budget range and max price (affordability)
+
+                                                                                                                                                                                                3. Buying position (AIP/cash/needs mortgage)
+
+                                                                                                                                                                                                4. Desired locations and property type (search criteria)
+
+                                                                                                                                                                                                5. Intended move date (timing)
+
+                                                                                                                                                                                                6. Has property to sell? (chain)
+
+                                                                                                                                                                                                7. Preferred contact method / viewing availability
+
+                                                                                                                                                                                                8. Consent to contact (GDPR)
+
+                                                                                                                                                                                                9. Source (portal/referral)
+
+                                                                                                                                                                                                10. Assigned agent (internal)
+
+These are the minimum required to have a functional buyer record and begin automated matching and outreach.
+
+
+In the end I envision this looking something like this on the estate agents side,
+  
+
+Now we have covered the front end of sales we need to have systems in place to manage the back end of the sales process. This involves everything from the stage at which the offer is accepted to the stage at which contracts are exchanged. This is one of the most technically challenging parts of estate agency because emotions are high fall throughs are up to 20% of properties and the process is often long drawn out and complex with long chains and lots of independent parties weighing in on the deal trying to renegotiate etc. 
+The job of sales progression is often managed by dedicated sales progressors and it is my view that this process is harder to automate because the number of edge cases likely exceeds any standards. 
+Please see a comprehensive list of the back end sales process and what the CRM should do to track this process (at this fiddly stage of the process the CRMs main job should be as a virtual check list and reminding agent.).
+
+
+
+
+
+
+The sales process should be tracked like a timeline here is how the timeline looks,
+Sales Progression Workflow & CRM Field/Task Specification
+Stage → Trigger / Key Actions → CRM Tasks/Fields to Track
+1. Offer Accepted → Mark as SSTC (Sold Subject to Contract)
+                                                                                                                                                                                                   * Trigger: Offer accepted by vendor & buyer; property status changes to SSTC.
+
+                                                                                                                                                                                                   * CRM must update: Property Status field = “SSTC”.
+
+                                                                                                                                                                                                   * Tasks/Fields:
+
+                                                                                                                                                                                                      * Offer ID, Date accepted, Offer amount, Buyer & Vendor contact linked.
+
+                                                                                                                                                                                                      * Assign “Sales Progressor / Case Handler” (field: SalesProgressor).
+
+                                                                                                                                                                                                      * Task: Intro call to buyer & vendor (auto-trigger).
+
+                                                                                                                                                                                                      * Chain Flag: Link to “Sale Chain” record (if multi-link).
+
+                                                                                                                                                                                                      * Chain_View: Dashboard or chain-view panel (Reapit supports chain view in their “Sales Progression Dashboard” feature). reapit.com
+
+2. Sales Memorandum / Instruction to Solicitor
+                                                                                                                                                                                                         * Action: Generate & send sales memorandum (agent → solicitor/vendor).
+
+                                                                                                                                                                                                         * CRM must allow: Generation of Memorandum document (template) + upload field.
+
+                                                                                                                                                                                                         * Fields: Solicitor (Buyer side), Solicitor (Vendor side), Solicitor Contact Info.
+
+                                                                                                                                                                                                         * Task: Send memorandum to solicitor and confirm acceptance.
+
+3. Key Documents Requested from Vendor
+                                                                                                                                                                                                            * Action: Request from vendor: Title (freehold/leasehold), Management Pack, TA6/TA7, TA10, Service Charges, etc.
+
+                                                                                                                                                                                                            * CRM fields/tasks:
+
+                                                                                                                                                                                                               * Upload fields: TitleDocument, ManagementPack, TA6, TA7, TA10.
+
+                                                                                                                                                                                                               * Leasehold vs Freehold flag.
+
+                                                                                                                                                                                                               * ServiceChargeAnnual, GroundRent (if leasehold).
+
+                                                                                                                                                                                                               * Task: Vendor to supply documents by X date.
+
+                                                                                                                                                                                                               * Document status field: Not received / Received / Verified.
+
+4. Buyer Mortgage & Survey Progress
+                                                                                                                                                                                                                  * Action: Confirm buyer’s mortgage is in progress; survey arranged.
+
+                                                                                                                                                                                                                  * Fields/tasks:
+
+                                                                                                                                                                                                                     * BuyerMortgageStatus: AIP / In progress / Offered / Approved.
+
+                                                                                                                                                                                                                     * SurveyOrdered: boolean + date ordered + surveyor name.
+
+                                                                                                                                                                                                                     * SurveyReportReceived: boolean + date.
+
+                                                                                                                                                                                                                     * Survey Issues Flag: Yes/No + Notes about any renegotiation.
+
+                                                                                                                                                                                                                     * Task: Monitor mortgage progress by date.
+
+                                                                                                                                                                                                                     * Automation: If mortgage not approved by X week → alert.
+
+5. Searches & Management Pack Info (if Leasehold)
+                                                                                                                                                                                                                        * Action: Order local authority searches; review management pack (for flats).
+
+                                                                                                                                                                                                                        * Fields/tasks:
+
+                                                                                                                                                                                                                           * SearchesOrdered: Date.
+
+                                                                                                                                                                                                                           * SearchesClear: boolean + date cleared.
+
+                                                                                                                                                                                                                           * ManagementPackReviewed: boolean + date.
+
+                                                                                                                                                                                                                           * ServiceChargeHistory: numeric field(s).
+
+                                                                                                                                                                                                                           * Flag: Major works planned? Yes/No + Details (important for mortgage).
+
+                                                                                                                                                                                                                           * Task: Review searches and management pack within set timeframe.
+
+6. Exchange Preparation
+                                                                                                                                                                                                                              * Action: Check all parties happy, mortgage approved, searches clear, vendor obligations done.
+
+                                                                                                                                                                                                                              * CRM must update: Property Status = “Exchanged”.
+
+                                                                                                                                                                                                                              * Fields/tasks:
+
+                                                                                                                                                                                                                                 * ExchangeDate (planned).
+
+                                                                                                                                                                                                                                 * MortgageOfferDate.
+
+                                                                                                                                                                                                                                 * VendorsLegalObligationsComplete: boolean.
+
+                                                                                                                                                                                                                                 * BuyersLegalObligationsComplete: boolean.
+
+                                                                                                                                                                                                                                 * Task: Notify all parties of exchange date.
+
+                                                                                                                                                                                                                                 * Document: Exchange contract uploaded (optional).
+
+7. Completion & Handover
+                                                                                                                                                                                                                                    * Action: Book completion date, arrange funds, key handover, update status to “Completed”.
+
+                                                                                                                                                                                                                                    * CRM tasks/fields:
+
+                                                                                                                                                                                                                                       * CompletionDate.
+
+                                                                                                                                                                                                                                       * FundsTransferred: boolean + date.
+
+                                                                                                                                                                                                                                       * KeyHandoverDate/Time.
+
+                                                                                                                                                                                                                                       * BuyerContact (link).
+
+                                                                                                                                                                                                                                       * VendorContact (link).
+
+                                                                                                                                                                                                                                       * PropertyStatus = “Completed”.
+
+                                                                                                                                                                                                                                       * Task: Issue completion letter (template).
+
+                                                                                                                                                                                                                                       * Task: Ask for review/testimonial from buyer and vendor.
+
+8. Post-Completion & Review
+                                                                                                                                                                                                                                          * Action: Wrap-up: record testimonial, update referral database, archive chain.
+
+                                                                                                                                                                                                                                          * CRM fields/tasks:
+
+                                                                                                                                                                                                                                             * ReviewRequested: boolean + date.
+
+                                                                                                                                                                                                                                             * ReviewReceived: boolean + date + rating.
+
+                                                                                                                                                                                                                                             * ReferralPotential: boolean + notes.
+
+                                                                                                                                                                                                                                             * ArchiveDate: date when record will move to archive.
+
+                                                                                                                                                                                                                                             * Chain analytics: record deal time, vendor/buyer satisfaction scores.
+
+                                                                                                                                                                                                                                             * Task: Send “welcome pack” to buyer (optional).
+
+________________
+
+
+Additional Columns / Data to Track (besides your original timeline)
+                                                                                                                                                                                                                                                * Chain ID: for multi-link chains (Alto allows chain tracking & chain view). Alto Software
+
+                                                                                                                                                                                                                                                * Progression Stage: numeric or descriptive e.g., 1=Offer, 2=SSTC, 3=Solicitor Instructed, 4=Searches, 5=Exchange, 6=Completion.
+
+                                                                                                                                                                                                                                                * Days in Stage: auto-calculated (=current date minus date stage started) — helpful for alerts.
+
+                                                                                                                                                                                                                                                * Delay Reason: text/dropdown — if the sale stalls, record reason (survey issues, finance delay, chain collapse).
+
+                                                                                                                                                                                                                                                * Assigned Team/Person: Field for which progressor is handling (important for multi-branch).
+
+                                                                                                                                                                                                                                                * Documents Pending Count: Integer of how many required docs still outstanding.
+
+                                                                                                                                                                                                                                                * Alerts/Notifications: Trigger system for upcoming deadlines (mortgage expiry, search expiry, vendor docs missing).
+
+                                                                                                                                                                                                                                                * Client Portal Access: Set flag if buyer/vendor portal is enabled (Alto’s “PropertyFile” portal allows real-time updates). Alto Software
+
+                                                                                                                                                                                                                                                * Communication History: store all emails, calls and texts linked to the transaction (audit trail).
+
+                                                                                                                                                                                                                                                * Mortgage/Finance Conditions: Free text for any special conditions (remortgage, bridging loan).
+
+                                                                                                                                                                                                                                                * Chain Lead Time Estimate: Forecast date of exchange/completion (for internal reporting).
+
+                                                                                                                                                                                                                                                * KPI Metrics: e.g., days from SSTC to Exchange, days from Exchange to Completion — for agency reporting.
+
+________________
+
+
+Suggested UI / Workflow for Developers
+                                                                                                                                                                                                                                                   * Use a “Sales Progression” tab on property record.
+
+                                                                                                                                                                                                                                                   * Display a progress bar or timeline at top showing stages and their status (Offer → SSTC → Solicitor Instructed → Searches → Exchange → Completion).
+
+                                                                                                                                                                                                                                                   * Beside timeline display: key dates (Offer Date, SSTC Date, Exchange Date, Completion Date).
+
+                                                                                                                                                                                                                                                   * Below: Checklist component showing required tasks/documents (vendor packs, mortgage, searches) with status icons (✅/🔴).
+
+                                                                                                                                                                                                                                                   * Right-hand panel: “Chain View” listing all linked transactions (vendor chain, buyer’s purchase, etc).
+
+                                                                                                                                                                                                                                                   * Notifications/Alerts: Pop-up or dashboard tile for any items overdue (e.g., “Management pack pending”, “Searches not ordered”).
+
+                                                                                                                                                                                                                                                   * Client Portal toggle: when enabled, send status updates automatically to vendor/buyer (via email/SMS) when stage changes.
+
+                                                                                                                                                                                                                                                   * Role-based access: The progressor user should have a slightly different UI (with tasks list and chain summary) than negotiator.
+
+________________
+
+
+Why This Matters (Lessons from CRM Platforms)
+                                                                                                                                                                                                                                                      * Alto emphasises “customise milestones” and “real-time communication” to keep vendors and buyers updated. Alto Software
+
+                                                                                                                                                                                                                                                      * Reapit emphasises “streamline sales progression” and “know what you need to do, and when to do it”. reapit.com
+
+                                                                                                                                                                                                                                                      * Task management and automations are essential to avoid admin bottlenecks and ensure nothing falls through the cracks. reapit.com
+
+                                                                                                                                                                                                                                                      * Offering a client portal (buyer/vendor view) enhances transparency and helps keep deals smooth.

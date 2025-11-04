@@ -1,40 +1,44 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
 from datetime import date
 
+from pydantic import BaseModel, ConfigDict, EmailStr
+
+from app.models.applicant import ApplicantStatus
+
+
 class ApplicantBase(BaseModel):
-    first_name: str
-    last_name: str
+    full_name: str
     email: EmailStr
-    phone: Optional[str] = None
-    bedrooms_min: Optional[int] = None
-    bedrooms_max: Optional[int] = None
-    rent_budget_min: Optional[float] = None
-    rent_budget_max: Optional[float] = None
-    desired_locations: Optional[str] = None
-    move_in_date: Optional[date] = None
-    notes: Optional[str] = None
+    phone: str | None = None
+    bedrooms_min: int | None = None
+    bedrooms_max: int | None = None
+    rent_budget_min: float | None = None
+    rent_budget_max: float | None = None
+    desired_locations: str | None = None
+    move_in_date: date | None = None
+    notes: str | None = None
 
 class ApplicantCreate(ApplicantBase):
     pass
 
 class ApplicantUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    bedrooms_min: Optional[int] = None
-    bedrooms_max: Optional[int] = None
-    rent_budget_min: Optional[float] = None
-    rent_budget_max: Optional[float] = None
-    desired_locations: Optional[str] = None
-    move_in_date: Optional[date] = None
-    status: Optional[str] = None
-    notes: Optional[str] = None
+    full_name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    bedrooms_min: int | None = None
+    bedrooms_max: int | None = None
+    rent_budget_min: float | None = None
+    rent_budget_max: float | None = None
+    desired_locations: str | None = None
+    move_in_date: date | None = None
+    status: ApplicantStatus | None = None
+    references_passed: bool | None = None
+    right_to_rent_checked: bool | None = None
+    notes: str | None = None
 
 class ApplicantResponse(ApplicantBase):
-    id: str
-    status: str
+    id: int
+    status: ApplicantStatus
+    references_passed: bool
+    right_to_rent_checked: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

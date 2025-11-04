@@ -1,10 +1,10 @@
-import pytest
 from fastapi import status
+
 
 def test_health_endpoint(client):
     """Test health check endpoint"""
     response = client.get("/health")
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["status"] == "healthy"
@@ -15,7 +15,7 @@ def test_health_endpoint(client):
 def test_landing_page(client):
     """Test landing page loads"""
     response = client.get("/")
-    
+
     assert response.status_code == status.HTTP_200_OK
     assert "Team 67" in response.text
     assert "Estate Agency CRM API" in response.text
@@ -30,7 +30,7 @@ def test_api_docs(client):
 def test_openapi_json(client):
     """Test OpenAPI schema is accessible"""
     response = client.get("/openapi.json")
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "openapi" in data
