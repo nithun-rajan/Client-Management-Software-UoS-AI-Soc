@@ -1,28 +1,59 @@
 INFO:     Will watch for changes in these directories: ['/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [90799] using WatchFiles
-INFO:     Started server process [90802]
+INFO:     Started reloader process [94984] using WatchFiles
+INFO:     Started server process [95000]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 🚀 Creating database tables...
 ✅ Database ready
-INFO:     127.0.0.1:55530 - "OPTIONS /api/v1/land-registry/ai-rent-estimate?house_number=2&postcode=SW1A+1AA HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55533 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55530 - "POST /api/v1/land-registry/ai-rent-estimate?house_number=2&postcode=SW1A+1AA HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57657 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57661 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57669 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57670 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57675 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57676 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
 WARNING:  WatchFiles detected changes in 'app/services/llm_service.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [90802]
-INFO:     Started server process [90840]
+INFO:     Finished server process [95000]
+INFO:     Started server process [95096]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 🚀 Creating database tables...
 ✅ Database ready
-INFO:     127.0.0.1:55554 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55573 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55583 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55585 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55598 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55601 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55624 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57689 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57688 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57711 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57710 - "GET /api/v1/kpis/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57710 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57711 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57710 - "OPTIONS /api/v1/messaging/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57711 - "PUT /api/v1/messaging/4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57710 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57711 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57771 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57772 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57780 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57781 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57787 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57788 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57804 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57803 - "GET /api/v1/kpis/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57803 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57804 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57902 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57901 - "GET /api/v1/kpis/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57906 - "GET /api/v1/land-registry/lookup-property?house_number=4&postcode=SO15+1AG HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57909 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57909 - "OPTIONS /api/v1/land-registry/ai-rent-estimate?house_number=4&postcode=SO15+1AG HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57909 - "POST /api/v1/land-registry/ai-rent-estimate?house_number=4&postcode=SO15+1AG HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57917 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57920 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57926 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57927 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57926 - "GET /api/v1/applicants HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:57927 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57929 - "POST /api/v1/ai/match-proposals?applicant_id=5f487ded-bd19-4b05-869c-bf199cd90caf&limit=5&min_score=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59393 - "GET /api/v1/applicants HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59393 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK

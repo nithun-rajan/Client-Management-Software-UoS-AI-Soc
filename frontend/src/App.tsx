@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import Landlords from "./pages/Landlords";
 import Applicants from "./pages/Applicants";
+import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/properties" element={<Properties />} />
               <Route path="/landlords" element={<Landlords />} />
               <Route path="/applicants" element={<Applicants />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/search" element={<Search />} />
               <Route path="/kpis" element={<KPIsDashboard />} />
               <Route path="/settings" element={<Settings />} />
