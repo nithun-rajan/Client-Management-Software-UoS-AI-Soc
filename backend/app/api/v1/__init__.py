@@ -1,0 +1,33 @@
+from fastapi import APIRouter
+
+from app.api.v1 import (
+    applicants, 
+    auth, 
+    events, 
+    kpis, 
+    land_registry, 
+    landlords, 
+    messaging, 
+    properties, 
+    property_matching, 
+    search,
+    tenancy,
+    tasks,  # Add this import
+    vendors   # Add this import
+)
+
+api_router = APIRouter()
+
+api_router.include_router(applicants.router)
+api_router.include_router(auth.router)
+api_router.include_router(events.router)
+api_router.include_router(kpis.router)
+api_router.include_router(land_registry.router)
+api_router.include_router(landlords.router)
+api_router.include_router(messaging.router)
+api_router.include_router(properties.router)
+api_router.include_router(property_matching.router)
+api_router.include_router(search.router)
+api_router.include_router(tenancy.router)
+api_router.include_router(tasks.router)     # Add this line
+api_router.include_router(vendors.router)   # Add this line
