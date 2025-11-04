@@ -1,14 +1,63 @@
 import { UserCheck, Mail, Phone, Building2, Eye, Pencil, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useLandlords } from '@/hooks/useLandlords';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 import { Link } from 'react-router-dom';
+import api from '@/lib/api';
 
 export default function Landlords() {
-  const { data: landlords, isLoading } = useLandlords();
+  const { data: landlords, isLoading, refetch } = useLandlords();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedLandlord, setSelectedLandlord] = useState<any>(null);
+  const { toast } = useToast();
+
+  const handleEdit = (landlord: any) => {
+    setSelectedLandlord(landlord);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (landlord: any) => {
+    setSelectedLandlord(landlord);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/api/v1/landlords/${selectedLandlord.id}/`);
+      toast({ title: 'Success', description: 'Landlord deleted successfully' });
+      setDeleteOpen(false);
+      refetch();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete landlord', variant: 'destructive' });
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.put(`/api/v1/landlords/${selectedLandlord.id}/`, {
+        full_name: formData.get('full_name'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        address: formData.get('address')
+      });
+      toast({ title: 'Success', description: 'Landlord updated successfully' });
+      setEditOpen(false);
+      refetch();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to update landlord', variant: 'destructive' });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -87,10 +136,10 @@ export default function Landlords() {
                     View Details
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleEdit(landlord)}>
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => handleDelete(landlord)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -107,6 +156,57 @@ export default function Landlords() {
           </div>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Landlord</DialogTitle>
+            <DialogDescription>Update landlord details</DialogDescription>
+          </DialogHeader>
+          {selectedLandlord && (
+            <form onSubmit={handleEditSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <Input id="full_name" name="full_name" defaultValue={selectedLandlord.full_name} required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" defaultValue={selectedLandlord.email} required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" name="phone" defaultValue={selectedLandlord.phone} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input id="address" name="address" defaultValue={selectedLandlord.address} />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Landlord</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this landlord? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

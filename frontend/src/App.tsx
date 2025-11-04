@@ -12,6 +12,7 @@ import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import PropertyDetails from "./pages/PropertyDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,15 +34,18 @@ const App = () => (
           <Sidebar />
           <main className="flex-1 ml-64">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/landlords" element={<Landlords />} />
-              <Route path="/applicants" element={<Applicants />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/kpis" element={<KPIsDashboard />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/properties" element={<Properties />} />
+            <Route path="/properties/:id" element={<PropertyDetails />} /> {/* KEEP ONLY THIS ONE */}
+            <Route path="/landlords" element={<Landlords />} />
+            <Route path="/landlords/:id" element={<Landlords />} />
+            <Route path="/applicants" element={<Applicants />} />
+            <Route path="/applicants/:id" element={<Applicants />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/kpis" element={<KPIsDashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
           </main>
         </div>
       </BrowserRouter>
