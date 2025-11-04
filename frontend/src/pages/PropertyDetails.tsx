@@ -86,8 +86,18 @@ export default function PropertyDetails() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                <Building2 className="h-24 w-24 text-muted-foreground" />
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                {/* <img 
+                  src={`https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=450&fit=crop&crop=entropy&auto=format&q=75`}
+                  alt={property.address_line1}
+                  className="w-full h-full object-cover"
+                /> */}
+                {/* sorry but i have to do this */}
+                <img 
+                  src={`https://picsum.photos/seed/building${property.id}/800/450`}
+                  alt={property.address_line1}
+                  className="w-full h-full object-cover"
+                />
               </div>
               
               <div className="grid grid-cols-3 gap-4">
