@@ -25,7 +25,7 @@ def list_properties(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     return properties
 
 @router.get("/{property_id}", response_model=PropertyResponse)
-def get_property(property_id: int, db: Session = Depends(get_db)):
+def get_property(property_id: str, db: Session = Depends(get_db)):
     """Get a specific property"""
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:
@@ -34,7 +34,7 @@ def get_property(property_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{property_id}", response_model=PropertyResponse)
 def update_property(
-    property_id: int,
+    property_id: str,
     property_data: PropertyUpdate,
     db: Session = Depends(get_db)
 ):
@@ -51,7 +51,7 @@ def update_property(
     return property
 
 @router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_property(property_id: int, db: Session = Depends(get_db)):
+def delete_property(property_id: str, db: Session = Depends(get_db)):
     """Delete a property"""
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:

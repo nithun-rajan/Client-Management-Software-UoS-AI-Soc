@@ -5,14 +5,14 @@ Tracks all communications and activities linked to Properties, Landlords, and Ap
 As per Blueprint: Activity feed with calls logged, emails sent, SMS messages, tasks created
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from app.models.base import Base
+from app.models.base import BaseModel
 
 
-class Communication(Base):
+class Communication(BaseModel):
     """
     Communication/Activity Log Model
     
@@ -20,9 +20,6 @@ class Communication(Base):
     Used for compliance tracking and relationship management
     """
     __tablename__ = "communications"
-    
-    # Primary Key
-    id = Column(Integer, primary_key=True, index=True)
     
     # Communication Type & Details
     type = Column(String(50), nullable=False, index=True)  # email, call, sms, note, task, meeting, viewing
@@ -32,17 +29,15 @@ class Communication(Base):
     # Metadata
     direction = Column(String(20), nullable=True)  # inbound, outbound (null for notes/tasks)
     created_by = Column(String(255), nullable=True)  # User who created this entry
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Flags
     is_important = Column(Boolean, default=False)  # Flag for priority communications
     is_read = Column(Boolean, default=False)  # Track if communication has been reviewed
     
-    # Polymorphic Relationships (at least one must be set)
-    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True, index=True)
-    landlord_id = Column(Integer, ForeignKey("landlords.id"), nullable=True, index=True)
-    applicant_id = Column(Integer, ForeignKey("applicants.id"), nullable=True, index=True)
+    # Polymorphic Relationships (at least one must be set) - Using String UUIDs to match BaseModel
+    property_id = Column(String, ForeignKey("properties.id"), nullable=True, index=True)
+    landlord_id = Column(String, ForeignKey("landlords.id"), nullable=True, index=True)
+    applicant_id = Column(String, ForeignKey("applicants.id"), nullable=True, index=True)
     
     # Relationships (back-references)
     property = relationship("Property", back_populates="communications")

@@ -27,7 +27,7 @@ class PropertyUpdate(BaseModel):
     description: str | None = None
 
 class PropertyResponse(PropertyBase):
-    id: int
+    id: str  # Changed to str to match BaseModel UUID
     status: PropertyStatus
 
     model_config = ConfigDict(from_attributes=True)

@@ -29,7 +29,7 @@ def create_communication(
     At least one entity (property, landlord, or applicant) must be linked
     """
     # Create new communication
-    db_communication = Communication(**communication.dict())
+    db_communication = Communication(**communication.model_dump())
     
     db.add(db_communication)
     db.commit()
@@ -43,7 +43,7 @@ def list_communications(
     db: Session = Depends(get_db),
     type: Optional[str] = Query(None, description="Filter by type (email, call, sms, note, task, meeting, viewing)"),
     entity_type: Optional[str] = Query(None, description="Filter by entity type (property, landlord, applicant)"),
-    entity_id: Optional[int] = Query(None, description="Filter by specific entity ID"),
+    entity_id: Optional[str] = Query(None, description="Filter by specific entity ID"),
     start_date: Optional[datetime] = Query(None, description="Filter by start date"),
     end_date: Optional[datetime] = Query(None, description="Filter by end date"),
     is_important: Optional[bool] = Query(None, description="Filter by importance"),

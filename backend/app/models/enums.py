@@ -28,6 +28,7 @@ class ApplicantStatus:
 
 class TenancyStatus:
     """Tenancy status"""
+    DRAFT = "draft"
     PENDING = "pending"
     ACTIVE = "active"
     EXPIRED = "expired"

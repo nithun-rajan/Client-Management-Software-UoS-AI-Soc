@@ -30,7 +30,7 @@ def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     return landlords
 
 @router.get("/{landlord_id}", response_model=LandlordResponse)
-def get_landlord(landlord_id: int, db: Session = Depends(get_db)):
+def get_landlord(landlord_id: str, db: Session = Depends(get_db)):
     """Get a specific landlord"""
     landlord = db.query(Landlord).filter(Landlord.id == landlord_id).first()
     if not landlord:
@@ -39,7 +39,7 @@ def get_landlord(landlord_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{landlord_id}", response_model=LandlordResponse)
 def update_landlord(
-    landlord_id: int,
+    landlord_id: str,
     landlord_data: LandlordUpdate,
     db: Session = Depends(get_db)
 ):
@@ -56,7 +56,7 @@ def update_landlord(
     return landlord
 
 @router.delete("/{landlord_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_landlord(landlord_id: int, db: Session = Depends(get_db)):
+def delete_landlord(landlord_id: str, db: Session = Depends(get_db)):
     """Delete a landlord"""
     landlord = db.query(Landlord).filter(Landlord.id == landlord_id).first()
     if not landlord:

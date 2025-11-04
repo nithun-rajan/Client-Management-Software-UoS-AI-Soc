@@ -108,4 +108,10 @@ def count_search_results(
         query = query.filter(Property.property_type == property_type)
 
     if postcode is not None:
-        query = query.filter
+        query = query.filter(Property.postcode.ilike(f"%{postcode}%"))
+    
+    if status is not None:
+        query = query.filter(Property.status == status)
+
+    total = query.count()
+    return {"count": total}

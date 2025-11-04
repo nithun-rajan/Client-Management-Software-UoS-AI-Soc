@@ -248,4 +248,5 @@ app.include_router(messaging.router, prefix="/api/v1")  # 💬 Communication Log
 app.include_router(tenancy.router, prefix="/api/v1")  # 🏠 Tenancy Management (by Abdullah)
 
 #add a router for auth.py (by Anthony)
-# app.include_router(auth.router, prefix="/api/v1")
+from app.api.v1 import auth
+app.include_router(auth.router, prefix="/api/v1")
