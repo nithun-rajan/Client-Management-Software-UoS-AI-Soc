@@ -1,34 +1,33 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from pydantic import ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.enums import PropertyStatus
 
 
 class PropertyBase(BaseModel):
-    address: Optional[str] = None
+    address: str
     postcode: str
     property_type: str
     bedrooms: int = Field(ge=0)
     bathrooms: int = Field(ge=0)
-    rent: Optional[float] = None
-    description: Optional[str] = None
+    rent: float | None = None
+    description: str | None = None
 
 class PropertyCreate(PropertyBase):
-    city: str
+    pass
 
 class PropertyUpdate(BaseModel):
-    address: Optional[str] = None
-    city: Optional[str] = None
-    postcode: Optional[str] = None
-    property_type: Optional[str] = None
-    bedrooms: Optional[int] = None
-    bathrooms: Optional[int] = None
-    rent: Optional[float] = None
-    status: Optional[str] = None
-    description: Optional[str] = None
+    address: str | None = None
+    postcode: str | None = None
+    property_type: str | None = None
+    bedrooms: int | None = None
+    bathrooms: int | None = None
+    rent: float | None = None
+    status: PropertyStatus | None = None
+    description: str | None = None
 
 class PropertyResponse(PropertyBase):
-    id: str
-    status: str
-    city: str
+    id: int
+    status: PropertyStatus
 
     model_config = ConfigDict(from_attributes=True)
