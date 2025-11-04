@@ -1,6 +1,9 @@
 import { Home, Building2, Users, UserCheck, Search, BarChart3, Settings, MessageSquare } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
+import AgentProfileDialog from './AgentProfileDialog.tsx';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -15,6 +18,7 @@ const navigation = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const [agentOpen, setAgentOpen] = useState(false);
 
   return (
     <aside className="fixed inset-y-0 left-0 w-64 bg-gradient-primary border-r border-white/10 backdrop-blur-sm">
@@ -50,18 +54,28 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* User Profile */}
+        {/* Agent Profile */}
         <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white font-semibold">
-              T67
+          <button
+            onClick={() => setAgentOpen(true)}
+            className="w-full flex items-center gap-3 hover:bg-white/10 rounded-lg p-2 transition-all group"
+          >
+            <div className="relative">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                EA
+              </div>
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-400 rounded-full border-2 border-indigo-900 animate-pulse"></div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">Team 67</p>
-              <p className="text-xs text-white/60 truncate">UoS AI Society</p>
+            <div className="text-left flex-1">
+              <p className="text-sm font-semibold text-white">Estate Agent</p>
+              <p className="text-xs text-white/70">• Live</p>
             </div>
-          </div>
+            <Sparkles className="h-4 w-4 text-yellow-400 opacity-0 group-hover:opacity-100 transition" />
+          </button>
         </div>
+
+        {/* Profile Pop up */}
+        <AgentProfileDialog open={agentOpen} onOpenChange={setAgentOpen} />
       </div>
     </aside>
   );
