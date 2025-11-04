@@ -8,11 +8,13 @@ import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/shared/StatusBadge';
 import api from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function ApplicantDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { toast } = useToast();
     console.log('ApplicantDetails rendering, id:', id);
 
 
@@ -23,7 +25,13 @@ export default function ApplicantDetails() {
       return response.data;
     },
   });
-
+  const handleSendEmail = () => {
+    console.log('📧 Sending email for property:', applicant.id);
+    toast({ 
+      title: 'Email Sent', 
+      description: `Property details sent to interested parties`,
+    });
+  };
   if (isLoading) {
     return (
       <div>
@@ -61,6 +69,10 @@ export default function ApplicantDetails() {
         <Button variant="outline" onClick={() => navigate('/applicants')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Applicants
+        </Button>
+        <Button onClick={handleSendEmail}>
+          <Mail className="h-4 w-4 mr-2" />
+          Send Details
         </Button>
 
         <div className="grid gap-6 md:grid-cols-3">

@@ -1,4 +1,4 @@
-import { Building2, Bed, Bath, Eye, Pencil, Trash2, PoundSterling } from 'lucide-react';
+import { Building2, Bed, Bath, Eye, Pencil, Trash2, PoundSterling, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,33 @@ export default function Properties() {
     );
   }
 
+  const handleExportCSV = () => {
+  if (!properties || properties.length === 0) return;
+  
+  const csvContent = [
+    ['Address', 'City', 'Postcode', 'Type', 'Bedrooms', 'Bathrooms', 'Rent', 'Status'].join(','),
+    ...properties.map(p => [
+      p.address_line1,
+      p.city,
+      p.postcode,
+      p.property_type,
+      p.bedrooms,
+      p.bathrooms,
+      p.rent || 'POA',
+      p.status
+    ].join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `properties-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+  toast({ title: 'Success', description: 'Properties exported to CSV' });
+  };
+
   return (
     <div>
       <Header title="Properties" />
@@ -92,6 +119,13 @@ export default function Properties() {
                 </div>
                 <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                   <Building2 className="h-16 w-16 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-3xl font-bold">Properties</h1>
+                  <Button onClick={handleExportCSV} variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -143,6 +177,7 @@ export default function Properties() {
             </Card>
           ))}
         </div>
+
 
         {properties?.length === 0 && (
           <div className="text-center py-12">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Mail, Phone, Bed, PoundSterling, Eye, Pencil, Trash2, Dog, Sparkles, MapPin, Home, Calendar } from 'lucide-react';
+import { Users, Mail, Phone, Bed, PoundSterling, Eye, Pencil, Trash2, Dog, Sparkles, MapPin, Home, Calendar, } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';

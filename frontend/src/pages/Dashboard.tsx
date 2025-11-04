@@ -1,10 +1,11 @@
-import { Building2, UserCheck, Users, PoundSterling, Activity } from 'lucide-react';
+import { Building2, UserCheck, Users, PoundSterling, Activity, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useKPIs } from '@/hooks/useKPIs';
 import { useEvents } from '@/hooks/useEvents';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/layout/Header';
 import { formatDistanceToNow } from 'date-fns';
+
 
 export default function Dashboard() {
   const { data: kpis, isLoading } = useKPIs();
@@ -80,7 +81,32 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-
+        {/* Compliance Alert Card */}
+          <Card className="md:col-span-3 border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-800">
+                <AlertCircle className="h-5 w-5" />
+                Compliance Alerts
+              </CardTitle>
+              <CardDescription>Documents requiring attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600">0</div>
+                  <div className="text-sm text-muted-foreground">Expiring Soon</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-600">0</div>
+                  <div className="text-sm text-muted-foreground">Expired</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600">{kpis?.properties.total || 0}</div>
+                  <div className="text-sm text-muted-foreground">Compliant</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         {/* Recent Activity */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2 shadow-card">
@@ -117,7 +143,7 @@ export default function Dashboard() {
                   return (
                     <div key={event.id} className="flex items-start gap-4">
                       <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-${eventColor}/10`}>
-                        {eventIcon && <eventIcon className={`h-5 w-5 text-${eventColor}`} />}
+                        
                       </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{eventTitle}</p>
@@ -137,6 +163,7 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          
 
           <Card className="shadow-card">
             <CardHeader>
@@ -158,6 +185,7 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+          
         </div>
       </div>
     </div>

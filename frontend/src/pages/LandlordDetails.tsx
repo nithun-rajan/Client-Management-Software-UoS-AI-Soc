@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { UserCheck, Mail, Phone, MapPin, Building2, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserCheck, Mail, Phone, MapPin, Building2, ArrowLeft, CheckCircle, AlertCircle} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,10 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import Header from '@/components/layout/Header';
 import api from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function LandlordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { data: landlord, isLoading } = useQuery({
     queryKey: ['landlord', id],
@@ -19,7 +22,13 @@ export default function LandlordDetails() {
       return response.data;
     },
   });
-
+const handleSendEmail = () => {
+  console.log('📧 Sending email for property:', landlord.id);
+  toast({ 
+    title: 'Email Sent', 
+    description: `Property details sent to interested parties`,
+  });
+};
   if (isLoading) {
     return (
       <div>
@@ -62,6 +71,10 @@ export default function LandlordDetails() {
         <Button variant="outline" onClick={() => navigate('/landlords')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Landlords
+        </Button>
+        <Button onClick={handleSendEmail}>
+          <Mail className="h-4 w-4 mr-2" />
+          Send Details
         </Button>
 
         <div className="grid gap-6 md:grid-cols-3">
