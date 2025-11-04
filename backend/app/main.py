@@ -244,6 +244,7 @@ app.include_router(kpis.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
 app.include_router(property_matching.router, prefix="/api/v1")  # 🤖 AI Property Matching
 app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Registry Integration (FREE!)
+app.include_router(applicants.router, prefix="/api/v1")
 
 #add a router for auth.py (by Anthony)
 # app.include_router(auth.router, prefix="/api/v1")

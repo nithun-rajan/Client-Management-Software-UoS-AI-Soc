@@ -13,16 +13,16 @@ import { Link } from 'react-router-dom';
 
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
-  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
+  const [selectedApplicantId, setSelectedApplicantId] = useState<number | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   
   const matchingMutation = usePropertyMatching(
-    selectedApplicantId || '',
+    selectedApplicantId ? String(selectedApplicantId) : '',
     5,
     50
   );
 
-  const handleFindMatches = async (applicantId: string) => {
+  const handleFindMatches = async (applicantId: number) => {
     setSelectedApplicantId(applicantId);
     const result = await matchingMutation.mutateAsync();
     if (result.matches.length > 0) {
@@ -112,8 +112,10 @@ export default function Applicants() {
                   <Sparkles className="h-4 w-4 mr-1" />
                   {matchingMutation.isPending && selectedApplicantId === applicant.id ? 'Finding...' : 'Find Matches'}
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/applicants/${applicant.id}`}>
+                    <Eye className="h-4 w-4" />
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>

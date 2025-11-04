@@ -7,7 +7,7 @@ export function useApplicants() {
   return useQuery({
     queryKey: ['applicants'],
     queryFn: async () => {
-      const { data } = await api.get('/api/v1/applicants');
+      const { data } = await api.get('/api/v1/applicants/');  // Added /
       return data as Applicant[];
     },
   });
@@ -17,7 +17,7 @@ export function useApplicant(id: string) {
   return useQuery({
     queryKey: ['applicants', id],
     queryFn: async () => {
-      const { data } = await api.get(`/api/v1/applicants/${id}`);
+      const { data } = await api.get(`/api/v1/applicants/${id}/`);  // Added /
       return data as Applicant;
     },
     enabled: !!id,
@@ -29,7 +29,7 @@ export function useCreateApplicant() {
   
   return useMutation({
     mutationFn: async (applicantData: Partial<Applicant>) => {
-      const { data } = await api.post('/api/v1/applicants', applicantData);
+      const { data } = await api.post('/api/v1/applicants/', applicantData);  // Added /
       return data;
     },
     onSuccess: () => {
@@ -46,8 +46,8 @@ export function useUpdateApplicant() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...applicantData }: Partial<Applicant> & { id: number }) => {
-      const { data } = await api.put(`/api/v1/applicants/${id}`, applicantData);
+    mutationFn: async ({ id, ...applicantData }: Partial<Applicant> & { id: string }) => {  // Changed to string
+      const { data } = await api.put(`/api/v1/applicants/${id}/`, applicantData);  // Added /
       return data;
     },
     onSuccess: () => {
@@ -64,8 +64,8 @@ export function useDeleteApplicant() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/api/v1/applicants/${id}`);
+    mutationFn: async (id: string) => {  // Changed to string
+      await api.delete(`/api/v1/applicants/${id}/`);  // Added /
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applicants'] });
