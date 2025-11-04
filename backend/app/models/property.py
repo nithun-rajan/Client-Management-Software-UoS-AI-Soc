@@ -10,7 +10,7 @@ class Property(BaseModel):
     address = Column(String, nullable=False)
     address_line1 = Column(String)
     address_line2 = Column(String)
-    city = Column(String, nullable=False)
+    city = Column(String, nullable=True)
     postcode = Column(String, nullable=False, index=True)
     
     property_type = Column(String, nullable=False)  # flat, house, maisonette

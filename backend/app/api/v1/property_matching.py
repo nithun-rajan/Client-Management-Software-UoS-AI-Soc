@@ -31,6 +31,7 @@ class PropertyMatcher:
         score = 0.0
         max_score = 0.0
         
+        # Bedroom matching (using bedrooms_min/max range)
         max_score += 30
         if applicant.desired_bedrooms:
             if str(property.bedrooms) == applicant.desired_bedrooms:
@@ -54,17 +55,12 @@ class PropertyMatcher:
         max_score += 20
         if applicant.preferred_locations and property.postcode:
             preferred = applicant.preferred_locations.lower()
-            property_location = f"{property.city} {property.postcode}".lower()
+            property_location = f"{property.city or ''} {property.postcode}".lower()
             
             if any(loc.strip() in property_location for loc in preferred.split(',')):
                 score += 20
             elif any(loc.strip()[:4] in property.postcode.lower()[:4] for loc in preferred.split(',')):
                 score += 10  # Partial postcode match
-        
-        max_score += 15
-        if applicant.desired_property_type:
-            if applicant.desired_property_type.lower() in property.property_type.lower():
-                score += 15
         
         max_score += 10
         if applicant.move_in_date:
@@ -84,7 +80,9 @@ class PropertyMatcher:
         """
         Blueprint page 29: "matches should be personalised"
         """
-        message_parts = [f"Hi {applicant.first_name}! "]
+        # Extract first name from first_name field
+        first_name = applicant.first_name if applicant.first_name else "there"
+        message_parts = [f"Hi {first_name}! "]
         
         # Opening based on match quality
         if score >= 90:
@@ -95,13 +93,14 @@ class PropertyMatcher:
             message_parts.append("Here's a property you might be interested in. ")
         
         # Property description
+        city = property.city or ""
         message_parts.append(
-            f"This {property.bedrooms}-bedroom {property.property_type} in {property.city} "
-            f"is available for £{property.rent:,.0f}/month. "
+            f"This {property.bedrooms}-bedroom {property.property_type} in {city} "
+            f"is available for £{property.rent:,.0f}/month. " if property.rent else ""
         )
         
+        # Pet-related personalization (Blueprint page 29)
         if applicant.has_pets and applicant.pet_details:
-            # Blueprint page 29: "if the applicant mentions pets, mention the garden"
             if property.features and 'garden' in property.features.lower():
                 message_parts.append(f"Great news - it has a garden that {applicant.pet_details} would love! ")
             elif property.features and 'pets_allowed' in property.features.lower():
@@ -164,8 +163,8 @@ async def ai_match_properties(
                 "id": applicant.id,
                 "name": f"{applicant.first_name} {applicant.last_name}",
                 "criteria": {
-                    "bedrooms": applicant.desired_bedrooms,
-                    "budget": f"£{applicant.rent_budget_min}-£{applicant.rent_budget_max}",
+                    "bedrooms": applicant.desired_bedrooms or 'any',
+                    "budget": f"£{applicant.rent_budget_min or 0}-£{applicant.rent_budget_max or 0}",
                     "locations": applicant.preferred_locations
                 }
             },
@@ -193,8 +192,9 @@ async def ai_match_properties(
                 reasons.append(f"Within budget (£{property.rent:,.0f})")
             if applicant.preferred_locations:
                 locs = [l.strip() for l in applicant.preferred_locations.split(',')]
-                if any(loc.lower() in f"{property.city} {property.postcode}".lower() for loc in locs):
-                    reasons.append(f"Preferred location ({property.city})")
+                city = property.city or ""
+                if any(loc.lower() in f"{city} {property.postcode}".lower() for loc in locs):
+                    reasons.append(f"Preferred location ({city})")
             
             matches.append({
                 "property_id": property.id,
@@ -231,7 +231,7 @@ async def ai_match_properties(
             "email": applicant.email,
             "phone": applicant.phone,
             "criteria": {
-                "bedrooms": applicant.desired_bedrooms,
+                "bedrooms": applicant.desired_bedrooms or 'any',
                 "budget": f"£{applicant.rent_budget_min or 0}-£{applicant.rent_budget_max or 0}",
                 "locations": applicant.preferred_locations,
                 "move_in_date": str(applicant.move_in_date) if applicant.move_in_date else None
