@@ -6,7 +6,8 @@ from app.models.applicant import ApplicantStatus
 
 
 class ApplicantBase(BaseModel):
-    full_name: str
+    first_name: str
+    last_name: str
     email: EmailStr
     phone: str | None = None
     bedrooms_min: int | None = None
@@ -21,7 +22,8 @@ class ApplicantCreate(ApplicantBase):
     pass
 
 class ApplicantUpdate(BaseModel):
-    full_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
     bedrooms_min: int | None = None
@@ -36,9 +38,7 @@ class ApplicantUpdate(BaseModel):
     notes: str | None = None
 
 class ApplicantResponse(ApplicantBase):
-    id: int
-    status: ApplicantStatus
-    references_passed: bool
-    right_to_rent_checked: bool
+    id: str
+    status: str
 
     model_config = ConfigDict(from_attributes=True)

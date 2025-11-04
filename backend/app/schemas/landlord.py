@@ -29,7 +29,7 @@ class LandlordUpdate(BaseModel):
     notes: str | None = None
 
 class LandlordResponse(LandlordBase):
-    id: int
+    id: str
     aml_verified: bool
     aml_verification_date: date | None = None
 

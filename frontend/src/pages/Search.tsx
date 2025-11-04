@@ -19,7 +19,7 @@ export default function Search() {
   const handleFilterChange = (key: keyof SearchFilters, value: string | number) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value === '' ? undefined : value
+      [key]: value === 'all' ? undefined : value
     }));
   };
 
@@ -89,14 +89,14 @@ export default function Search() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Property Type</label>
                 <Select 
-                  value={filters.property_type || ''} 
+                  value={filters.property_type || 'all'} 
                   onValueChange={(value) => handleFilterChange('property_type', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
+                    <SelectItem value="all">All types</SelectItem>
                     <SelectItem value="flat">Flat</SelectItem>
                     <SelectItem value="house">House</SelectItem>
                     <SelectItem value="maisonette">Maisonette</SelectItem>
@@ -106,14 +106,14 @@ export default function Search() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>
                 <Select 
-                  value={filters.status || ''} 
+                  value={filters.status || 'all'} 
                   onValueChange={(value) => handleFilterChange('status', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="available">Available</SelectItem>
                     <SelectItem value="let_agreed">Let Agreed</SelectItem>
                     <SelectItem value="let_by">Let By</SelectItem>

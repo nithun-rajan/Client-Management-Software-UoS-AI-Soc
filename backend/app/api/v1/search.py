@@ -26,7 +26,7 @@ def search_properties(
 ):
     """
     Search properties with multiple filters.
-    
+
     Examples:
     - /search/properties?bedrooms=2
     - /search/properties?bedrooms_min=2&bedrooms_max=4&rent_max=2000
@@ -108,4 +108,9 @@ def count_search_results(
         query = query.filter(Property.property_type == property_type)
 
     if postcode is not None:
-        query = query.filter
+        query = query.filter(Property.postcode.ilike(f"%{postcode}%"))
+
+    if status is not None:
+        query = query.filter(Property.status == status)
+
+    return {"count": query.count()}
