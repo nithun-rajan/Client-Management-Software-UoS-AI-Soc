@@ -37,19 +37,20 @@ All colors MUST be HSL.
     --ring: 248 73% 65%;
 
     --radius: 0.75rem;
-    
+
     --status-available: 158 64% 52%;
     --status-pending: 38 92% 50%;
     --status-urgent: 0 84.2% 60.2%;
     --status-active: 217 91% 60%;
     --status-inactive: 215 16.3% 46.9%;
-    
+
     --gradient-primary: linear-gradient(135deg, hsl(248 73% 65%), hsl(268 45% 54%));
     --gradient-success: linear-gradient(135deg, hsl(158 64% 52%), hsl(172 66% 50%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
-    
+
     --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-elevated:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     --sidebar-background: 0 0% 98%;
 

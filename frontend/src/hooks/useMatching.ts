@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import api from '@/lib/api';
-import { toast } from 'sonner';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { toast } from "sonner";
 
 export interface PropertyMatch {
   property_id: string;
@@ -42,7 +42,11 @@ export interface MatchingResponse {
   next_steps: string[];
 }
 
-export function usePropertyMatching(applicantId: string, limit: number = 5, minScore: number = 50) {
+export function usePropertyMatching(
+  applicantId: string,
+  limit: number = 5,
+  minScore: number = 50
+) {
   return useMutation({
     mutationFn: async () => {
       const { data } = await api.post(
@@ -54,14 +58,14 @@ export function usePropertyMatching(applicantId: string, limit: number = 5, minS
       toast.success(`Found ${data.total_matches} matching properties!`);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Failed to find matches');
+      toast.error(error?.response?.data?.detail || "Failed to find matches");
     },
   });
 }
 
 export function useApplicantAnalytics(applicantId: string) {
   return useQuery({
-    queryKey: ['applicantAnalytics', applicantId],
+    queryKey: ["applicantAnalytics", applicantId],
     queryFn: async () => {
       const { data } = await api.get(`/api/v1/ai/analytics/applicant/${applicantId}`);
       return data;
@@ -69,4 +73,3 @@ export function useApplicantAnalytics(applicantId: string) {
     enabled: !!applicantId,
   });
 }
-
