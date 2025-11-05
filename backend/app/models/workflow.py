@@ -14,9 +14,13 @@ class WorkflowTransition(BaseModel):
     to_status = Column(String, nullable=False)
     user_id = Column(String)  # Who performed the transition
     notes = Column(Text)
+<<<<<<< HEAD
     # 'metadata' is a reserved attribute name on declarative classes (Base.metadata).
     # Use a different attribute name but keep the DB column name as 'metadata'
     metadata_json = Column('metadata', JSON)  # Store additional context
+=======
+    workflow_metadata = Column(JSON)  # Store additional context
+>>>>>>> bf7fab4 (fix enum inheritance, add model config to adjust pydantic to used enums)
     side_effects_executed = Column(JSON)  # List of automated actions
     
     # Index for faster queries

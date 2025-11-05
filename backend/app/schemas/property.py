@@ -1,8 +1,20 @@
+<<<<<<< HEAD
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class PropertyBase(BaseModel):
     address: str | None = None
+=======
+
+from pydantic import ConfigDict, Field
+
+from app.models.enums import PropertyStatus
+
+from app.schemas.model_config import AppBaseModel
+
+class PropertyBase(AppBaseModel):
+    address: str
+>>>>>>> bf7fab4 (fix enum inheritance, add model config to adjust pydantic to used enums)
     postcode: str
     property_type: str
     bedrooms: int = Field(ge=0)
@@ -13,7 +25,7 @@ class PropertyBase(BaseModel):
 class PropertyCreate(PropertyBase):
     city: str
 
-class PropertyUpdate(BaseModel):
+class PropertyUpdate(AppBaseModel):
     address: str | None = None
     city: str | None = None
     postcode: str | None = None
@@ -25,8 +37,13 @@ class PropertyUpdate(BaseModel):
     description: str | None = None
 
 class PropertyResponse(PropertyBase):
+<<<<<<< HEAD
     id: str
     status: str
     city: str
 
     model_config = ConfigDict(from_attributes=True)
+=======
+    id: int
+    status: PropertyStatus
+>>>>>>> bf7fab4 (fix enum inheritance, add model config to adjust pydantic to used enums)

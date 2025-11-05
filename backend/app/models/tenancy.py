@@ -15,6 +15,15 @@ class Tenancy(BaseModel):
     rent_amount = Column(Float, nullable=False)
     deposit_amount = Column(Float)
     status = Column(String, default=TenancyStatus.PENDING)
+<<<<<<< HEAD
+=======
+
+    PENDING = "pending"
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    TERMINATED = "terminated"
+    RENEWED = "renewed"
+>>>>>>> bf7fab4 (fix enum inheritance, add model config to adjust pydantic to used enums)
 
     # Progression tracking (from pages 29-31)
     agreed_rent = Column(Float)  # Page 29: "Agreed Rent"
