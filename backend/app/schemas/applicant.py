@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import date
 
@@ -14,6 +14,8 @@ class ApplicantBase(BaseModel):
     desired_locations: Optional[str] = None
     move_in_date: Optional[date] = None
     notes: Optional[str] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class ApplicantCreate(ApplicantBase):
     pass
@@ -31,6 +33,7 @@ class ApplicantUpdate(BaseModel):
     move_in_date: Optional[date] = None
     status: Optional[str] = None
     notes: Optional[str] = None
+
 
 class ApplicantResponse(ApplicantBase):
     id: str
