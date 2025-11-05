@@ -4,7 +4,14 @@ export interface Property {
   address_line2?: string;
   city: string;
   postcode: string;
-  status: 'available' | 'let_agreed' | 'let_by' | 'tenanted' | 'under_offer' | 'blocked' | 'maintenance';
+  status:
+    | "available"
+    | "let_agreed"
+    | "let_by"
+    | "tenanted"
+    | "under_offer"
+    | "blocked"
+    | "maintenance";
   property_type: string;
   bedrooms: number;
   bathrooms: number;
@@ -37,7 +44,16 @@ export interface Applicant {
   email: string;
   phone: string;
   date_of_birth?: string;
-  status: 'new' | 'qualified' | 'viewing_booked' | 'offer_submitted' | 'offer_accepted' | 'references' | 'let_agreed' | 'tenancy_started' | 'archived';
+  status:
+    | "new"
+    | "qualified"
+    | "viewing_booked"
+    | "offer_submitted"
+    | "offer_accepted"
+    | "references"
+    | "let_agreed"
+    | "tenancy_started"
+    | "archived";
   desired_bedrooms?: string;
   desired_property_type?: string;
   rent_budget_min?: number;
@@ -70,4 +86,20 @@ export interface KPIData {
     qualified: number;
     qualification_rate: number;
   };
+}
+
+export interface AIRentEstimate {
+  success: boolean;
+  ai_estimate: {
+    monthly_rent: number;
+    confidence: string;
+    reasoning: string;
+    market_position: string;
+  };
+  property_details: {
+    address: string;
+    bedrooms: number;
+    property_type: string;
+  };
+  source: string;
 }

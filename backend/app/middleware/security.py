@@ -1,4 +1,5 @@
 """Security middleware for HTTP security headers."""
+
 import os
 from collections.abc import Callable
 
@@ -75,9 +76,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "form-action 'self';"
         )
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Add security headers to response.
 

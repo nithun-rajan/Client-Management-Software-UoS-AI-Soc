@@ -11,11 +11,10 @@ Provides endpoints for:
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import Optional
 from pydantic import BaseModel
 
-from app.services.land_registry_service import get_land_registry_service
 from app.services.data_street_service import get_data_street_service
+from app.services.land_registry_service import get_land_registry_service
 from app.services.llm_service import get_llm_service
 
 
@@ -24,23 +23,28 @@ router = APIRouter(prefix="/land-registry", tags=["UK Land Registry"])
 
 # ==================== Request/Response Models ====================
 
+
 class ValuationPackRequest(BaseModel):
     """Valuation pack generation parameters"""
+
     postcode: str
     property_type: str  # e.g., "Flat", "Terraced", "Semi-Detached", "Detached"
-    bedrooms: Optional[int] = None
+    bedrooms: int | None = None
 
 
 # ==================== Endpoints ====================
 
+
 @router.get("/lookup-property")
 async def lookup_specific_property(
-    house_number: str = Query(..., description="House number or flat number (e.g., '123' or 'Flat 5')"),
+    house_number: str = Query(
+        ..., description="House number or flat number (e.g., '123' or 'Flat 5')"
+    ),
     postcode: str = Query(..., description="UK postcode (e.g., 'SO15 2JS')"),
 ):
     """
     🏠 Look Up Specific Property by Address
-    
+
     This is the **Alto-style** property lookup! Enter a house number and postcode
     to get the EXACT property's details:
     - Last sold price
@@ -51,12 +55,12 @@ async def lookup_specific_property(
     - Current valuation
     - Price trends over time
     - Google Maps link
-    
+
     **Example:**
     ```
     GET /api/v1/land-registry/lookup-property?house_number=10&postcode=SW1A%201AA
     ```
-    
+
     **Returns:**
     - Exact property match
     - Sales history (all transactions)
@@ -71,7 +75,7 @@ async def lookup_specific_property(
             postcode=postcode,
             house_number=house_number,
         )
-        
+
         return {
             "success": True,
             "data": property_data,
@@ -81,13 +85,10 @@ async def lookup_specific_property(
         # API key not configured
         raise HTTPException(
             status_code=500,
-            detail="DATA_STREET_API_KEY not configured. Please add your API key to .env file."
-        )
+            detail="DATA_STREET_API_KEY not configured. Please add your API key to .env file.",
+        ) from e
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error looking up property: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error looking up property: {e!s}") from e
 
 
 @router.post("/ai-rent-estimate")
@@ -97,11 +98,11 @@ async def ai_rent_estimate(
 ):
     """
     🤖 AI-Powered Monthly Rent Estimation
-    
+
     Uses advanced AI to analyze comprehensive property data and estimate
     the optimal monthly rent. Perfect for estate agents to make data-driven
     pricing decisions!
-    
+
     **What the AI Analyzes:**
     - Property type, size, bedrooms, bathrooms
     - Location desirability and local market
@@ -110,7 +111,7 @@ async def ai_rent_estimate(
     - Environmental factors (noise, etc.)
     - Construction age and amenities
     - Local authority and area statistics
-    
+
     **Returns:**
     - Estimated monthly rent (£)
     - Confidence level (low/medium/high)
@@ -118,7 +119,7 @@ async def ai_rent_estimate(
     - Positive/negative factors affecting price
     - Market comparison
     - Actionable recommendations for agents
-    
+
     **Example:**
     ```
     POST /api/v1/land-registry/ai-rent-estimate?house_number=1&postcode=SW1V%201QH
@@ -131,23 +132,23 @@ async def ai_rent_estimate(
             postcode=postcode,
             house_number=house_number,
         )
-        
+
         if not property_data.get("found"):
             raise HTTPException(
                 status_code=404,
-                detail=f"Property not found: {property_data.get('message', 'Unknown error')}"
+                detail=f"Property not found: {property_data.get('message', 'Unknown error')}",
             )
-        
+
         # Get AI-powered rent estimation
         llm_service = await get_llm_service()
         ai_analysis = await llm_service.estimate_monthly_rent(property_data)
-        
+
         if not ai_analysis.get("success"):
             raise HTTPException(
                 status_code=500,
-                detail=f"AI analysis failed: {ai_analysis.get('error', 'Unknown error')}"
+                detail=f"AI analysis failed: {ai_analysis.get('error', 'Unknown error')}",
             )
-        
+
         return {
             "success": True,
             "property": {
@@ -169,31 +170,27 @@ async def ai_rent_estimate(
                 "price_per_sqm": ai_analysis.get("price_per_sqm"),
                 "model_used": ai_analysis.get("model_used"),
             },
-            "source": "AI-Powered Analysis (OpenAI + data.street.co.uk)"
+            "source": "AI-Powered Analysis (OpenAI + data.street.co.uk)",
         }
-        
+
     except ValueError as e:
         # API key not configured
         error_msg = str(e)
         if "OPENAI_API_KEY" in error_msg:
             raise HTTPException(
                 status_code=500,
-                detail="OPENAI_API_KEY not configured. Please add your OpenAI API key to .env file."
-            )
-        elif "DATA_STREET_API_KEY" in error_msg:
+                detail="OPENAI_API_KEY not configured. Please add your OpenAI API key to .env file.",
+            ) from e
+        if "DATA_STREET_API_KEY" in error_msg:
             raise HTTPException(
                 status_code=500,
-                detail="DATA_STREET_API_KEY not configured. Please add your data.street API key to .env file."
-            )
-        else:
-            raise HTTPException(status_code=500, detail=str(e))
+                detail="DATA_STREET_API_KEY not configured. Please add your data.street API key to .env file.",
+            ) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
     except HTTPException:
         raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error estimating rent: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error estimating rent: {e!s}") from e
 
 
 @router.get("/sold-prices")
@@ -204,15 +201,15 @@ async def get_sold_prices(
 ):
     """
     📊 Get actual sold property prices for a postcode
-    
+
     Returns official HM Land Registry data showing real transaction prices.
     This is the gold standard for UK property valuations!
-    
+
     **Example:**
     ```
     GET /api/v1/land-registry/sold-prices?postcode=SO15%202JS&limit=50
     ```
-    
+
     **Returns:**
     - Address
     - Sale price
@@ -227,7 +224,7 @@ async def get_sold_prices(
             limit=limit,
             months_back=months_back,
         )
-        
+
         return {
             "success": True,
             "postcode": postcode,
@@ -238,25 +235,26 @@ async def get_sold_prices(
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching sold prices: {str(e)}"
-        )
+            status_code=500, detail=f"Error fetching sold prices: {e!s}"
+        ) from e
 
 
 @router.get("/area-stats")
 async def get_area_statistics(
     postcode: str = Query(..., description="UK postcode"),
-    property_type: Optional[str] = Query(None, description="Filter by property type (e.g., 'Flat', 'Terraced')"),
+    property_type: str | None = Query(
+        None, description="Filter by property type (e.g., 'Flat', 'Terraced')"
+    ),
 ):
     """
     📈 Get market statistics for a postcode area
-    
+
     Returns comprehensive statistics including:
     - Average and median prices
     - Price ranges (min/max)
     - Property type breakdown
     - Recent sales
-    
+
     **Example:**
     ```
     GET /api/v1/land-registry/area-stats?postcode=SO15%202JS&property_type=Flat
@@ -268,7 +266,7 @@ async def get_area_statistics(
             postcode=postcode,
             property_type=property_type,
         )
-        
+
         return {
             "success": True,
             "data": stats,
@@ -276,23 +274,22 @@ async def get_area_statistics(
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching area statistics: {str(e)}"
-        )
+            status_code=500, detail=f"Error fetching area statistics: {e!s}"
+        ) from e
 
 
 @router.post("/valuation-pack")
 async def generate_valuation_pack(request: ValuationPackRequest):
     """
     📦 Generate Comprehensive Valuation Pack
-    
+
     This endpoint generates a complete valuation report as described in the blueprint:
     - Property value estimates based on real sold prices
     - Comparable properties (actual sales)
     - Market statistics and trends
     - Recommended valuation range
     - Data quality indicators
-    
+
     **Example Request:**
     ```json
     {
@@ -301,7 +298,7 @@ async def generate_valuation_pack(request: ValuationPackRequest):
         "bedrooms": 2
     }
     ```
-    
+
     **Returns:**
     A comprehensive valuation report with:
     - Valuation summary (avg price, median, recommended range)
@@ -309,7 +306,7 @@ async def generate_valuation_pack(request: ValuationPackRequest):
     - Top 15 comparable sales
     - Area statistics
     - Confidence level
-    
+
     **Perfect for:**
     - Landlord valuations
     - Property appraisals
@@ -323,7 +320,7 @@ async def generate_valuation_pack(request: ValuationPackRequest):
             property_type=request.property_type,
             bedrooms=request.bedrooms,
         )
-        
+
         return {
             "success": True,
             "data": valuation_pack,
@@ -332,24 +329,23 @@ async def generate_valuation_pack(request: ValuationPackRequest):
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error generating valuation pack: {str(e)}"
-        )
+            status_code=500, detail=f"Error generating valuation pack: {e!s}"
+        ) from e
 
 
 @router.get("/search-by-town")
 async def search_by_town(
     town: str = Query(..., description="Town or city name (e.g., 'Southampton')"),
-    property_type: Optional[str] = Query(None, description="Property type filter"),
-    min_price: Optional[float] = Query(None, description="Minimum price (£)"),
-    max_price: Optional[float] = Query(None, description="Maximum price (£)"),
+    property_type: str | None = Query(None, description="Property type filter"),
+    min_price: float | None = Query(None, description="Minimum price (£)"),
+    max_price: float | None = Query(None, description="Maximum price (£)"),
     limit: int = Query(50, description="Maximum results"),
 ):
     """
     🔍 Search sold properties by town/city
-    
+
     Search for recently sold properties in a specific town or city.
-    
+
     **Example:**
     ```
     GET /api/v1/land-registry/search-by-town?town=Southampton&property_type=Flat&min_price=150000&max_price=300000
@@ -364,7 +360,7 @@ async def search_by_town(
             max_price=max_price,
             limit=limit,
         )
-        
+
         return {
             "success": True,
             "town": town,
@@ -379,24 +375,25 @@ async def search_by_town(
         }
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error searching properties: {str(e)}"
-        )
+            status_code=500, detail=f"Error searching properties: {e!s}"
+        ) from e
 
 
 @router.get("/health")
 async def land_registry_health_check():
     """
     ✅ Check Land Registry API connectivity
-    
+
     Verifies that the service is working.
     No API key required - this is free government data!
     """
     try:
         service = await get_land_registry_service()
         # Test with a simple query
-        test_result = await service.get_sold_prices_by_postcode("SW1A 1AA", limit=1, months_back=1)
-        
+        test_result = await service.get_sold_prices_by_postcode(
+            "SW1A 1AA", limit=1, months_back=1
+        )
+
         return {
             "success": True,
             "message": "HM Land Registry API is ready",
@@ -407,6 +404,5 @@ async def land_registry_health_check():
     except Exception as e:
         return {
             "success": False,
-            "message": f"Error: {str(e)}",
+            "message": f"Error: {e!s}",
         }
-

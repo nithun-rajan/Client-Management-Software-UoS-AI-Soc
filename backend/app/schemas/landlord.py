@@ -13,8 +13,10 @@ class LandlordBase(BaseModel):
     account_number: str | None = None
     notes: str | None = None
 
+
 class LandlordCreate(LandlordBase):
     pass
+
 
 class LandlordUpdate(BaseModel):
     full_name: str | None = None
@@ -27,6 +29,7 @@ class LandlordUpdate(BaseModel):
     sort_code: str | None = None
     account_number: str | None = None
     notes: str | None = None
+
 
 class LandlordResponse(LandlordBase):
     id: str

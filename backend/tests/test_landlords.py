@@ -7,7 +7,7 @@ def test_create_landlord(client):
         "full_name": "John Smith",
         "email": "john.smith@example.com",
         "phone": "07700900123",
-        "address": "10 Landlord Lane, Southampton"
+        "address": "10 Landlord Lane, Southampton",
     }
 
     response = client.post("/api/v1/landlords/", json=landlord_data)
@@ -16,7 +16,7 @@ def test_create_landlord(client):
     data = response.json()
     assert data["full_name"] == landlord_data["full_name"]
     assert data["email"] == landlord_data["email"]
-    assert data["aml_verified"] == False
+    assert not data["aml_verified"]
     assert "id" in data
 
 
@@ -25,7 +25,7 @@ def test_create_landlord_duplicate_email(client):
     landlord_data = {
         "full_name": "Jane Doe",
         "email": "duplicate@example.com",
-        "phone": "07700900456"
+        "phone": "07700900456",
     }
 
     # Create first landlord
@@ -43,7 +43,7 @@ def test_list_landlords(client):
     # Create landlords
     landlords = [
         {"full_name": "Alice Johnson", "email": "alice@example.com"},
-        {"full_name": "Bob Williams", "email": "bob@example.com"}
+        {"full_name": "Bob Williams", "email": "bob@example.com"},
     ]
 
     for landlord in landlords:
@@ -59,20 +59,14 @@ def test_list_landlords(client):
 def test_update_landlord_aml_status(client):
     """Test updating landlord AML verification"""
     # Create landlord
-    landlord_data = {
-        "full_name": "Charlie Brown",
-        "email": "charlie@example.com"
-    }
+    landlord_data = {"full_name": "Charlie Brown", "email": "charlie@example.com"}
     create_response = client.post("/api/v1/landlords/", json=landlord_data)
     landlord_id = create_response.json()["id"]
 
     # Update AML status
-    update_data = {
-        "aml_verified": True,
-        "aml_verification_date": "2025-11-01"
-    }
+    update_data = {"aml_verified": True, "aml_verification_date": "2025-11-01"}
     response = client.put(f"/api/v1/landlords/{landlord_id}", json=update_data)
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["aml_verified"] == True
+    assert data["aml_verified"]

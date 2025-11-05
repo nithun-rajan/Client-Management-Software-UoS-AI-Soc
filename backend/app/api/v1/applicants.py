@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -9,11 +8,14 @@ from app.schemas.applicant import ApplicantCreate, ApplicantResponse, ApplicantU
 
 router = APIRouter(prefix="/applicants", tags=["applicants"])
 
+
 @router.post("/", response_model=ApplicantResponse, status_code=status.HTTP_201_CREATED)
 def create_applicant(applicant_data: ApplicantCreate, db: Session = Depends(get_db)):
     """Create a new applicant"""
     # Check if email already exists
-    existing = db.query(Applicant).filter(Applicant.email == applicant_data.email).first()
+    existing = (
+        db.query(Applicant).filter(Applicant.email == applicant_data.email).first()
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -23,11 +25,12 @@ def create_applicant(applicant_data: ApplicantCreate, db: Session = Depends(get_
     db.refresh(db_applicant)
     return db_applicant
 
+
 @router.get("/", response_model=list[ApplicantResponse])
 def list_applicants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all applicants"""
-    applicants = db.query(Applicant).offset(skip).limit(limit).all()
-    return applicants
+    return db.query(Applicant).offset(skip).limit(limit).all()
+
 
 @router.get("/{applicant_id}", response_model=ApplicantResponse)
 def get_applicant(applicant_id: int, db: Session = Depends(get_db)):
@@ -37,11 +40,10 @@ def get_applicant(applicant_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Applicant not found")
     return applicant
 
+
 @router.put("/{applicant_id}", response_model=ApplicantResponse)
 def update_applicant(
-    applicant_id: int,
-    applicant_data: ApplicantUpdate,
-    db: Session = Depends(get_db)
+    applicant_id: int, applicant_data: ApplicantUpdate, db: Session = Depends(get_db)
 ):
     """Update an applicant"""
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
@@ -54,6 +56,7 @@ def update_applicant(
     db.commit()
     db.refresh(applicant)
     return applicant
+
 
 @router.delete("/{applicant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_applicant(applicant_id: int, db: Session = Depends(get_db)):

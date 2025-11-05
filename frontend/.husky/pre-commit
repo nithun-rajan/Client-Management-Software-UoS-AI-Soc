@@ -9,10 +9,12 @@ if git diff --cached --name-only | grep -E '\.env$|\.env\..*$' | grep -v '\.exam
   exit 1
 fi
 
-# Check for common secret patterns in staged changes
-if git diff --cached -G'(password|api_key|secret|token|private_key)' | grep -iE '(password|api_key|secret|token|private_key)\s*[:=]'; then
-  echo "⚠️  Warning: Potential secret detected in staged changes!"
-  echo "   Found patterns matching: password, api_key, secret, token, private_key"
+# Check for actual secret values (not just variable names or type annotations)
+# Look for secret keywords followed by = and a quoted string value
+# Exclude: type annotations (: str), variable-to-variable assignments (=var_name)
+if git diff --cached | grep -E '\+.*\b(password|api_key|secret|token|private_key)\s*=\s*["\047][^"\047]{8,}["\047]' | grep -v '(your-|example-|test-|mock-|fake-|dummy-|sample-|placeholder-)'; then
+  echo "⚠️  Warning: Potential secret VALUE detected in staged changes!"
+  echo "   Found assignment patterns like: secret_key = \"actual-value\""
   echo "   Please review your changes carefully."
   echo ""
   read -p "   Continue with commit anyway? (y/N) " -n 1 -r

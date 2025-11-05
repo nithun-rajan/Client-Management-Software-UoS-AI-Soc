@@ -31,7 +31,7 @@ const App = () => (
       <BrowserRouter>
         <div className="flex min-h-screen w-full bg-background">
           <Sidebar />
-          <main className="flex-1 ml-64">
+          <main className="ml-64 flex-1">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/properties" element={<Properties />} />

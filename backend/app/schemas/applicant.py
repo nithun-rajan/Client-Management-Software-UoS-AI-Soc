@@ -18,8 +18,10 @@ class ApplicantBase(BaseModel):
     move_in_date: date | None = None
     notes: str | None = None
 
+
 class ApplicantCreate(ApplicantBase):
     pass
+
 
 class ApplicantUpdate(BaseModel):
     first_name: str | None = None
@@ -36,6 +38,7 @@ class ApplicantUpdate(BaseModel):
     references_passed: bool | None = None
     right_to_rent_checked: bool | None = None
     notes: str | None = None
+
 
 class ApplicantResponse(ApplicantBase):
     id: str

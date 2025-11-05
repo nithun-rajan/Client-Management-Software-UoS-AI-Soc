@@ -19,8 +19,8 @@ class Task(BaseModel):
     related_entity_id = Column(String)
 
     # Specific relationships
-    tenancy_id = Column(String, ForeignKey('tenancies.id'))
-    vendor_id = Column(String, ForeignKey('vendors.id'))
+    tenancy_id = Column(String, ForeignKey("tenancies.id"))
+    vendor_id = Column(String, ForeignKey("vendors.id"))
 
     # Relationships
     tenancy = relationship("Tenancy", back_populates="tasks")

@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -8,6 +7,7 @@ from app.schemas.landlord import LandlordCreate, LandlordResponse, LandlordUpdat
 
 
 router = APIRouter(prefix="/landlords", tags=["landlords"])
+
 
 @router.post("/", response_model=LandlordResponse, status_code=status.HTTP_201_CREATED)
 def create_landlord(landlord_data: LandlordCreate, db: Session = Depends(get_db)):
@@ -23,11 +23,12 @@ def create_landlord(landlord_data: LandlordCreate, db: Session = Depends(get_db)
     db.refresh(db_landlord)
     return db_landlord
 
+
 @router.get("/", response_model=list[LandlordResponse])
 def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all landlords"""
-    landlords = db.query(Landlord).offset(skip).limit(limit).all()
-    return landlords
+    return db.query(Landlord).offset(skip).limit(limit).all()
+
 
 @router.get("/{landlord_id}", response_model=LandlordResponse)
 def get_landlord(landlord_id: int, db: Session = Depends(get_db)):
@@ -37,11 +38,10 @@ def get_landlord(landlord_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Landlord not found")
     return landlord
 
+
 @router.put("/{landlord_id}", response_model=LandlordResponse)
 def update_landlord(
-    landlord_id: int,
-    landlord_data: LandlordUpdate,
-    db: Session = Depends(get_db)
+    landlord_id: int, landlord_data: LandlordUpdate, db: Session = Depends(get_db)
 ):
     """Update a landlord"""
     landlord = db.query(Landlord).filter(Landlord.id == landlord_id).first()
@@ -54,6 +54,7 @@ def update_landlord(
     db.commit()
     db.refresh(landlord)
     return landlord
+
 
 @router.delete("/{landlord_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_landlord(landlord_id: int, db: Session = Depends(get_db)):

@@ -1,4 +1,5 @@
 """Prometheus metrics middleware for performance monitoring."""
+
 import time
 from collections.abc import Callable
 
@@ -20,7 +21,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 http_requests_total = Counter(
     "http_requests_total",
     "Total number of HTTP requests",
-    ["method", "endpoint", "status"]
+    ["method", "endpoint", "status"],
 )
 
 # HTTP request duration histogram (latency by method, endpoint)
@@ -28,14 +29,29 @@ http_request_duration_seconds = Histogram(
     "http_request_duration_seconds",
     "HTTP request latency in seconds",
     ["method", "endpoint"],
-    buckets=(0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1.0, 2.5, 5.0, 7.5, 10.0)
+    buckets=(
+        0.005,
+        0.01,
+        0.025,
+        0.05,
+        0.075,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0,
+    ),
 )
 
 # HTTP requests in progress gauge
 http_requests_in_progress = Gauge(
     "http_requests_in_progress",
     "Number of HTTP requests currently being processed",
-    ["method", "endpoint"]
+    ["method", "endpoint"],
 )
 
 
@@ -61,11 +77,9 @@ def normalize_endpoint(path: str) -> str:
     segments = path.split("/")
     normalized = []
 
-    for i, segment in enumerate(segments):
+    for _i, segment in enumerate(segments):
         # Check if segment looks like an ID (numeric or UUID pattern)
-        if segment.isdigit() or (
-            len(segment) == 36 and segment.count("-") == 4
-        ):
+        if segment.isdigit() or (len(segment) == 36 and segment.count("-") == 4):
             # Replace with placeholder
             normalized.append("{id}")
         else:
@@ -100,9 +114,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.excluded_paths = excluded_paths or ["/metrics", "/health"]
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Collect metrics for each request.
 
@@ -161,9 +173,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         finally:
             # Decrement in-progress gauge
-            http_requests_in_progress.labels(
-                method=method, endpoint=endpoint
-            ).dec()
+            http_requests_in_progress.labels(method=method, endpoint=endpoint).dec()
 
 
 def metrics_endpoint() -> FastAPIResponse:
@@ -182,7 +192,4 @@ def metrics_endpoint() -> FastAPIResponse:
             return metrics_endpoint()
         ```
     """
-    return FastAPIResponse(
-        content=generate_latest(),
-        media_type=CONTENT_TYPE_LATEST
-    )
+    return FastAPIResponse(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

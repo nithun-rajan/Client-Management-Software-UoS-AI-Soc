@@ -14,27 +14,20 @@ Returns exit code 0 if all modules meet thresholds, 1 otherwise.
 import argparse
 import sys
 import xml.etree.ElementTree as ET
-from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 # SC-013: Critical module thresholds
 CRITICAL_MODULE_THRESHOLDS = {
     # API endpoints - critical business logic
     "app/api": 80.0,
-
     # Core business logic
     "app/services": 80.0,
-
     # Data models
     "app/models": 75.0,
-
     # Security middleware
     "app/middleware": 85.0,
-
     # Observability (health, metrics, logging)
     "app/observability": 80.0,
-
     # Database layer
     "app/core/database.py": 75.0,
 }
@@ -60,7 +53,7 @@ class CoverageChecker:
             coverage_xml_path: Path to coverage.xml file
         """
         self.coverage_xml_path = coverage_xml_path
-        self.module_coverage: Dict[str, Tuple[float, int, int]] = {}
+        self.module_coverage: dict[str, tuple[float, int, int]] = {}
 
     def parse_coverage_xml(self) -> None:
         """Parse coverage XML file and extract per-module metrics."""
@@ -69,36 +62,46 @@ class CoverageChecker:
             root = tree.getroot()
 
             # Find all packages/classes
-            for package in root.findall('.//package'):
-                package_name = package.get('name', '')
+            for package in root.findall(".//package"):
+                package.get("name", "")
 
                 # Process each class (file) in the package
-                for cls in package.findall('classes/class'):
-                    filename = cls.get('filename', '')
-                    if not filename.startswith('app/'):
+                for cls in package.findall("classes/class"):
+                    filename = cls.get("filename", "")
+                    if not filename.startswith("app/"):
                         continue
 
                     # Get line coverage metrics
-                    lines = cls.find('lines')
+                    lines = cls.find("lines")
                     if lines is None:
                         continue
 
                     total_lines = 0
                     covered_lines = 0
 
-                    for line in lines.findall('line'):
-                        hits = int(line.get('hits', 0))
+                    for line in lines.findall("line"):
+                        hits = int(line.get("hits", 0))
                         total_lines += 1
                         if hits > 0:
                             covered_lines += 1
 
                     if total_lines > 0:
                         coverage_pct = (covered_lines / total_lines) * 100
-                        self.module_coverage[filename] = (coverage_pct, covered_lines, total_lines)
+                        self.module_coverage[filename] = (
+                            coverage_pct,
+                            covered_lines,
+                            total_lines,
+                        )
 
         except FileNotFoundError:
-            print(f"Error: Coverage file not found: {self.coverage_xml_path}", file=sys.stderr)
-            print("Run tests with coverage first: pytest --cov=app --cov-report=xml", file=sys.stderr)
+            print(
+                f"Error: Coverage file not found: {self.coverage_xml_path}",
+                file=sys.stderr,
+            )
+            print(
+                "Run tests with coverage first: pytest --cov=app --cov-report=xml",
+                file=sys.stderr,
+            )
             sys.exit(1)
         except ET.ParseError as e:
             print(f"Error parsing coverage XML: {e}", file=sys.stderr)
@@ -120,7 +123,7 @@ class CoverageChecker:
 
         # Check for directory match in critical modules
         for critical_path, threshold in CRITICAL_MODULE_THRESHOLDS.items():
-            if module_path.startswith(critical_path + '/'):
+            if module_path.startswith(critical_path + "/"):
                 return threshold
 
         # Check relaxed modules
@@ -130,7 +133,7 @@ class CoverageChecker:
         # Default to standard threshold
         return STANDARD_MODULE_THRESHOLD
 
-    def check_coverage(self) -> Tuple[bool, List[str]]:
+    def check_coverage(self) -> tuple[bool, list[str]]:
         """
         Check if all modules meet their coverage thresholds.
 
@@ -150,17 +153,33 @@ class CoverageChecker:
 
             # Categorize module
             is_critical = any(
-                module_path == critical_path or module_path.startswith(critical_path + '/')
-                for critical_path in CRITICAL_MODULE_THRESHOLDS.keys()
+                module_path == critical_path
+                or module_path.startswith(critical_path + "/")
+                for critical_path in CRITICAL_MODULE_THRESHOLDS
             )
             is_relaxed = module_path in RELAXED_MODULES
 
             if is_critical:
-                critical_modules[module_path] = (coverage_pct, covered, total, threshold)
+                critical_modules[module_path] = (
+                    coverage_pct,
+                    covered,
+                    total,
+                    threshold,
+                )
             elif is_relaxed:
-                relaxed_modules_found[module_path] = (coverage_pct, covered, total, threshold)
+                relaxed_modules_found[module_path] = (
+                    coverage_pct,
+                    covered,
+                    total,
+                    threshold,
+                )
             else:
-                standard_modules[module_path] = (coverage_pct, covered, total, threshold)
+                standard_modules[module_path] = (
+                    coverage_pct,
+                    covered,
+                    total,
+                    threshold,
+                )
 
             # Check if threshold met
             if coverage_pct < threshold:
@@ -170,15 +189,21 @@ class CoverageChecker:
                     f"(covered {covered}/{total} lines)"
                 )
 
-        return all_passed, failures, critical_modules, standard_modules, relaxed_modules_found
+        return (
+            all_passed,
+            failures,
+            critical_modules,
+            standard_modules,
+            relaxed_modules_found,
+        )
 
     def print_report(
         self,
         all_passed: bool,
-        failures: List[str],
-        critical_modules: Dict,
-        standard_modules: Dict,
-        relaxed_modules: Dict
+        failures: list[str],
+        critical_modules: dict,
+        standard_modules: dict,
+        relaxed_modules: dict,
     ) -> None:
         """
         Print coverage report.
@@ -199,7 +224,9 @@ class CoverageChecker:
         if critical_modules:
             print("🔒 Critical Modules (≥75-85% coverage required):")
             print("-" * 80)
-            for module_path, (coverage_pct, covered, total, threshold) in sorted(critical_modules.items()):
+            for module_path, (coverage_pct, covered, total, threshold) in sorted(
+                critical_modules.items()
+            ):
                 status = "✅" if coverage_pct >= threshold else "❌"
                 print(f"{status} {module_path}")
                 print(f"   Coverage: {coverage_pct:.2f}% (threshold: {threshold:.2f}%)")
@@ -208,13 +235,19 @@ class CoverageChecker:
 
         # Standard modules
         if standard_modules:
-            print(f"📦 Standard Modules (≥{STANDARD_MODULE_THRESHOLD:.0f}% coverage required):")
+            print(
+                f"📦 Standard Modules (≥{STANDARD_MODULE_THRESHOLD:.0f}% coverage required):"
+            )
             print("-" * 80)
             # Only show failures and borderline cases
-            for module_path, (coverage_pct, covered, total, threshold) in sorted(standard_modules.items()):
+            for module_path, (coverage_pct, covered, total, threshold) in sorted(
+                standard_modules.items()
+            ):
                 if coverage_pct < threshold or coverage_pct < threshold + 5:
                     status = "✅" if coverage_pct >= threshold else "❌"
-                    print(f"{status} {module_path}: {coverage_pct:.2f}% ({covered}/{total} lines)")
+                    print(
+                        f"{status} {module_path}: {coverage_pct:.2f}% ({covered}/{total} lines)"
+                    )
             print(f"   ... ({len(standard_modules)} standard modules checked)")
             print()
 
@@ -222,18 +255,26 @@ class CoverageChecker:
         if relaxed_modules:
             print("⚙️  Configuration/Utility Modules (relaxed thresholds):")
             print("-" * 80)
-            for module_path, (coverage_pct, covered, total, threshold) in sorted(relaxed_modules.items()):
+            for module_path, (coverage_pct, covered, total, threshold) in sorted(
+                relaxed_modules.items()
+            ):
                 status = "✅" if coverage_pct >= threshold else "❌"
-                print(f"{status} {module_path}: {coverage_pct:.2f}% (threshold: {threshold:.2f}%)")
+                print(
+                    f"{status} {module_path}: {coverage_pct:.2f}% (threshold: {threshold:.2f}%)"
+                )
             print()
 
         # Summary
-        total_modules = len(critical_modules) + len(standard_modules) + len(relaxed_modules)
+        total_modules = (
+            len(critical_modules) + len(standard_modules) + len(relaxed_modules)
+        )
         failed_modules = len(failures)
         passed_modules = total_modules - failed_modules
 
         print("=" * 80)
-        print(f"Summary: {passed_modules}/{total_modules} modules passed coverage thresholds")
+        print(
+            f"Summary: {passed_modules}/{total_modules} modules passed coverage thresholds"
+        )
         print("=" * 80)
 
         if not all_passed:
@@ -268,13 +309,13 @@ Module Categories:
 Examples:
   python scripts/check_module_coverage.py
   python scripts/check_module_coverage.py --coverage-file build/coverage.xml
-        """
+        """,
     )
 
     parser.add_argument(
         "--coverage-file",
         default="coverage.xml",
-        help="Path to coverage.xml file (default: coverage.xml)"
+        help="Path to coverage.xml file (default: coverage.xml)",
     )
 
     args = parser.parse_args()

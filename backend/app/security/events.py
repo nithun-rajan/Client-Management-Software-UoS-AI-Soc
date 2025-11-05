@@ -6,7 +6,7 @@ authentication failures, suspicious activity, and potential attacks.
 """
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import Request
 
@@ -54,9 +54,9 @@ def log_security_event(
     event_type: SecurityEventType,
     severity: SecurityEventSeverity,
     message: str,
-    request: Optional[Request] = None,
-    user_id: Optional[str] = None,
-    additional_data: Optional[dict[str, Any]] = None,
+    request: Request | None = None,
+    user_id: str | None = None,
+    additional_data: dict[str, Any] | None = None,
 ) -> None:
     """
     Log a security event with structured data.
@@ -85,7 +85,9 @@ def log_security_event(
                 "user_agent": request.headers.get("user-agent"),
                 "method": request.method,
                 "path": request.url.path,
-                "query_params": str(request.query_params) if request.query_params else None,
+                "query_params": str(request.query_params)
+                if request.query_params
+                else None,
             }
         )
 
@@ -110,7 +112,7 @@ def log_security_event(
 
 def log_auth_failure(
     request: Request,
-    username: Optional[str] = None,
+    username: str | None = None,
     reason: str = "Invalid credentials",
 ) -> None:
     """

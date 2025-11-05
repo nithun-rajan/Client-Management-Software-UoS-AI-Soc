@@ -1,4 +1,5 @@
 """Structured logging middleware for observability."""
+
 import logging
 import time
 from collections.abc import Callable
@@ -18,7 +19,7 @@ structlog.configure(
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
         structlog.dev.set_exc_info,
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ],
     wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
     context_class=dict,
@@ -43,9 +44,7 @@ class StructuredLoggingMiddleware(BaseHTTPMiddleware):
     compatibility with log aggregation tools (ELK, Loki, CloudWatch).
     """
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Log request and response details.
 

@@ -1,4 +1,5 @@
 """Request ID middleware for distributed tracing."""
+
 import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
@@ -28,11 +29,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     - Debugging production issues
     """
 
-    def __init__(
-        self,
-        app,
-        header_name: str = "X-Request-ID"
-    ):
+    def __init__(self, app, header_name: str = "X-Request-ID"):
         """
         Initialize the middleware.
 
@@ -43,9 +40,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.header_name = header_name
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Process each request and inject request ID.
 

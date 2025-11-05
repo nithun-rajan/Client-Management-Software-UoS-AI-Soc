@@ -3,15 +3,22 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.models.user import User
-from app.schemas.user import UserCreate, UserRead
-from app.schemas.auth import Token, RefreshTokenRequest
-from app.core.security import (
-    get_password_hash, create_access_token, create_refresh_token,
-    verify_password, get_current_user,
-    jwt, settings, JWTError, TokenData
-)
 from app.core.database import get_db
+from app.core.security import (
+    JWTError,
+    TokenData,
+    create_access_token,
+    create_refresh_token,
+    get_current_user,
+    get_password_hash,
+    jwt,
+    settings,
+    verify_password,
+)
+from app.models.user import User
+from app.schemas.auth import RefreshTokenRequest, Token
+from app.schemas.user import UserCreate, UserRead
+
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -25,7 +32,7 @@ def register_new_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An account with this email already exists."
+            detail="An account with this email already exists.",
         )
 
     hashed_password = get_password_hash(user.password)
@@ -36,10 +43,7 @@ def register_new_user(user: UserCreate, db: Session = Depends(get_db)):
     if user.branch_id:
         user_data["branch_id"] = str(user.branch_id)
 
-    db_user = User(
-        **user_data,
-        hashed_password=hashed_password
-    )
+    db_user = User(**user_data, hashed_password=hashed_password)
 
     db.add(db_user)
     db.commit()
@@ -50,8 +54,7 @@ def register_new_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login_for_access_token(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     """
     Logs in a user and returns JWT tokens.
@@ -66,7 +69,9 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
 
     token_data = {"sub": user.email}
     access_token = create_access_token(data=token_data)
@@ -77,24 +82,24 @@ def login_for_access_token(
 
 # ... (token refresh and /me endpoints are unchanged from before) ...
 
+
 @router.post("/token", response_model=Token)
-def refresh_access_token(
-        request: RefreshTokenRequest,
-        db: Session = Depends(get_db)
-):
+def refresh_access_token(request: RefreshTokenRequest, db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate refresh token",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(request.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            request.refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         email: str | None = payload.get("sub")
         if email is None:
             raise credentials_exception
         token_data = TokenData(sub=email)
     except JWTError:
-        raise credentials_exception
+        raise credentials_exception from None
 
     user = db.query(User).filter(User.email == token_data.sub).first()
 

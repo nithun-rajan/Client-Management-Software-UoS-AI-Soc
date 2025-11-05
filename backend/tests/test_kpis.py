@@ -4,27 +4,36 @@ from fastapi import status
 def test_kpis_endpoint(client):
     """Test KPI dashboard endpoint"""
     # Create some test data
-    client.post("/api/v1/properties/", json={
-        "address": "KPI Test Property",
-        "postcode": "SO15",
-        "property_type": "flat",
-        "bedrooms": 2,
-        "bathrooms": 1,
-        "rent": 1200.00,
-        "status": "available"
-    })
+    client.post(
+        "/api/v1/properties/",
+        json={
+            "address": "KPI Test Property",
+            "postcode": "SO15",
+            "property_type": "flat",
+            "bedrooms": 2,
+            "bathrooms": 1,
+            "rent": 1200.00,
+            "status": "available",
+        },
+    )
 
-    client.post("/api/v1/landlords/", json={
-        "full_name": "KPI Test Landlord",
-        "email": "kpi@example.com",
-        "aml_verified": True
-    })
+    client.post(
+        "/api/v1/landlords/",
+        json={
+            "full_name": "KPI Test Landlord",
+            "email": "kpi@example.com",
+            "aml_verified": True,
+        },
+    )
 
-    client.post("/api/v1/applicants/", json={
-        "full_name": "KPI Test Applicant",
-        "email": "kpi.applicant@example.com",
-        "references_passed": True
-    })
+    client.post(
+        "/api/v1/applicants/",
+        json={
+            "full_name": "KPI Test Applicant",
+            "email": "kpi.applicant@example.com",
+            "references_passed": True,
+        },
+    )
 
     # Get KPIs
     response = client.get("/api/v1/kpis/")

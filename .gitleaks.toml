@@ -77,6 +77,7 @@ regexes = [
   '''mock-[a-z-]+''',
   '''dummy-[a-z-]+''',
   '''sample-[a-z-]+''',
+  '''default-secret-key-change-in-production''',
 ]
 
 # Keywords that are safe in certain contexts
@@ -91,3 +92,11 @@ description = "SQLite URLs don't contain credentials"
 [[allowlist.regexTarget]]
 regex = '''(?i)(test|example|sample|demo|fake|mock|dummy)'''
 description = "Test/example data"
+
+[[allowlist.regexTarget]]
+regex = '''(?i)default_secret\s*=\s*["']default-secret-key-change-in-production["']'''
+description = "Security validation code checking for default secrets"
+
+[[allowlist.regexTarget]]
+regex = '''(?i)SECRET_KEY.*default-secret-key-change-in-production'''
+description = "Default fallback value for SECRET_KEY in development"

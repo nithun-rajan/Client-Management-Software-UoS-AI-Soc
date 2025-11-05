@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, String, Text, Integer
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
@@ -9,11 +9,11 @@ class Tenancy(BaseModel):
     __tablename__ = "tenancies"
 
     # Core relationships
-    property_id = Column(String, ForeignKey('properties.id'), nullable=False)
+    property_id = Column(String, ForeignKey("properties.id"), nullable=False)
     property = relationship("Property", back_populates="tenancies")
 
     # Primary Applicant/Tenant
-    applicant_id = Column(String, ForeignKey('applicants.id'))
+    applicant_id = Column(String, ForeignKey("applicants.id"))
     applicant = relationship("Applicant", back_populates="tenancies")
 
     # Financial

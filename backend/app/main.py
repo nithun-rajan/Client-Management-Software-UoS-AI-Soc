@@ -1,21 +1,29 @@
 import os
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
-from slowapi import _rate_limit_exceeded_handler
+from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.orm import Session
-import time
 
 import app.models  # ensure all models are registered before table creation
-from app.api.v1 import applicants, events, kpis, landlords, properties, search, property_matching, land_registry
+from app.api.v1 import (
+    applicants,
+    events,
+    kpis,
+    land_registry,
+    landlords,
+    properties,
+    property_matching,
+    search,
+)
 from app.core.database import Base, engine, get_db
 from app.middleware.logging import StructuredLoggingMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware, get_limiter
-from prometheus_fastapi_instrumentator import Instrumentator
 
 # Import middleware
 from app.middleware.request_id import RequestIDMiddleware
@@ -23,9 +31,12 @@ from app.middleware.security import SecurityHeadersMiddleware
 from app.models.applicant import Applicant
 from app.models.landlord import Landlord
 from app.models.property import Property
-from app.observability import get_health_check, get_request_tracer, get_error_budget_calculator
+from app.observability import (
+    get_error_budget_calculator,
+    get_health_check,
+    get_request_tracer,
+)
 from app.security.csrf import get_csrf_protection
-from app.security.events import SecurityEventType, SecurityEventSeverity, log_security_event
 
 
 @asynccontextmanager
@@ -124,19 +135,15 @@ app = FastAPI(
     **Team 67** | Hackathon 2025
     """,
     version="1.0.0",
-    contact={
-        "name": "Team 67",
-        "email": "ali.marzooq13@outlook.com"
-    },
-    license_info={
-        "name": "MIT"
-    },
-    lifespan=lifespan
+    contact={"name": "Team 67", "email": "ali.marzooq13@outlook.com"},
+    license_info={"name": "MIT"},
+    lifespan=lifespan,
 )
 
 # Configure rate limiter
 limiter = get_limiter()
 app.state.limiter = limiter
+
 
 # Custom rate limit exceeded handler that explicitly includes Retry-After header
 # FR-026: Ensure Retry-After header is present on 429 responses
@@ -150,26 +157,25 @@ def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONR
     retry_after = 60  # Default to 60 seconds for /minute limits
 
     # Try to get more accurate retry time from exception or limiter
-    if hasattr(exc, 'retry_after'):
+    if hasattr(exc, "retry_after"):
         retry_after = int(exc.retry_after)
-    elif hasattr(request.app.state, 'limiter'):
+    elif hasattr(request.app.state, "limiter"):
         # Calculate based on window (e.g., for "100/minute", window is 60 seconds)
         retry_after = 60
 
-    response = JSONResponse(
+    return JSONResponse(
         status_code=429,
         content={
             "error": "Rate limit exceeded",
             "detail": f"Too many requests. Please try again in {retry_after} seconds.",
-            "retry_after": retry_after
+            "retry_after": retry_after,
         },
         headers={
             "Retry-After": str(retry_after),  # FR-026: Explicit Retry-After header
             "X-RateLimit-Reset": str(int(time.time()) + retry_after),
-        }
+        },
     )
 
-    return response
 
 # Add exception handler for rate limit exceeded
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
@@ -182,19 +188,25 @@ csrf_protection = get_csrf_protection(
 # Add middleware (order matters: first added = outermost = executed first)
 # 1. Security headers (outermost)
 app.add_middleware(
-    SecurityHeadersMiddleware,
-    environment=os.getenv("ENVIRONMENT", "development")
+    SecurityHeadersMiddleware, environment=os.getenv("ENVIRONMENT", "development")
 )
 
 # 2. CORS (before other middleware to handle preflight)
 # Get allowed origins from environment variable
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
-allowed_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+cors_origins_env = os.getenv(
+    "CORS_ORIGINS", "http://localhost:3000,http://localhost:5173"
+)
+allowed_origins = [
+    origin.strip() for origin in cors_origins_env.split(",") if origin.strip()
+]
 
 # In development, allow all origins for convenience
 # In production, MUST use specific origins from CORS_ORIGINS env variable
 environment = os.getenv("ENVIRONMENT", "development")
-if environment == "development" and cors_origins_env == "http://localhost:3000,http://localhost:5173":
+if (
+    environment == "development"
+    and cors_origins_env == "http://localhost:3000,http://localhost:5173"
+):
     # Development mode with default origins - allow all for convenience
     allowed_origins = ["*"]
 elif "*" in allowed_origins and environment != "development":
@@ -216,7 +228,7 @@ app.add_middleware(
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     RateLimitMiddleware,
-    excluded_paths=["/metrics", "/health", "/docs", "/openapi.json"]
+    excluded_paths=["/metrics", "/health", "/docs", "/openapi.json"],
 )
 
 # 4. Structured logging
@@ -339,7 +351,7 @@ def root(db: Session = Depends(get_db)):
             <div class="emoji">🏢</div>
             <h1>UoS Scouting Challenge</h1>
             <div class="subtitle">API by Team 67</div>
-            
+
             <div class="stats">
                 <div class="stat">
                     <div class="stat-number">{endpoint_count}</div>
@@ -358,13 +370,13 @@ def root(db: Session = Depends(get_db)):
                     <div class="stat-label">Applicants</div>
                 </div>
             </div>
-            
+
             <div class="buttons">
                 <a href="/docs" class="button">📖 API Documentation</a>
                 <a href="/api/v1/kpis/" class="button">📊 KPI Dashboard</a><a href="/health" class="button">💚 Health Check</a>
-                
+
             </div>
-            
+
             <div class="footer">
                 Built with FastAPI • Python • SQLAlchemy<br>
                 Hackathon 2025
@@ -437,7 +449,9 @@ async def trace_request(request: Request):
     trace_info = await tracer.trace_request(request)
 
     if trace_info.get("enabled"):
-        trace_info["timestamp"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        trace_info["timestamp"] = (
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
         trace_info["context"] = tracer.get_context_variables()
 
     return trace_info
@@ -543,8 +557,12 @@ app.include_router(applicants.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(kpis.router, prefix="/api/v1")
 app.include_router(events.router, prefix="/api/v1")
-app.include_router(property_matching.router, prefix="/api/v1")  # 🤖 AI Property Matching
-app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Registry Integration (FREE!)
+app.include_router(
+    property_matching.router, prefix="/api/v1"
+)  # 🤖 AI Property Matching
+app.include_router(
+    land_registry.router, prefix="/api/v1"
+)  # 🏡 HM Land Registry Integration (FREE!)
 
-#add a router for auth.py (by Anthony)
+# add a router for auth.py (by Anthony)
 # app.include_router(auth.router, prefix="/api/v1")

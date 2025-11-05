@@ -36,20 +36,8 @@ export function useCreateProperty() {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Property created successfully");
     },
-    onError: (error: unknown) => {
-      const message =
-        error &&
-        typeof error === "object" &&
-        "response" in error &&
-        error.response &&
-        typeof error.response === "object" &&
-        "data" in error.response &&
-        error.response.data &&
-        typeof error.response.data === "object" &&
-        "detail" in error.response.data
-          ? String(error.response.data.detail)
-          : "Failed to create property";
-      toast.error(message);
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to create property");
     },
   });
 }
@@ -66,20 +54,8 @@ export function useUpdateProperty() {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Property updated successfully");
     },
-    onError: (error: unknown) => {
-      const message =
-        error &&
-        typeof error === "object" &&
-        "response" in error &&
-        error.response &&
-        typeof error.response === "object" &&
-        "data" in error.response &&
-        error.response.data &&
-        typeof error.response.data === "object" &&
-        "detail" in error.response.data
-          ? String(error.response.data.detail)
-          : "Failed to update property";
-      toast.error(message);
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to update property");
     },
   });
 }
@@ -95,20 +71,8 @@ export function useDeleteProperty() {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Property deleted successfully");
     },
-    onError: (error: unknown) => {
-      const message =
-        error &&
-        typeof error === "object" &&
-        "response" in error &&
-        error.response &&
-        typeof error.response === "object" &&
-        "data" in error.response &&
-        error.response.data &&
-        typeof error.response.data === "object" &&
-        "detail" in error.response.data
-          ? String(error.response.data.detail)
-          : "Failed to delete property";
-      toast.error(message);
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to delete property");
     },
   });
 }

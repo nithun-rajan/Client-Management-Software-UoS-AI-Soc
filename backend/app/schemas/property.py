@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import PropertyStatus
@@ -13,8 +12,10 @@ class PropertyBase(BaseModel):
     rent: float | None = None
     description: str | None = None
 
+
 class PropertyCreate(PropertyBase):
     city: str
+
 
 class PropertyUpdate(BaseModel):
     address: str | None = None
@@ -26,6 +27,7 @@ class PropertyUpdate(BaseModel):
     rent: float | None = None
     status: PropertyStatus | None = None
     description: str | None = None
+
 
 class PropertyResponse(PropertyBase):
     id: str

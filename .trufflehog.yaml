@@ -1,0 +1,25 @@
+# TruffleHog Configuration
+# Allowlist for false positives
+
+# Exclude paths (documentation and examples)
+exclude_paths:
+  - README.md
+  - docs/
+  - backend/.env.example
+  - backend/.env.preview.example
+  - backend/docs/
+
+# Allowlist specific patterns that are safe
+allowlist:
+  regexes:
+    # Security validation code - not actual secrets
+    - 'default-secret-key-change-in-production'
+    - 'your-secret-key-here'
+    - 'your-secret-key-here-replace-in-production'
+    - 'replace-in-production'
+
+  # Paths where these patterns are expected
+  paths:
+    - '.gitleaks.toml'
+    - '.pre-commit-config.yaml'
+    - 'backend/app/main.py'  # Security validation code

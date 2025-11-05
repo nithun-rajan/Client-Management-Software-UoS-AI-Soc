@@ -1,6 +1,17 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
 from app.models.enums import PropertyStatus
@@ -52,7 +63,7 @@ class Property(BaseModel):
     main_photo_url = Column(String)
     photo_urls = Column(Text)  # JSON array of URLs
 
-    landlord_id = Column(String, ForeignKey('landlords.id'))
+    landlord_id = Column(String, ForeignKey("landlords.id"))
     landlord = relationship("Landlord", back_populates="properties")
 
     tenancies = relationship("Tenancy", back_populates="property")
@@ -85,6 +96,7 @@ class Property(BaseModel):
     @property
     def expiring_documents(self):
         from datetime import timedelta
+
         today = datetime.now().date()
         soon = today + timedelta(days=30)
 

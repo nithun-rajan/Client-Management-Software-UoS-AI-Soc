@@ -78,10 +78,7 @@ def test_logs_include_request_id(client, caplog):
     test_request_id = "test-request-id-123"
 
     with caplog.at_level("INFO"):
-        response = client.get(
-            "/test",
-            headers={"X-Request-ID": test_request_id}
-        )
+        response = client.get("/test", headers={"X-Request-ID": test_request_id})
 
     assert response.status_code == 200
 
@@ -114,12 +111,7 @@ def test_logger_supports_structured_fields():
     logger = get_logger()
 
     # Should support keyword arguments for structured logging
-    logger.info(
-        "Test event",
-        user_id="123",
-        action="test_action",
-        amount=100.50
-    )
+    logger.info("Test event", user_id="123", action="test_action", amount=100.50)
 
 
 def test_logs_exception_details(client, caplog):

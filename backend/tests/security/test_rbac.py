@@ -57,7 +57,6 @@ class TestBranchManagerRBAC:
         # 1. Authenticate as branch manager
         # 2. POST /api/v1/properties
         # 3. Assert 201 Created
-        pass
 
     def test_branch_manager_can_delete_property_in_branch(self, client: TestClient):
         """Branch Manager should be able to delete any property in their branch."""
@@ -66,7 +65,6 @@ class TestBranchManagerRBAC:
         # 2. Authenticate as branch manager for branch A
         # 3. DELETE /api/v1/properties/{id}
         # 4. Assert 204 No Content
-        pass
 
     def test_branch_manager_cannot_access_other_branch(self, client: TestClient):
         """Branch Manager should NOT access resources from other branches."""
@@ -75,7 +73,6 @@ class TestBranchManagerRBAC:
         # 2. Authenticate as branch manager for branch B
         # 3. GET /api/v1/properties/{id}
         # 4. Assert 403 Forbidden
-        pass
 
     def test_branch_manager_can_manage_users_in_branch(self, client: TestClient):
         """Branch Manager should be able to create/update/delete users in their branch."""
@@ -87,7 +84,6 @@ class TestBranchManagerRBAC:
         # 5. Assert 200 OK
         # 6. DELETE /api/v1/users/{id}
         # 7. Assert 204 No Content
-        pass
 
     def test_branch_manager_can_view_branch_kpis(self, client: TestClient):
         """Branch Manager should see all KPIs for their branch."""
@@ -97,7 +93,6 @@ class TestBranchManagerRBAC:
         # 3. GET /api/v1/kpis/
         # 4. Assert 200 OK
         # 5. Assert KPIs include all branch A users
-        pass
 
 
 @pytest.mark.skip(reason="Authentication/RBAC not yet implemented")
@@ -111,7 +106,6 @@ class TestPropertyManagerRBAC:
         # 2. POST /api/v1/properties
         # 3. Assert 201 Created
         # 4. Verify property manager_id matches user_id
-        pass
 
     def test_property_manager_can_update_own_property(self, client: TestClient):
         """Property Manager should be able to update their own managed properties."""
@@ -120,7 +114,6 @@ class TestPropertyManagerRBAC:
         # 2. Create property (managed by manager A)
         # 3. PUT /api/v1/properties/{id}
         # 4. Assert 200 OK
-        pass
 
     def test_property_manager_cannot_update_others_property(self, client: TestClient):
         """Property Manager should NOT update properties managed by others."""
@@ -129,7 +122,6 @@ class TestPropertyManagerRBAC:
         # 2. Authenticate as property manager B
         # 3. PUT /api/v1/properties/{id}
         # 4. Assert 403 Forbidden
-        pass
 
     def test_property_manager_cannot_delete_property(self, client: TestClient):
         """Property Manager should NOT be able to delete properties."""
@@ -138,7 +130,6 @@ class TestPropertyManagerRBAC:
         # 2. Create property
         # 3. DELETE /api/v1/properties/{id}
         # 4. Assert 403 Forbidden (only branch managers can delete)
-        pass
 
     def test_property_manager_can_manage_landlords(self, client: TestClient):
         """Property Manager should create/update landlords for their properties."""
@@ -148,7 +139,6 @@ class TestPropertyManagerRBAC:
         # 3. Assert 201 Created
         # 4. PUT /api/v1/landlords/{id}
         # 5. Assert 200 OK
-        pass
 
     def test_property_manager_can_manage_applicants(self, client: TestClient):
         """Property Manager should manage applicants for their properties."""
@@ -158,7 +148,6 @@ class TestPropertyManagerRBAC:
         # 3. Assert 201 Created
         # 4. DELETE /api/v1/applicants/{id}
         # 5. Assert 204 No Content
-        pass
 
     def test_property_manager_can_read_own_profile(self, client: TestClient):
         """Property Manager should be able to read their own profile."""
@@ -166,7 +155,6 @@ class TestPropertyManagerRBAC:
         # 1. Authenticate as property manager
         # 2. GET /api/v1/users/me
         # 3. Assert 200 OK
-        pass
 
     def test_property_manager_sees_only_own_kpis(self, client: TestClient):
         """Property Manager should only see their own KPI metrics."""
@@ -175,7 +163,6 @@ class TestPropertyManagerRBAC:
         # 2. Authenticate as property manager A
         # 3. GET /api/v1/kpis/
         # 4. Assert only property manager A's metrics returned
-        pass
 
 
 @pytest.mark.skip(reason="Authentication/RBAC not yet implemented")
@@ -188,7 +175,6 @@ class TestLettingsNegotiatorRBAC:
         # 1. Authenticate as lettings negotiator
         # 2. POST /api/v1/properties
         # 3. Assert 403 Forbidden
-        pass
 
     def test_negotiator_can_list_properties(self, client: TestClient):
         """Lettings Negotiator should be able to list properties."""
@@ -196,7 +182,6 @@ class TestLettingsNegotiatorRBAC:
         # 1. Authenticate as lettings negotiator
         # 2. GET /api/v1/properties
         # 3. Assert 200 OK
-        pass
 
     def test_negotiator_can_read_property_details(self, client: TestClient):
         """Lettings Negotiator should read property details for viewings."""
@@ -205,7 +190,6 @@ class TestLettingsNegotiatorRBAC:
         # 2. Authenticate as lettings negotiator
         # 3. GET /api/v1/properties/{id}
         # 4. Assert 200 OK
-        pass
 
     def test_negotiator_cannot_update_property(self, client: TestClient):
         """Lettings Negotiator should NOT be able to update properties."""
@@ -214,7 +198,6 @@ class TestLettingsNegotiatorRBAC:
         # 2. Authenticate as lettings negotiator
         # 3. PUT /api/v1/properties/{id}
         # 4. Assert 403 Forbidden
-        pass
 
     def test_negotiator_can_create_applicant(self, client: TestClient):
         """Lettings Negotiator should be able to create tenant applicants."""
@@ -222,7 +205,6 @@ class TestLettingsNegotiatorRBAC:
         # 1. Authenticate as lettings negotiator
         # 2. POST /api/v1/applicants
         # 3. Assert 201 Created
-        pass
 
     def test_negotiator_can_update_applicant(self, client: TestClient):
         """Lettings Negotiator should be able to update applicant details."""
@@ -231,7 +213,6 @@ class TestLettingsNegotiatorRBAC:
         # 2. Create applicant
         # 3. PUT /api/v1/applicants/{id}
         # 4. Assert 200 OK
-        pass
 
     def test_negotiator_can_create_viewing_event(self, client: TestClient):
         """Lettings Negotiator should be able to create viewing events."""
@@ -239,7 +220,6 @@ class TestLettingsNegotiatorRBAC:
         # 1. Authenticate as lettings negotiator
         # 2. POST /api/v1/events (type: viewing)
         # 3. Assert 201 Created
-        pass
 
     def test_negotiator_can_read_landlord_info(self, client: TestClient):
         """Lettings Negotiator should be able to read landlord contact info."""
@@ -248,7 +228,6 @@ class TestLettingsNegotiatorRBAC:
         # 2. Authenticate as lettings negotiator
         # 3. GET /api/v1/landlords/{id}
         # 4. Assert 200 OK
-        pass
 
     def test_negotiator_cannot_create_landlord(self, client: TestClient):
         """Lettings Negotiator should NOT be able to create landlords."""
@@ -256,7 +235,6 @@ class TestLettingsNegotiatorRBAC:
         # 1. Authenticate as lettings negotiator
         # 2. POST /api/v1/landlords
         # 3. Assert 403 Forbidden
-        pass
 
     def test_negotiator_can_read_own_kpis(self, client: TestClient):
         """Lettings Negotiator should see their own performance metrics."""
@@ -265,7 +243,6 @@ class TestLettingsNegotiatorRBAC:
         # 2. GET /api/v1/kpis/me
         # 3. Assert 200 OK
         # 4. Assert only own metrics returned
-        pass
 
 
 @pytest.mark.skip(reason="Authentication/RBAC not yet implemented")
@@ -280,7 +257,6 @@ class TestResourceOwnership:
         # 3. Authenticate as property manager A
         # 4. GET /api/v1/properties
         # 5. Assert only property manager A's properties returned
-        pass
 
     def test_branch_manager_sees_all_branch_properties(self, client: TestClient):
         """Branch Manager should see all properties in their branch."""
@@ -291,7 +267,6 @@ class TestResourceOwnership:
         # 4. GET /api/v1/properties
         # 5. Assert all branch A properties returned
         # 6. Assert no branch B properties returned
-        pass
 
     def test_cross_branch_access_denied(self, client: TestClient):
         """Users should NOT access resources from other branches."""
@@ -300,7 +275,6 @@ class TestResourceOwnership:
         # 2. Authenticate as lettings negotiator in branch B
         # 3. GET /api/v1/properties/{id}
         # 4. Assert 403 Forbidden
-        pass
 
     def test_negotiator_cannot_access_others_kpis(self, client: TestClient):
         """Lettings Negotiator should only see their own KPI metrics."""
@@ -310,7 +284,6 @@ class TestResourceOwnership:
         # 3. Authenticate as negotiator A
         # 4. GET /api/v1/kpis/
         # 5. Assert only negotiator A's metrics included
-        pass
 
 
 @pytest.mark.skip(reason="Authentication/RBAC not yet implemented")
@@ -322,21 +295,18 @@ class TestUnauthenticatedAccess:
         # TODO: Implement once auth is available
         # 1. GET /api/v1/properties (without auth token)
         # 2. Assert 401 Unauthorized
-        pass
 
     def test_unauthenticated_cannot_create_property(self, client: TestClient):
         """Unauthenticated requests should be rejected."""
         # TODO: Implement once auth is available
         # 1. POST /api/v1/properties (without auth token)
         # 2. Assert 401 Unauthorized
-        pass
 
     def test_unauthenticated_cannot_access_kpis(self, client: TestClient):
         """Unauthenticated requests should not access KPIs."""
         # TODO: Implement once auth is available
         # 1. GET /api/v1/kpis/ (without auth token)
         # 2. Assert 401 Unauthorized
-        pass
 
 
 @pytest.mark.skip(reason="Authentication/RBAC not yet implemented")
@@ -350,7 +320,6 @@ class TestTokenExpiration:
         # 2. GET /api/v1/properties with expired token
         # 3. Assert 401 Unauthorized
         # 4. Assert error message indicates token expired
-        pass
 
     def test_refresh_token_extends_session(self, client: TestClient):
         """Refresh token should extend session."""
@@ -361,7 +330,6 @@ class TestTokenExpiration:
         # 4. Assert new access token returned
         # 5. Use new token to access protected endpoint
         # 6. Assert 200 OK
-        pass
 
 
 # Placeholder for future RBAC implementation
@@ -378,7 +346,9 @@ def get_user_role():
     raise NotImplementedError("Authentication not yet implemented")
 
 
-def check_permission(user_id: str, resource: str, action: str, branch_id: str = None) -> bool:
+def check_permission(
+    user_id: str, resource: str, action: str, branch_id: str | None = None
+) -> bool:
     """
     Check if user has permission to perform action on resource.
 

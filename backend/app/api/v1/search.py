@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -10,6 +9,7 @@ from app.schemas.property import PropertyResponse
 
 router = APIRouter(prefix="/search", tags=["search"])
 
+
 @router.get("/properties", response_model=list[PropertyResponse])
 def search_properties(
     bedrooms: int | None = Query(None, description="Number of bedrooms"),
@@ -17,12 +17,14 @@ def search_properties(
     bedrooms_max: int | None = Query(None, description="Maximum bedrooms"),
     rent_min: float | None = Query(None, description="Minimum rent"),
     rent_max: float | None = Query(None, description="Maximum rent"),
-    property_type: str | None = Query(None, description="Property type (flat/house/maisonette)"),
+    property_type: str | None = Query(
+        None, description="Property type (flat/house/maisonette)"
+    ),
     postcode: str | None = Query(None, description="Postcode (partial match)"),
     status: PropertyStatus | None = Query(None, description="Property status"),
     skip: int = Query(0, description="Skip N results"),
     limit: int = Query(100, description="Limit results"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Search properties with multiple filters.
@@ -63,9 +65,7 @@ def search_properties(
         query = query.filter(Property.status == status)
 
     # Get results with pagination
-    properties = query.offset(skip).limit(limit).all()
-
-    return properties
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/properties/count")
@@ -78,7 +78,7 @@ def count_search_results(
     property_type: str | None = None,
     postcode: str | None = None,
     status: PropertyStatus | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Count how many properties match the search criteria.

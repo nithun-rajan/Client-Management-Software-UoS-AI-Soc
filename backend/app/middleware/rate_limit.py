@@ -6,12 +6,11 @@ In development, uses in-memory storage.
 """
 
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -68,8 +67,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         try:
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
         except RateLimitExceeded as exc:
             # Log rate limit violation

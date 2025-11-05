@@ -57,20 +57,8 @@ export function usePropertyMatching(
     onSuccess: (data) => {
       toast.success(`Found ${data.total_matches} matching properties!`);
     },
-    onError: (error: unknown) => {
-      const message =
-        error &&
-        typeof error === "object" &&
-        "response" in error &&
-        error.response &&
-        typeof error.response === "object" &&
-        "data" in error.response &&
-        error.response.data &&
-        typeof error.response.data === "object" &&
-        "detail" in error.response.data
-          ? String(error.response.data.detail)
-          : "Failed to find matches";
-      toast.error(message);
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to find matches");
     },
   });
 }

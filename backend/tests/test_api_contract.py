@@ -1,4 +1,5 @@
 """Tests for API contract validation."""
+
 import json
 from pathlib import Path
 
@@ -15,7 +16,9 @@ def get_baseline_spec_path() -> Path:
     """Get path to baseline OpenAPI spec."""
     backend_dir = Path(__file__).parent.parent
     repo_root = backend_dir.parent
-    return repo_root / "specs/001-devex-qa-security-infra/contracts/openapi-baseline.json"
+    return (
+        repo_root / "specs/001-devex-qa-security-infra/contracts/openapi-baseline.json"
+    )
 
 
 def test_openapi_spec_is_valid():
@@ -58,8 +61,9 @@ def test_openapi_spec_endpoints_have_descriptions():
                     missing_descriptions.append(f"{method.upper()} {path}")
 
     # Allow some endpoints to not have descriptions (like root)
-    assert len(missing_descriptions) < len(spec["paths"]) * 0.2, \
+    assert len(missing_descriptions) < len(spec["paths"]) * 0.2, (
         f"Too many endpoints missing descriptions: {missing_descriptions}"
+    )
 
 
 def test_openapi_spec_has_response_schemas():
@@ -79,11 +83,14 @@ def test_openapi_spec_has_response_schemas():
                 if "200" in operation["responses"]:
                     response = operation["responses"]["200"]
                     if "content" not in response:
-                        missing_schemas.append(f"{method.upper()} {path} (200 response)")
+                        missing_schemas.append(
+                            f"{method.upper()} {path} (200 response)"
+                        )
 
     # Some endpoints might not return content (like DELETE)
-    assert len(missing_schemas) < len(spec["paths"]), \
+    assert len(missing_schemas) < len(spec["paths"]), (
         f"Too many endpoints missing response schemas: {missing_schemas}"
+    )
 
 
 def test_openapi_spec_consistent_with_baseline():
@@ -111,8 +118,9 @@ def test_openapi_spec_consistent_with_baseline():
     current_paths = set(current_spec.get("paths", {}).keys())
 
     removed_paths = baseline_paths - current_paths
-    assert len(removed_paths) == 0, \
+    assert len(removed_paths) == 0, (
         f"Paths removed from API (breaking change): {removed_paths}"
+    )
 
     # 2. Check that methods for existing paths still exist
     for path in baseline_paths & current_paths:
@@ -120,8 +128,9 @@ def test_openapi_spec_consistent_with_baseline():
         current_methods = set(current_spec["paths"][path].keys())
 
         removed_methods = baseline_methods - current_methods
-        assert len(removed_methods) == 0, \
+        assert len(removed_methods) == 0, (
             f"Methods removed from {path} (breaking change): {removed_methods}"
+        )
 
 
 def test_openapi_spec_version_format():

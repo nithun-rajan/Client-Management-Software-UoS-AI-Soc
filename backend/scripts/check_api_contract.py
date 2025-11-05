@@ -5,6 +5,7 @@ API Contract Breaking Change Checker
 Uses openapi-diff to detect breaking changes in API contracts.
 Can be run standalone or imported for testing.
 """
+
 import json
 import subprocess
 import sys
@@ -16,7 +17,9 @@ def get_baseline_spec_path() -> Path:
     # Assuming script is in backend/scripts/
     backend_dir = Path(__file__).parent.parent
     repo_root = backend_dir.parent
-    return repo_root / "specs/001-devex-qa-security-infra/contracts/openapi-baseline.json"
+    return (
+        repo_root / "specs/001-devex-qa-security-infra/contracts/openapi-baseline.json"
+    )
 
 
 def generate_current_spec() -> dict:
@@ -34,7 +37,7 @@ def generate_current_spec() -> dict:
 def save_spec(spec: dict, path: Path) -> None:
     """Save OpenAPI spec to file."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(spec, f, indent=2)
 
 
@@ -42,9 +45,7 @@ def check_openapi_diff_installed() -> bool:
     """Check if openapi-diff is installed."""
     try:
         result = subprocess.run(
-            ['openapi-diff', '--version'],
-            capture_output=True,
-            text=True
+            ["openapi-diff", "--version"], check=False, capture_output=True, text=True
         )
         return result.returncode == 0
     except FileNotFoundError:
@@ -64,9 +65,10 @@ def run_openapi_diff(baseline_path: Path, current_path: Path) -> tuple[int, str]
     print()
 
     result = subprocess.run(
-        ['openapi-diff', str(baseline_path), str(current_path)],
+        ["openapi-diff", str(baseline_path), str(current_path)],
+        check=False,
         capture_output=True,
-        text=True
+        text=True,
     )
 
     return result.returncode, result.stdout + result.stderr
@@ -85,24 +87,23 @@ def analyze_diff_output(output: str) -> dict:
     """
     output_lower = output.lower()
 
-    if 'breaking' in output_lower:
+    if "breaking" in output_lower:
         return {
-            'has_breaking_changes': True,
-            'has_changes': True,
-            'message': 'Breaking changes detected'
+            "has_breaking_changes": True,
+            "has_changes": True,
+            "message": "Breaking changes detected",
         }
-    elif 'no changes' in output_lower or 'no differences' in output_lower:
+    if "no changes" in output_lower or "no differences" in output_lower:
         return {
-            'has_breaking_changes': False,
-            'has_changes': False,
-            'message': 'No API changes detected'
+            "has_breaking_changes": False,
+            "has_changes": False,
+            "message": "No API changes detected",
         }
-    else:
-        return {
-            'has_breaking_changes': False,
-            'has_changes': True,
-            'message': 'Non-breaking changes detected'
-        }
+    return {
+        "has_breaking_changes": False,
+        "has_changes": True,
+        "message": "Non-breaking changes detected",
+    }
 
 
 def main() -> int:
@@ -140,13 +141,13 @@ def main() -> int:
         return 0
 
     # Run diff
-    exit_code, output = run_openapi_diff(baseline_path, current_spec_path)
+    _exit_code, output = run_openapi_diff(baseline_path, current_spec_path)
 
     # Analyze output
     analysis = analyze_diff_output(output)
 
     # Print results
-    if analysis['has_breaking_changes']:
+    if analysis["has_breaking_changes"]:
         print("❌ BREAKING CHANGES DETECTED")
         print()
         print(output)
@@ -157,15 +158,14 @@ def main() -> int:
         print("  2. Either fix the breaking changes OR")
         print("  3. If intentional, version the API (e.g., /api/v2/)")
         return 1
-    elif analysis['has_changes']:
+    if analysis["has_changes"]:
         print("✅ Non-breaking changes only")
         print()
         print(output)
         return 0
-    else:
-        print("✅ No API changes detected")
-        return 0
+    print("✅ No API changes detected")
+    return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

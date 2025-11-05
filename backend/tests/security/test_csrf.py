@@ -100,10 +100,7 @@ class TestCSRFMiddleware:
     def test_post_with_header_but_no_cookie_fails(self, client, csrf_protection):
         """Test that POST with header but no cookie is rejected."""
         token = csrf_protection.generate_token()
-        response = client.post(
-            "/protected",
-            headers={"X-CSRF-Token": token}
-        )
+        response = client.post("/protected", headers={"X-CSRF-Token": token})
         assert response.status_code == 403
         assert "cookie" in response.json()["detail"].lower()
 
@@ -122,10 +119,7 @@ class TestCSRFMiddleware:
         token2 = csrf_protection.generate_token()
 
         client.cookies.set("csrf_token", token1)
-        response = client.post(
-            "/protected",
-            headers={"X-CSRF-Token": token2}
-        )
+        response = client.post("/protected", headers={"X-CSRF-Token": token2})
         assert response.status_code == 403
         assert "mismatch" in response.json()["detail"].lower()
 
@@ -134,10 +128,7 @@ class TestCSRFMiddleware:
         token = csrf_protection.generate_token()
 
         client.cookies.set("csrf_token", token)
-        response = client.post(
-            "/protected",
-            headers={"X-CSRF-Token": token}
-        )
+        response = client.post("/protected", headers={"X-CSRF-Token": token})
         assert response.status_code == 200
         assert response.json()["message"] == "success"
 
@@ -146,10 +137,7 @@ class TestCSRFMiddleware:
         invalid_token = "invalid_random_part.invalid_signature"
 
         client.cookies.set("csrf_token", invalid_token)
-        response = client.post(
-            "/protected",
-            headers={"X-CSRF-Token": invalid_token}
-        )
+        response = client.post("/protected", headers={"X-CSRF-Token": invalid_token})
         assert response.status_code == 403
 
 

@@ -9,6 +9,7 @@ import html
 import re
 from typing import Any
 
+
 # Common SQL injection patterns
 SQL_INJECTION_PATTERNS = [
     r"(\bUNION\b.*\bSELECT\b)",
@@ -26,7 +27,9 @@ SQL_INJECTION_PATTERNS = [
 ]
 
 # Compile patterns for performance
-COMPILED_SQL_PATTERNS = [re.compile(pattern, re.IGNORECASE) for pattern in SQL_INJECTION_PATTERNS]
+COMPILED_SQL_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE) for pattern in SQL_INJECTION_PATTERNS
+]
 
 # XSS patterns
 XSS_PATTERNS = [
@@ -40,7 +43,9 @@ XSS_PATTERNS = [
     r"<embed",
 ]
 
-COMPILED_XSS_PATTERNS = [re.compile(pattern, re.IGNORECASE | re.DOTALL) for pattern in XSS_PATTERNS]
+COMPILED_XSS_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE | re.DOTALL) for pattern in XSS_PATTERNS
+]
 
 
 def sanitize_html(text: str) -> str:
@@ -75,11 +80,7 @@ def detect_sql_injection(text: str) -> bool:
     if not isinstance(text, str):
         return False
 
-    for pattern in COMPILED_SQL_PATTERNS:
-        if pattern.search(text):
-            return True
-
-    return False
+    return any(pattern.search(text) for pattern in COMPILED_SQL_PATTERNS)
 
 
 def detect_xss(text: str) -> bool:
@@ -95,11 +96,7 @@ def detect_xss(text: str) -> bool:
     if not isinstance(text, str):
         return False
 
-    for pattern in COMPILED_XSS_PATTERNS:
-        if pattern.search(text):
-            return True
-
-    return False
+    return any(pattern.search(text) for pattern in COMPILED_XSS_PATTERNS)
 
 
 def sanitize_filename(filename: str) -> str:
@@ -128,7 +125,9 @@ def sanitize_filename(filename: str) -> str:
     # Limit length
     max_length = 255
     if len(filename) > max_length:
-        name_part, ext_part = filename.rsplit(".", 1) if "." in filename else (filename, "")
+        name_part, ext_part = (
+            filename.rsplit(".", 1) if "." in filename else (filename, "")
+        )
         name_part = name_part[: max_length - len(ext_part) - 1]
         filename = f"{name_part}.{ext_part}" if ext_part else name_part
 
@@ -207,10 +206,7 @@ def validate_integer_range(
     if min_value is not None and int_value < min_value:
         return False
 
-    if max_value is not None and int_value > max_value:
-        return False
-
-    return True
+    return not (max_value is not None and int_value > max_value)
 
 
 def sanitize_dict(data: dict[str, Any], sanitize_values: bool = True) -> dict[str, Any]:

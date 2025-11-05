@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
 
 router = APIRouter(prefix="/events", tags=["events"])
+
 
 @router.get("/log")
 def get_event_log():
@@ -14,18 +15,19 @@ def get_event_log():
             "event": "property.created",
             "entity_type": "property",
             "entity_id": 1,
-            "timestamp": datetime.now().isoformat(),
-            "user": "system"
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user": "system",
         },
         {
             "id": 2,
             "event": "applicant.registered",
             "entity_type": "applicant",
             "entity_id": 5,
-            "timestamp": datetime.now().isoformat(),
-            "user": "system"
-        }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user": "system",
+        },
     ]
+
 
 @router.post("/trigger")
 def trigger_event(event_type: str, entity_id: int):
@@ -34,5 +36,5 @@ def trigger_event(event_type: str, entity_id: int):
         "status": "ok",
         "event": event_type,
         "entity_id": entity_id,
-        "triggered_at": datetime.now().isoformat()
+        "triggered_at": datetime.now(timezone.utc).isoformat(),
     }
