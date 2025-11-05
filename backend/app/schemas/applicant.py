@@ -2,10 +2,12 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+from app.schemas.model_config import AppBaseModel
+
 from app.models.applicant import ApplicantStatus
 
 
-class ApplicantBase(BaseModel):
+class ApplicantBase(AppBaseModel):
     full_name: str
     email: EmailStr
     phone: str | None = None
@@ -17,10 +19,12 @@ class ApplicantBase(BaseModel):
     move_in_date: date | None = None
     notes: str | None = None
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 class ApplicantCreate(ApplicantBase):
     pass
 
-class ApplicantUpdate(BaseModel):
+class ApplicantUpdate(AppBaseModel):
     full_name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
@@ -35,10 +39,11 @@ class ApplicantUpdate(BaseModel):
     right_to_rent_checked: bool | None = None
     notes: str | None = None
 
+
 class ApplicantResponse(ApplicantBase):
     id: int
     status: ApplicantStatus
     references_passed: bool
     right_to_rent_checked: bool
 
-    model_config = ConfigDict(from_attributes=True)
+   
