@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.applicant import Applicant
+from app.models.enums import ApplicantStatus, PropertyStatus
 from app.models.landlord import Landlord
-from app.models.property import Property, PropertyStatus
+from app.models.property import Property
 
 
 router = APIRouter(prefix="/kpis", tags=["kpis"])
@@ -22,7 +23,7 @@ def get_kpis(db: Session = Depends(get_db)):
     )
     let_by = db.query(Property).filter(Property.status == PropertyStatus.LET_BY).count()
     managed = (
-        db.query(Property).filter(Property.status == PropertyStatus.MANAGED).count()
+        db.query(Property).filter(Property.status == PropertyStatus.TENANTED).count()
     )
 
     # Average rent
@@ -35,7 +36,7 @@ def get_kpis(db: Session = Depends(get_db)):
     # Total applicants
     total_applicants = db.query(Applicant).count()
     qualified_applicants = (
-        db.query(Applicant).filter(Applicant.references_passed).count()
+        db.query(Applicant).filter(Applicant.status == ApplicantStatus.QUALIFIED).count()
     )
 
     return {

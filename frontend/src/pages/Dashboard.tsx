@@ -103,7 +103,7 @@ export default function Dashboard() {
                 </>
               ) : events && events.length > 0 ? (
                 events.slice(0, 5).map((event) => {
-                  const eventIcon =
+                  const EventIcon =
                     event.entity_type === "property"
                       ? Building2
                       : event.entity_type === "applicant"
@@ -135,8 +135,8 @@ export default function Dashboard() {
                       <div
                         className={`flex h-10 w-10 items-center justify-center rounded-full bg-${eventColor}/10`}
                       >
-                        {eventIcon && (
-                          <eventIcon className={`h-5 w-5 text-${eventColor}`} />
+                        {EventIcon && (
+                          <EventIcon className={`h-5 w-5 text-${eventColor}`} />
                         )}
                       </div>
                       <div className="flex-1 space-y-1">
