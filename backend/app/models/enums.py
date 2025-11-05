@@ -127,3 +127,16 @@ class UserRole:
     MANAGER = "manager"
     AGENT = "agent"
     VIEWER = "viewer"
+
+class TicketStatus:
+    NEW = "new"
+    QUOTED = "quoted"
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class TicketUrgency:
+    EMERGENCY = "emergency"
+    URGENT = "urgent"
+    ROUTINE = "routine"
