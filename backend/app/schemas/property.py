@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from pydantic import ConfigDict
 
-
 class PropertyBase(BaseModel):
     address: Optional[str] = None
     postcode: str
