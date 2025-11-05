@@ -13,7 +13,13 @@ class Tenancy(BaseModel):
     end_date = Column(Date, nullable=False)
     rent_amount = Column(Float, nullable=False)
     deposit_amount = Column(Float)
-    status = Column(String, default=TenancyStatus.DRAFT)
+    status = Column(String, default=TenancyStatus.PENDING)
+
+    PENDING = "pending"
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    TERMINATED = "terminated"
+    RENEWED = "renewed"
 
     # Progression tracking (from pages 29-31)
     agreed_rent = Column(Float)  # Page 29: "Agreed Rent"

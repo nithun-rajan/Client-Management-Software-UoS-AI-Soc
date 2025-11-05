@@ -14,7 +14,7 @@ class WorkflowTransition(BaseModel):
     to_status = Column(String, nullable=False)
     user_id = Column(String)  # Who performed the transition
     notes = Column(Text)
-    metadata = Column(JSON)  # Store additional context
+    workflow_metadata = Column(JSON)  # Store additional context
     side_effects_executed = Column(JSON)  # List of automated actions
     
     # Index for faster queries

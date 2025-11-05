@@ -1,10 +1,11 @@
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from app.models.enums import PropertyStatus
 
+from app.schemas.model_config import AppBaseModel
 
-class PropertyBase(BaseModel):
+class PropertyBase(AppBaseModel):
     address: str
     postcode: str
     property_type: str
@@ -16,7 +17,7 @@ class PropertyBase(BaseModel):
 class PropertyCreate(PropertyBase):
     pass
 
-class PropertyUpdate(BaseModel):
+class PropertyUpdate(AppBaseModel):
     address: str | None = None
     postcode: str | None = None
     property_type: str | None = None
@@ -29,5 +30,3 @@ class PropertyUpdate(BaseModel):
 class PropertyResponse(PropertyBase):
     id: int
     status: PropertyStatus
-
-    model_config = ConfigDict(from_attributes=True)
