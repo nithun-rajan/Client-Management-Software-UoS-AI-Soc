@@ -1,5 +1,9 @@
 from pydantic import BaseModel, ConfigDict
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> bf7fab4 (fix enum inheritance, add model config to adjust pydantic to used enums)
 class AppBaseModel(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,  # For ORM compatibility
