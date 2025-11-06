@@ -1,7 +1,8 @@
 # app/schemas/user.py
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 from enum import Enum
 import uuid
+from app.schemas.model_config import AppBaseModel
 
 class Role(str, Enum):
     ADMIN = "admin"
@@ -10,7 +11,7 @@ class Role(str, Enum):
     VIEWER = "viewer"
 
 # Base properties
-class UserBase(BaseModel):
+class UserBase(AppBaseModel):
     email: EmailStr
     first_name: str
     last_name: str
@@ -31,5 +32,3 @@ class UserRead(UserBase):
     organization_id: uuid.UUID
     branch_id: uuid.UUID | None
 
-    class Config:
-        from_attributes = True

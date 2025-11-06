@@ -1,6 +1,16 @@
 from fastapi import status
 
 
+
+#@pytest.fixture(scope="function")
+def debug_tables(db_session):
+    """Debug fixture to check what tables were created"""
+    from sqlalchemy import inspect
+    inspector = inspect(db_session.bind)
+    tables = inspector.get_table_names()
+    print(f"🔍 Created tables: {tables}")
+    return tables
+
 def test_create_property(client):
     """Test creating a new property"""
     property_data = {

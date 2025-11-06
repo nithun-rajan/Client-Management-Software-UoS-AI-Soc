@@ -2,12 +2,13 @@
 Communication Schemas - Pydantic models for API validation
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import datetime
+from app.schemas.model_config import AppBaseModel
 
 
-class CommunicationBase(BaseModel):
+class CommunicationBase(AppBaseModel):
     """Base schema with common fields"""
     type: str = Field(..., description="Type of communication (email, call, sms, note, task, meeting, viewing)")
     subject: Optional[str] = Field(None, max_length=255, description="Optional subject line")
@@ -26,7 +27,8 @@ class CommunicationBase(BaseModel):
 class CommunicationCreate(CommunicationBase):
     """Schema for creating a new communication log entry"""
     
-    @validator('type')
+    @field_validator('type')
+    @classmethod
     def validate_type(cls, v):
         """Validate communication type"""
         valid_types = ['email', 'call', 'sms', 'note', 'task', 'meeting', 'viewing']
@@ -34,45 +36,50 @@ class CommunicationCreate(CommunicationBase):
             raise ValueError(f"Type must be one of: {', '.join(valid_types)}")
         return v
     
-    @validator('direction')
+    @field_validator('direction')
+    @classmethod
     def validate_direction(cls, v):
         """Validate communication direction"""
         if v is not None and v not in ['inbound', 'outbound']:
             raise ValueError("Direction must be 'inbound' or 'outbound'")
         return v
     
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def validate_content(cls, v):
         """Ensure content is not empty"""
         if not v or not v.strip():
             raise ValueError("Content cannot be empty")
         return v.strip()
     
-    @validator('applicant_id', always=True)
-    def validate_entity_link(cls, v, values):
-        """Ensure at least one entity is linked"""
-        property_id = values.get('property_id')
-        landlord_id = values.get('landlord_id')
-        
-        if not any([property_id, landlord_id, v]):
+    @model_validator(mode='after')
+    def validate_entity_link(self) -> 'CommunicationCreate':
+        property_id = self.property_id
+        landlord_id = self.landlord_id
+        applicant_id = self.applicant_id
+        if not any([property_id, landlord_id, applicant_id]):
             raise ValueError("At least one entity (property, landlord, or applicant) must be linked")
-        return v
+        return self
 
-
-class CommunicationUpdate(BaseModel):
+class CommunicationUpdate(AppBaseModel):
     """Schema for updating an existing communication"""
     subject: Optional[str] = Field(None, max_length=255)
     content: Optional[str] = None
     is_important: Optional[bool] = None
     is_read: Optional[bool] = None
 
-
+    @field_validator('content')
+    @classmethod
+    def validate_content(cls, v: Optional[str]) -> Optional[str]:
+        """Ensure content is not empty if provided"""
+        if v is not None and not v.strip():
+            raise ValueError("Content cannot be empty if provided")
+        return v.strip() if v else v
+    
 class CommunicationResponse(CommunicationBase):
     """Schema for API responses"""
     id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
 

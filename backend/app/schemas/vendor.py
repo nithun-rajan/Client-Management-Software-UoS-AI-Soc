@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from app.schemas.model_config import AppBaseModel
 from datetime import datetime, date
 from typing import Optional
 
 
-class VendorBase(BaseModel):
+class VendorBase(AppBaseModel):
     title: Optional[str] = None
     first_name: str
     last_name: str
@@ -24,7 +24,7 @@ class VendorCreate(VendorBase):
     pass
 
 
-class VendorUpdate(BaseModel):
+class VendorUpdate(AppBaseModel):
     title: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -46,5 +46,3 @@ class VendorResponse(VendorBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True

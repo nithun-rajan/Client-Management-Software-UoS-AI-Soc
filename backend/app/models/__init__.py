@@ -1,3 +1,5 @@
+
+
 from .applicant import Applicant
 from .landlord import Landlord
 from .property import Property
@@ -11,7 +13,6 @@ from .offer import Offer
 from .viewing import Viewing
 from .match_history import MatchHistory
 from .document import Document
-
 
 __all__ = [
     "Applicant",

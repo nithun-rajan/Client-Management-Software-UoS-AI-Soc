@@ -1,9 +1,9 @@
-from pydantic import BaseModel
+from app.schemas.model_config import AppBaseModel
 from datetime import datetime
 from typing import Optional
 
 
-class TaskBase(BaseModel):
+class TaskBase(AppBaseModel):
     title: str
     description: Optional[str] = None
     status: str = "todo"
@@ -20,7 +20,7 @@ class TaskCreate(TaskBase):
     pass
 
 
-class TaskUpdate(BaseModel):
+class TaskUpdate(AppBaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
@@ -34,5 +34,3 @@ class TaskResponse(TaskBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
