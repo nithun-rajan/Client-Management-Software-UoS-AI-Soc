@@ -46,7 +46,7 @@ class Tenancy(BaseModel):
     # Document tracking
     tenancy_agreement_sent = Column(Boolean, default=False)  # Page 31: 3.1
     statutory_documents_sent = Column(Boolean, default=False)  # Page 31: 3.2
-
+    
     # Relationships
     property_id = Column(String, ForeignKey('properties.id'), nullable=False)
     property = relationship("Property", back_populates="tenancies")
