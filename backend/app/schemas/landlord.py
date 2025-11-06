@@ -1,9 +1,10 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import ConfigDict, EmailStr
+from app.schemas.model_config import AppBaseModel
 
 
-class LandlordBase(BaseModel):
+class LandlordBase(AppBaseModel):
     full_name: str
     email: EmailStr
     phone: str | None = None
@@ -16,7 +17,7 @@ class LandlordBase(BaseModel):
 class LandlordCreate(LandlordBase):
     pass
 
-class LandlordUpdate(BaseModel):
+class LandlordUpdate(AppBaseModel):
     full_name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
@@ -33,4 +34,3 @@ class LandlordResponse(LandlordBase):
     aml_verified: bool
     aml_verification_date: date | None = None
 
-    model_config = ConfigDict(from_attributes=True)

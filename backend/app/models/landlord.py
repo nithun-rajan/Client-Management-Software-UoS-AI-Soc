@@ -4,7 +4,7 @@ from app.models.base import BaseModel
 
 class Landlord(BaseModel):
     __tablename__ = "landlords"
-
+    
     # Core fields (keeping your existing structure)
     full_name = Column(String, nullable=False, index=True)
     email = Column(String, nullable=False, index=True)

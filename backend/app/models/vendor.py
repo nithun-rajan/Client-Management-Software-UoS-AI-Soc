@@ -7,6 +7,7 @@ from app.models.enums import VendorStatus
 
 class Vendor(BaseModel):
     __tablename__ = "vendors"
+   
 
     # Core identity
     title = Column(String)

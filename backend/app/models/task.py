@@ -7,6 +7,8 @@ from app.models.enums import TaskStatus
 
 class Task(BaseModel):
     __tablename__ = "tasks"
+    
+
 
     title = Column(String, nullable=False)
     description = Column(Text)
