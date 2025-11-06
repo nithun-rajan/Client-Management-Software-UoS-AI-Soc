@@ -44,15 +44,24 @@ def create_properties(db: Session, count: int = 20):
 
         address_line1 = fake.street_address()
         address_line2 = fake.secondary_address() if random.choice([True, False]) else None
+        
+        # Construct full address for the required 'address' field
+        address_parts = [address_line1]
+        if address_line2:
+            address_parts.append(address_line2)
+        address_parts.append(city)
+        full_address = ", ".join(address_parts)
+        
         property = Property(
+            address=full_address,  # Required field
             address_line1=address_line1,
             address_line2=address_line2,
             city=city,
             postcode=fake.postcode(),
             status=random.choice(statuses),
             property_type=property_type,
-            bedrooms=str(bedrooms),
-            bathrooms=str(random.randint(1, min(bedrooms, 3)))
+            bedrooms=bedrooms,  # Integer, not string
+            bathrooms=random.randint(1, min(bedrooms, 3))  # Integer, not string
         )
 
         db.add(property)
@@ -99,7 +108,18 @@ def create_applicants(db: Session, count: int = 15):
     """Create realistic applicants"""
     print(f"\n👥 Creating {count} applicants...")
 
-    statuses = list(ApplicantStatus)
+    # Get status values from ApplicantStatus class
+    statuses = [
+        ApplicantStatus.NEW,
+        ApplicantStatus.QUALIFIED,
+        ApplicantStatus.VIEWING_BOOKED,
+        ApplicantStatus.OFFER_SUBMITTED,
+        ApplicantStatus.OFFER_ACCEPTED,
+        ApplicantStatus.REFERENCES,
+        ApplicantStatus.LET_AGREED,
+        ApplicantStatus.TENANCY_STARTED,
+        ApplicantStatus.ARCHIVED,
+    ]
     uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
 
     applicants = []

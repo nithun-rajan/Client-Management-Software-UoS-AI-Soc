@@ -1,16 +1,16 @@
 
+from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.enums import PropertyStatus
 from app.models.property import Property
 from app.schemas.property import PropertyResponse
 
 
 router = APIRouter(prefix="/search", tags=["search"])
 
-@router.get("/properties", response_model=list[PropertyResponse])
+@router.get("/properties", response_model=List[PropertyResponse])
 def search_properties(
     bedrooms: int | None = Query(None, description="Number of bedrooms"),
     bedrooms_min: int | None = Query(None, description="Minimum bedrooms"),
@@ -19,7 +19,7 @@ def search_properties(
     rent_max: float | None = Query(None, description="Maximum rent"),
     property_type: str | None = Query(None, description="Property type (flat/house/maisonette)"),
     postcode: str | None = Query(None, description="Postcode (partial match)"),
-    status: PropertyStatus | None = Query(None, description="Property status"),
+    status: str | None = Query(None, description="Property status"),
     skip: int = Query(0, description="Skip N results"),
     limit: int = Query(100, description="Limit results"),
     db: Session = Depends(get_db)
@@ -77,7 +77,7 @@ def count_search_results(
     rent_max: float | None = None,
     property_type: str | None = None,
     postcode: str | None = None,
-    status: PropertyStatus | None = None,
+    status: str | None = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -108,4 +108,10 @@ def count_search_results(
         query = query.filter(Property.property_type == property_type)
 
     if postcode is not None:
-        query = query.filter
+        query = query.filter(Property.postcode.ilike(f"%{postcode}%"))
+
+    if status is not None:
+        query = query.filter(Property.status == status)
+
+    count = query.count()
+    return {"count": count}

@@ -30,5 +30,5 @@ class Applicant(BaseModel):
     special_requirements = Column(Text)
     
     # Relationships
-    # tenancies = relationship("Tenancy", back_populates="applicant")
+    tenancies = relationship("Tenancy", back_populates="applicant")
     communications = relationship("Communication", back_populates="applicant")
