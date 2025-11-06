@@ -112,8 +112,10 @@ export default function Applicants() {
                   <Sparkles className="h-4 w-4 mr-1" />
                   {matchingMutation.isPending && selectedApplicantId === applicant.id ? 'Finding...' : 'Find Matches'}
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/applicants/${applicant.id}`}>
+                    <Eye className="h-4 w-4" />
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>

@@ -25,3 +25,4 @@ class Landlord(BaseModel):
     
     # Relationships
     properties = relationship("Property", back_populates="landlord")
+    communications = relationship("Communication", back_populates="landlord")
