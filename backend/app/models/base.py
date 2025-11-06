@@ -11,7 +11,7 @@ def generate_uuid():
 
 class BaseModel(Base):  # all tables should log the following fields, hence all tables should inherit this one.
     __abstract__ = True
-    __table_args__ = {'extend_existing': True}
+    #__table_args__ = {'extend_existing': True}
 
     id = Column(String, primary_key=True, default=generate_uuid)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
