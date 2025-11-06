@@ -244,10 +244,18 @@ export default function Applicants() {
                           </CardDescription>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">
-                            £{match.property.rent}
-                          </div>
-                          <div className="text-xs text-muted-foreground">per month</div>
+                          {match.property.rent ? (
+                            <>
+                              <div className="text-2xl font-bold text-primary">
+                                £{match.property.rent.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">per month</div>
+                            </>
+                          ) : (
+                            <div className="text-lg font-semibold text-muted-foreground">
+                              POA
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardHeader>

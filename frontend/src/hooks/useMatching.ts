@@ -12,7 +12,7 @@ export interface PropertyMatch {
     postcode: string;
     bedrooms: number;
     bathrooms: number;
-    rent: number;
+    rent: number | null;
     property_type: string;
     description: string;
     main_photo: string | null;

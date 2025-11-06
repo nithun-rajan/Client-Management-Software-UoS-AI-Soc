@@ -46,7 +46,7 @@ export function useUpdateProperty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...propertyData }: Partial<Property> & { id: number }) => {
+    mutationFn: async ({ id, ...propertyData }: Partial<Property> & { id: string }) => {
       const { data } = await api.put(`/api/v1/properties/${id}`, propertyData);
       return data;
     },
@@ -64,7 +64,7 @@ export function useDeleteProperty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await api.delete(`/api/v1/properties/${id}`);
     },
     onSuccess: () => {
