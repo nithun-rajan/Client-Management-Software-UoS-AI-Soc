@@ -12,9 +12,10 @@ from sqlalchemy.orm import Session
 # Import your database and models
 from app.core.database import SessionLocal, engine, Base
 from app.models.property import Property
-from app.models.enums import PropertyStatus, ApplicantStatus
+from app.models.enums import PropertyStatus, ApplicantStatus, CommunicationType, CommunicationDirection
 from app.models.landlord import Landlord
 from app.models.applicant import Applicant
+from app.models.communication import Communication
 
 fake = Faker('en_GB')
 
@@ -172,6 +173,98 @@ def create_applicants(db: Session, count: int = 15):
     print(f"✅ Created {count} applicants")
     return applicants
 
+def create_communications(db: Session, properties, landlords, applicants, count: int = 30):
+    """Create realistic communications"""
+    print(f"\n📧 Creating {count} communications...")
+    
+    communication_types = ["email", "call", "sms", "note", "meeting", "viewing"]
+    directions = ["inbound", "outbound"]
+    
+    communication_messages = {
+        "email": [
+            "Regarding property viewing request",
+            "Follow-up on rental application",
+            "Monthly rent payment confirmation",
+            "Maintenance request submitted",
+            "Property availability inquiry"
+        ],
+        "call": [
+            "Discussed property details",
+            "Answered questions about tenancy",
+            "Scheduled property viewing",
+            "Follow-up call after viewing",
+            "Rent payment reminder"
+        ],
+        "sms": [
+            "Viewing confirmation for tomorrow",
+            "Quick question about property",
+            "Thank you for viewing",
+            "Documents received",
+            "Rent payment received"
+        ],
+        "note": [
+            "Applicant showed strong interest",
+            "Landlord requested callback",
+            "Property needs minor repairs",
+            "Good tenant prospect",
+            "Follow-up required next week"
+        ],
+        "meeting": [
+            "Property viewing completed",
+            "Discussed lease terms",
+            "Contract signing meeting",
+            "Property handover meeting",
+            "Quarterly review meeting"
+        ],
+        "viewing": [
+            "Property viewing - positive feedback",
+            "Viewing completed - applicant interested",
+            "Viewing scheduled for next week",
+            "Second viewing requested",
+            "Viewing cancelled - rescheduled"
+        ]
+    }
+    
+    communications = []
+    for i in range(count):
+        comm_type = random.choice(communication_types)
+        direction = random.choice(directions)
+        
+        # Random property, landlord, or applicant
+        property_id = random.choice(properties).id if random.choice([True, False, False]) else None
+        landlord_id = random.choice(landlords).id if random.choice([True, False, False]) else None
+        applicant_id = random.choice(applicants).id if random.choice([True, False, True]) else None
+        
+        # Random date within last 30 days
+        days_ago = random.randint(0, 30)
+        created_date = datetime.now() - timedelta(days=days_ago)
+        
+        content = fake.paragraph(nb_sentences=3) if comm_type in ["email", "note"] else random.choice(communication_messages[comm_type])
+        
+        communication = Communication(
+            type=comm_type,
+            direction=direction,
+            subject=random.choice(communication_messages[comm_type]),
+            content=content,
+            property_id=property_id,
+            landlord_id=landlord_id,
+            applicant_id=applicant_id,
+            is_read=random.choice([True, False]),
+            is_important=random.choice([True, False, False, False]),  # 25% chance of being important
+            created_at=created_date,
+            updated_at=created_date
+        )
+        
+        db.add(communication)
+        communications.append(communication)
+        
+        if (i + 1) % 10 == 0:
+            print(f"   Created {i + 1}/{count} communications...")
+    
+    db.commit()
+    print(f"✅ Created {count} communications")
+    return communications
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -189,6 +282,7 @@ def main():
         properties = create_properties(db, count=20)
         landlords = create_landlords(db, count=10)
         applicants = create_applicants(db, count=15)
+        communications = create_communications(db, properties, landlords, applicants, count=30)
         
         # Summary
         print("\n" + "="*60)
@@ -198,6 +292,7 @@ def main():
         print(f"   • {len(properties)} Properties")
         print(f"   • {len(landlords)} Landlords")
         print(f"   • {len(applicants)} Applicants")
+        print(f"   • {len(communications)} Communications")
         print("\n🚀 Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")

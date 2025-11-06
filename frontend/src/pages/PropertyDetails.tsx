@@ -19,7 +19,7 @@ export default function PropertyDetails() {
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/properties/${id}/`);
+      const response = await api.get(`/api/v1/properties/${id}`);
       return response.data;
     },
   });

@@ -1,6 +1,7 @@
-import { Building2, Bed, Bath, Eye, Pencil, Trash2, PoundSterling } from 'lucide-react';
+import { Building2, Bed, Bath, Eye, Pencil, Trash2, PoundSterling, Video } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useProperties } from '@/hooks/useProperties';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/components/layout/Header';
@@ -33,8 +34,14 @@ export default function Properties() {
           {properties?.map((property) => (
             <Card key={property.id} className="shadow-card hover:shadow-elevated transition-shadow group">
               <CardHeader className="relative">
-                <div className="absolute top-4 right-4 z-10">
+                <div className="absolute top-4 right-4 z-10 flex gap-2">
                   <StatusBadge status={property.status} />
+                  {property.virtual_tour_url && (
+                    <Badge className="bg-purple-500 text-white gap-1">
+                      <Video className="h-3 w-3" />
+                      Virtual Tour
+                    </Badge>
+                  )}
                 </div>
                 <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                   <Building2 className="h-16 w-16 text-muted-foreground" />
@@ -79,6 +86,18 @@ export default function Properties() {
                     View
                   </Link>
                 </Button>
+                {property.virtual_tour_url && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-purple-500 text-purple-500 hover:bg-purple-50"
+                    asChild
+                  >
+                    <a href={property.virtual_tour_url} target="_blank" rel="noopener noreferrer">
+                      <Video className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
                 <Button variant="outline" size="sm">
                   <Pencil className="h-4 w-4" />
                 </Button>

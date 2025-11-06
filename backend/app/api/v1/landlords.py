@@ -63,3 +63,61 @@ def delete_landlord(landlord_id: str, db: Session = Depends(get_db)):
     
     db.delete(landlord)
     db.commit()
+
+@router.get("/compliance/aml-check")
+def check_aml_compliance(db: Session = Depends(get_db)):
+    """
+    Check AML document expiry for all landlords
+    Blueprint: "System auto-flags any AML doc expiring within 12 months"
+    """
+    from datetime import datetime, timedelta
+    
+    landlords = db.query(Landlord).all()
+    
+    flagged = []
+    compliant = []
+    
+    for landlord in landlords:
+        alert_level = "green"  # compliant
+        issues = []
+        
+        if landlord.aml_check_expiry:
+            days_until_expiry = (landlord.aml_check_expiry - datetime.now().date()).days
+            
+            if days_until_expiry < 0:
+                alert_level = "red"
+                issues.append(f"AML expired {abs(days_until_expiry)} days ago")
+            elif days_until_expiry < 90:  # 3 months
+                alert_level = "red"
+                issues.append(f"AML expires in {days_until_expiry} days - URGENT")
+            elif days_until_expiry < 365:  # 12 months
+                alert_level = "amber"
+                issues.append(f"AML expires in {days_until_expiry} days")
+        else:
+            alert_level = "red"
+            issues.append("No AML expiry date recorded")
+        
+        landlord_data = {
+            "id": landlord.id,
+            "name": landlord.full_name,
+            "alert_level": alert_level,
+            "aml_expiry": landlord.aml_check_expiry.isoformat() if landlord.aml_check_expiry else None,
+            "issues": issues
+        }
+        
+        if alert_level in ["red", "amber"]:
+            flagged.append(landlord_data)
+        else:
+            compliant.append(landlord_data)
+    
+    return {
+        "total_landlords": len(landlords),
+        "flagged_count": len(flagged),
+        "compliant_count": len(compliant),
+        "flagged_landlords": flagged,
+        "compliant_landlords": compliant,
+        "summary": {
+            "red_alerts": len([l for l in flagged if l["alert_level"] == "red"]),
+            "amber_alerts": len([l for l in flagged if l["alert_level"] == "amber"])
+        }
+    }
