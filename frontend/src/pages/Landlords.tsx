@@ -34,6 +34,26 @@ export default function Landlords() {
       .slice(0, 2);
   };
 
+  const getAMLStatus = (expiryDate: string | null | undefined) => {
+    if (!expiryDate) {
+      return { level: 'red', label: 'No AML', days: 0, className: 'bg-red-500 text-white' };
+    }
+
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const daysUntilExpiry = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry < 0) {
+      return { level: 'red', label: `Expired ${Math.abs(daysUntilExpiry)}d ago`, days: daysUntilExpiry, className: 'bg-red-500 text-white' };
+    } else if (daysUntilExpiry < 90) {
+      return { level: 'red', label: `Expires in ${daysUntilExpiry}d`, days: daysUntilExpiry, className: 'bg-red-500 text-white' };
+    } else if (daysUntilExpiry < 365) {
+      return { level: 'amber', label: `${daysUntilExpiry}d remaining`, days: daysUntilExpiry, className: 'bg-amber-500 text-white' };
+    } else {
+      return { level: 'green', label: 'Compliant', days: daysUntilExpiry, className: 'bg-green-500 text-white' };
+    }
+  };
+
   return (
     <div>
       <Header title="Landlords" />
@@ -49,17 +69,21 @@ export default function Landlords() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg truncate">{landlord.full_name}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      {landlord.aml_verified ? (
-                        <Badge className="bg-accent text-white gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
+                      {(() => {
+                        const amlStatus = getAMLStatus(landlord.aml_check_expiry);
+                        return (
+                          <Badge className={`${amlStatus.className} gap-1 font-medium`}>
+                            {amlStatus.level === 'red' ? (
+                              <AlertCircle className="h-3 w-3" />
+                            ) : amlStatus.level === 'amber' ? (
+                              <AlertCircle className="h-3 w-3" />
+                            ) : (
+                              <CheckCircle className="h-3 w-3" />
+                            )}
+                            AML: {amlStatus.label}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

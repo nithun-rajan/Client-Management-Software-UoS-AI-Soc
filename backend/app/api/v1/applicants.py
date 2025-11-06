@@ -29,7 +29,7 @@ def list_applicants(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     return applicants
 
 @router.get("/{applicant_id}", response_model=ApplicantResponse)
-def get_applicant(applicant_id: int, db: Session = Depends(get_db)):
+def get_applicant(applicant_id: str, db: Session = Depends(get_db)):
     """Get a specific applicant"""
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
     if not applicant:
@@ -38,7 +38,7 @@ def get_applicant(applicant_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{applicant_id}", response_model=ApplicantResponse)
 def update_applicant(
-    applicant_id: int,
+    applicant_id: str,
     applicant_data: ApplicantUpdate,
     db: Session = Depends(get_db)
 ):
@@ -55,7 +55,7 @@ def update_applicant(
     return applicant
 
 @router.delete("/{applicant_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_applicant(applicant_id: int, db: Session = Depends(get_db)):
+def delete_applicant(applicant_id: str, db: Session = Depends(get_db)):
     """Delete an applicant"""
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
     if not applicant:

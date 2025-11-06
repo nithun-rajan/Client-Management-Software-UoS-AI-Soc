@@ -28,10 +28,10 @@ class LandlordUpdate(BaseModel):
     notes: Optional[str] = None
 
 class LandlordResponse(LandlordBase):
-    id: str  # Change from int to str
+    id: str
+    aml_verified: Optional[bool] = None
+    aml_verification_date: Optional[date] = None
+    aml_check_expiry: Optional[date] = None
     
-    class Config:
-        from_attributes = True
-
     class Config:
         from_attributes = True

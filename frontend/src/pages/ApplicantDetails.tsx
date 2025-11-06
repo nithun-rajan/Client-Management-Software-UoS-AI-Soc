@@ -18,7 +18,7 @@ export default function ApplicantDetails() {
   const { data: applicant, isLoading: applicantLoading } = useQuery({
     queryKey: ['applicant', id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/applicants/${id}/`);
+      const response = await api.get(`/api/v1/applicants/${id}`);
       return response.data;
     },
   });

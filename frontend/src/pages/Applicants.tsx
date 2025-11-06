@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { Users, Mail, Phone, Bed, PoundSterling, Eye, Pencil, Trash2, Dog, Sparkles, MapPin, Home, Calendar } from 'lucide-react';
+import { Users, Mail, Phone, Bed, PoundSterling, Eye, Pencil, Trash2, Dog, Sparkles, MapPin, Home, Calendar, Send, Clock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useApplicants } from '@/hooks/useApplicants';
 import { usePropertyMatching, PropertyMatch } from '@/hooks/useMatching';
+import { useMatchSending } from '@/hooks/useMatchSending';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/layout/Header';
 import StatusBadge from '@/components/shared/StatusBadge';
+import BookViewingDialog from '@/components/shared/BookViewingDialog';
 import { Link } from 'react-router-dom';
 
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
+  const [sendingPropertyId, setSendingPropertyId] = useState<string | null>(null);
+  const [viewingDialogOpen, setViewingDialogOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<PropertyMatch | null>(null);
+  const { toast } = useToast();
   
   const matchingMutation = usePropertyMatching(
     selectedApplicantId || '',
@@ -22,11 +29,52 @@ export default function Applicants() {
     50
   );
 
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
+
   const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
     const result = await matchingMutation.mutateAsync();
     if (result.matches.length > 0) {
       setMatchesDialogOpen(true);
+    }
+  };
+
+  const handleSendMatch = async (propertyId: string, applicantId: string) => {
+    setSendingPropertyId(propertyId);
+    try {
+      await sendMatches(applicantId, [propertyId], 'email');
+      toast({
+        title: "Match Sent!",
+        description: "Personalized property details sent to applicant via email",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send",
+        description: "Could not send match to applicant",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingPropertyId(null);
+    }
+  };
+
+  const handleSendAllMatches = async () => {
+    if (!matchData || !selectedApplicantId) return;
+    const propertyIds = matchData.matches.map((m: PropertyMatch) => m.property_id);
+    
+    try {
+      await sendMatches(selectedApplicantId, propertyIds, 'email');
+      toast({
+        title: "All Matches Sent!",
+        description: `Sent ${propertyIds.length} personalized property matches via email`,
+      });
+      setMatchesDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Failed to send",
+        description: "Could not send matches to applicant",
+        variant: "destructive"
+      });
     }
   };
 
@@ -114,7 +162,7 @@ export default function Applicants() {
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to={`/applicants/${applicant.id}`}>
-                    <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
@@ -136,13 +184,25 @@ export default function Applicants() {
       <Dialog open={matchesDialogOpen} onOpenChange={setMatchesDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              AI Property Matches for {matchData?.applicant.name}
-            </DialogTitle>
-            <DialogDescription>
-              Found {matchData?.total_matches} matching properties (AI Confidence: {((matchData?.ai_confidence || 0) * 100).toFixed(0)}%)
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  AI Property Matches for {matchData?.applicant.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Found {matchData?.total_matches} matching properties (AI Confidence: {((matchData?.ai_confidence || 0) * 100).toFixed(0)}%)
+                </DialogDescription>
+              </div>
+              <Button 
+                onClick={handleSendAllMatches}
+                disabled={sendingMatches}
+                className="bg-gradient-to-r from-primary to-secondary"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {sendingMatches ? 'Sending...' : `Send All ${matchData?.total_matches || 0} Matches`}
+              </Button>
+            </div>
           </DialogHeader>
 
           {matchData && (
@@ -244,14 +304,31 @@ export default function Applicants() {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Applicant
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleSendMatch(match.property_id, matchData.applicant.id)}
+                        disabled={sendingPropertyId === match.property_id}
+                      >
+                        <Send className="h-3 w-3 mr-1" />
+                        {sendingPropertyId === match.property_id ? 'Sending...' : 'Send to Applicant'}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedMatch(match);
+                          setViewingDialogOpen(true);
+                        }}
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline">
-                        View Property
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/properties/${match.property_id}`}>
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Link>
                       </Button>
                     </CardFooter>
                   </Card>
@@ -280,6 +357,18 @@ export default function Applicants() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedMatch && matchData && (
+        <BookViewingDialog
+          open={viewingDialogOpen}
+          onOpenChange={setViewingDialogOpen}
+          propertyId={selectedMatch.property_id}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedMatch.property.address}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

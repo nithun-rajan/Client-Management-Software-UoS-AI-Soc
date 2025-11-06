@@ -10,6 +10,7 @@ export interface Property {
   bathrooms: number;
   rent?: number;
   landlord_id?: number;
+  virtual_tour_url?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -22,6 +23,7 @@ export interface Landlord {
   address?: string;
   aml_verified: boolean;
   aml_verification_date?: string;
+  aml_check_expiry?: string;
   bank_account_name?: string;
   sort_code?: string;
   account_number?: string;

@@ -17,7 +17,7 @@ export default function LandlordDetails() {
   const { data: landlord, isLoading: landlordLoading } = useQuery({
     queryKey: ['landlord', id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/landlords/${id}/`);
+      const response = await api.get(`/api/v1/landlords/${id}`);
       return response.data;
     },
   });
@@ -93,10 +93,10 @@ export default function LandlordDetails() {
             <CardHeader>
               <div className="flex items-start gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-white text-2xl font-semibold">
-                  {getInitials(landlord.name)}
+                  {getInitials(landlord.full_name)}
                 </div>
                 <div className="flex-1">
-                  <CardTitle className="text-2xl">{landlord.name}</CardTitle>
+                  <CardTitle className="text-2xl">{landlord.full_name}</CardTitle>
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     {landlord.email && (
                       <div className="flex items-center gap-1">
@@ -123,27 +123,36 @@ export default function LandlordDetails() {
                 </div>
               )}
 
-              {(landlord.aml_verified || landlord.kyc_status) && (
+              {(landlord.aml_verified || landlord.aml_check_expiry) && (
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-2">Compliance Status</h3>
-                  <div className="flex gap-2">
+                  <div className="space-y-2">
                     {landlord.aml_verified && (
                       <Badge variant="default">AML Verified</Badge>
                     )}
-                    {landlord.kyc_status && (
-                      <Badge variant="secondary">KYC: {landlord.kyc_status}</Badge>
+                    {landlord.aml_verification_date && (
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Verified:</span>{' '}
+                        {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                      </p>
+                    )}
+                    {landlord.aml_check_expiry && (
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Expires:</span>{' '}
+                        {new Date(landlord.aml_check_expiry).toLocaleDateString()}
+                      </p>
                     )}
                   </div>
                 </div>
               )}
 
-              {(landlord.bank_name || landlord.account_number) && (
+              {(landlord.bank_account_name || landlord.account_number) && (
                 <div className="border-t pt-4">
                   <h3 className="font-semibold mb-2">Banking Details</h3>
                   <div className="space-y-1">
-                    {landlord.bank_name && (
+                    {landlord.bank_account_name && (
                       <p className="text-sm">
-                        <span className="text-muted-foreground">Bank:</span> {landlord.bank_name}
+                        <span className="text-muted-foreground">Account Name:</span> {landlord.bank_account_name}
                       </p>
                     )}
                     {landlord.sort_code && (
