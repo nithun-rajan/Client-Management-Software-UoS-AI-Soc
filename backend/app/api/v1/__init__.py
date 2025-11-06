@@ -12,9 +12,10 @@ from app.api.v1 import (
     property_matching, 
     search,
     tenancy,
-    tasks, 
+    tasks,
     vendors,
-    workflows   
+    viewings,
+    offers
 )
 
 api_router = APIRouter()
@@ -30,6 +31,7 @@ api_router.include_router(properties.router)
 api_router.include_router(property_matching.router)
 api_router.include_router(search.router)
 api_router.include_router(tenancy.router)
-api_router.include_router(tasks.router)     
-api_router.include_router(vendors.router)  
-api_router.include_router(workflows.router)
+api_router.include_router(tasks.router)
+api_router.include_router(vendors.router)
+api_router.include_router(viewings.router)
+api_router.include_router(offers.router)

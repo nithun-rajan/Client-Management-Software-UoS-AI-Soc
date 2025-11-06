@@ -1,5 +1,5 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 // ==================== Types ====================
 
@@ -41,7 +41,7 @@ export interface PropertyLookupResult {
   price_trend?: {
     change_amount: number;
     change_percentage: number;
-    direction: 'up' | 'down' | 'stable';
+    direction: "up" | "down" | "stable";
   };
   google_maps_url?: string;
   message?: string;
@@ -97,9 +97,13 @@ export interface ValuationPack {
 /**
  * Look up a specific property by house number and postcode (Alto-style!)
  */
-export function usePropertyLookup(houseNumber: string, postcode: string, enabled: boolean = true) {
+export function usePropertyLookup(
+  houseNumber: string,
+  postcode: string,
+  enabled: boolean = true
+) {
   return useQuery({
-    queryKey: ['landRegistry', 'lookup', houseNumber, postcode],
+    queryKey: ["landRegistry", "lookup", houseNumber, postcode],
     queryFn: async () => {
       const { data } = await api.get(`/api/v1/land-registry/lookup-property`, {
         params: {
@@ -119,7 +123,7 @@ export function usePropertyLookup(houseNumber: string, postcode: string, enabled
  */
 export function useSoldPrices(postcode: string, enabled: boolean = true) {
   return useQuery({
-    queryKey: ['landRegistry', 'soldPrices', postcode],
+    queryKey: ["landRegistry", "soldPrices", postcode],
     queryFn: async () => {
       const { data } = await api.get(`/api/v1/land-registry/sold-prices`, {
         params: {
@@ -138,9 +142,13 @@ export function useSoldPrices(postcode: string, enabled: boolean = true) {
 /**
  * Get area statistics for a postcode
  */
-export function useAreaStatistics(postcode: string, propertyType?: string, enabled: boolean = true) {
+export function useAreaStatistics(
+  postcode: string,
+  propertyType?: string,
+  enabled: boolean = true
+) {
   return useQuery({
-    queryKey: ['landRegistry', 'areaStats', postcode, propertyType],
+    queryKey: ["landRegistry", "areaStats", postcode, propertyType],
     queryFn: async () => {
       const { data } = await api.get(`/api/v1/land-registry/area-stats`, {
         params: {
@@ -160,7 +168,12 @@ export function useAreaStatistics(postcode: string, propertyType?: string, enabl
  */
 export function useValuationPack() {
   return useMutation({
-    mutationFn: async (params: { postcode: string; property_type: string; bedrooms?: number; bathrooms?: number }) => {
+    mutationFn: async (params: {
+      postcode: string;
+      property_type: string;
+      bedrooms?: number;
+      bathrooms?: number;
+    }) => {
       const { data } = await api.post(`/api/v1/land-registry/valuation-pack`, params);
       return data.data as ValuationPack;
     },
@@ -181,7 +194,7 @@ export function useSearchByTown(
   enabled: boolean = true
 ) {
   return useQuery({
-    queryKey: ['landRegistry', 'searchByTown', town, options],
+    queryKey: ["landRegistry", "searchByTown", town, options],
     queryFn: async () => {
       const { data } = await api.get(`/api/v1/land-registry/search-by-town`, {
         params: {
@@ -206,11 +219,15 @@ export function useSuggestedRent(
   bedrooms?: number,
   enabled: boolean = true
 ) {
-  const { data: areaStats, isLoading } = useAreaStatistics(postcode, propertyType, enabled);
+  const { data: areaStats, isLoading } = useAreaStatistics(
+    postcode,
+    propertyType,
+    enabled
+  );
 
   // Calculate suggested rent (monthly rent is typically 4-5% of property value annually)
   // So: (average_price * 0.045) / 12 months
-  const suggestedRent = areaStats?.average_price 
+  const suggestedRent = areaStats?.average_price
     ? Math.round((areaStats.average_price * 0.045) / 12)
     : null;
 

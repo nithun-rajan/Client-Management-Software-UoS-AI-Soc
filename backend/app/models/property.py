@@ -50,6 +50,7 @@ class Property(BaseModel):
     # Photos
     main_photo_url = Column(String)
     photo_urls = Column(Text)  # JSON array of URLs
+    virtual_tour_url = Column(String)  # Matterport/360 virtual tour
     
     landlord_id = Column(String, ForeignKey('landlords.id'))
     landlord = relationship("Landlord", back_populates="properties")

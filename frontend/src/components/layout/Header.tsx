@@ -1,12 +1,12 @@
-import { Bell, Plus } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Bell, Plus } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +14,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import api  from '@/lib/api';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 
 interface HeaderProps {
   title: string;
@@ -35,21 +41,25 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post('/properties/', {
-        address_line1: formData.get('address'),
-        city: formData.get('city'),
-        postcode: formData.get('postcode'),
-        property_type: formData.get('property_type'),
-        bedrooms: parseInt(formData.get('bedrooms') as string),
-        bathrooms: parseInt(formData.get('bathrooms') as string),
-        rent: parseFloat(formData.get('rent') as string),
-        status: 'available'
+      await api.post("/properties/", {
+        address_line1: formData.get("address"),
+        city: formData.get("city"),
+        postcode: formData.get("postcode"),
+        property_type: formData.get("property_type"),
+        bedrooms: parseInt(formData.get("bedrooms") as string),
+        bathrooms: parseInt(formData.get("bathrooms") as string),
+        rent: parseFloat(formData.get("rent") as string),
+        status: "available",
       });
-      toast({ title: 'Success', description: 'Property added successfully' });
+      toast({ title: "Success", description: "Property added successfully" });
       setPropertyOpen(false);
       window.location.reload();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to add property', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to add property",
+        variant: "destructive",
+      });
     }
   };
 
@@ -57,17 +67,21 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post('/landlords/', {
-        full_name: formData.get('full_name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        address: formData.get('address')
+      await api.post("/landlords/", {
+        full_name: formData.get("full_name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        address: formData.get("address"),
       });
-      toast({ title: 'Success', description: 'Landlord added successfully' });
+      toast({ title: "Success", description: "Landlord added successfully" });
       setLandlordOpen(false);
       window.location.reload();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to add landlord', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to add landlord",
+        variant: "destructive",
+      });
     }
   };
 
@@ -75,27 +89,31 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post('/applicants/', {
-        first_name: formData.get('first_name'),
-        last_name: formData.get('last_name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        rent_budget_min: parseFloat(formData.get('rent_budget_min') as string),
-        rent_budget_max: parseFloat(formData.get('rent_budget_max') as string)
+      await api.post("/applicants/", {
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        rent_budget_min: parseFloat(formData.get("rent_budget_min") as string),
+        rent_budget_max: parseFloat(formData.get("rent_budget_max") as string),
       });
-      toast({ title: 'Success', description: 'Applicant added successfully' });
+      toast({ title: "Success", description: "Applicant added successfully" });
       setApplicantOpen(false);
       window.location.reload();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to add applicant', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: "Failed to add applicant",
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+      <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <h1 className="text-2xl font-bold">{title}</h1>
-        
+
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -105,9 +123,15 @@ export default function Header({ title }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setPropertyOpen(true)}>+ New Property</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLandlordOpen(true)}>+ New Landlord</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setApplicantOpen(true)}>+ New Applicant</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPropertyOpen(true)}>
+                + New Property
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLandlordOpen(true)}>
+                + New Landlord
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setApplicantOpen(true)}>
+                + New Applicant
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
