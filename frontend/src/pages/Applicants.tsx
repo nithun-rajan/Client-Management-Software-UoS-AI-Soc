@@ -1,80 +1,59 @@
-import { useState } from 'react';
-import { Users, Mail, Phone, Bed, PoundSterling, Eye, Pencil, Trash2, Dog, Sparkles, MapPin, Home, Calendar, Send, Clock } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { useApplicants } from '@/hooks/useApplicants';
-import { usePropertyMatching, PropertyMatch } from '@/hooks/useMatching';
-import { useMatchSending } from '@/hooks/useMatchSending';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import Header from '@/components/layout/Header';
-import StatusBadge from '@/components/shared/StatusBadge';
-import BookViewingDialog from '@/components/shared/BookViewingDialog';
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import {
+  Users,
+  Mail,
+  Phone,
+  Bed,
+  PoundSterling,
+  Eye,
+  Pencil,
+  Trash2,
+  Dog,
+  Sparkles,
+  MapPin,
+  Home,
+  Calendar,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { useApplicants } from "@/hooks/useApplicants";
+import { usePropertyMatching, PropertyMatch } from "@/hooks/useMatching";
+import { Skeleton } from "@/components/ui/skeleton";
+import Header from "@/components/layout/Header";
+import StatusBadge from "@/components/shared/StatusBadge";
+import { Link } from "react-router-dom";
 
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
-  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
+  const [selectedApplicantId, setSelectedApplicantId] = useState<number | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
-  const [sendingPropertyId, setSendingPropertyId] = useState<string | null>(null);
-  const [viewingDialogOpen, setViewingDialogOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState<PropertyMatch | null>(null);
-  const { toast } = useToast();
-  
+
   const matchingMutation = usePropertyMatching(
-    selectedApplicantId || '',
+    selectedApplicantId ? String(selectedApplicantId) : "",
     5,
     50
   );
 
-  const { sendMatches, loading: sendingMatches } = useMatchSending();
-
-  const handleFindMatches = async (applicantId: string) => {
+  const handleFindMatches = async (applicantId: number) => {
     setSelectedApplicantId(applicantId);
     const result = await matchingMutation.mutateAsync();
     if (result.matches.length > 0) {
       setMatchesDialogOpen(true);
-    }
-  };
-
-  const handleSendMatch = async (propertyId: string, applicantId: string) => {
-    setSendingPropertyId(propertyId);
-    try {
-      await sendMatches(applicantId, [propertyId], 'email');
-      toast({
-        title: "Match Sent!",
-        description: "Personalized property details sent to applicant via email",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to send",
-        description: "Could not send match to applicant",
-        variant: "destructive"
-      });
-    } finally {
-      setSendingPropertyId(null);
-    }
-  };
-
-  const handleSendAllMatches = async () => {
-    if (!matchData || !selectedApplicantId) return;
-    const propertyIds = matchData.matches.map((m: PropertyMatch) => m.property_id);
-    
-    try {
-      await sendMatches(selectedApplicantId, propertyIds, 'email');
-      toast({
-        title: "All Matches Sent!",
-        description: `Sent ${propertyIds.length} personalized property matches via email`,
-      });
-      setMatchesDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Failed to send",
-        description: "Could not send matches to applicant",
-        variant: "destructive"
-      });
     }
   };
 
@@ -105,14 +84,17 @@ export default function Applicants() {
       <div className="p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {applicants?.map((applicant) => (
-            <Card key={applicant.id} className="shadow-card hover:shadow-elevated transition-shadow">
+            <Card
+              key={applicant.id}
+              className="shadow-card transition-shadow hover:shadow-elevated"
+            >
               <CardHeader>
                 <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-white font-bold shrink-0">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
                     {getInitials(applicant.first_name, applicant.last_name)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold">
                       {applicant.first_name} {applicant.last_name}
                     </h3>
                     <StatusBadge status={applicant.status} className="mt-1" />
@@ -138,7 +120,8 @@ export default function Applicants() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <PoundSterling className="h-4 w-4 shrink-0" />
                     <span>
-                      £{applicant.rent_budget_min || 0} - £{applicant.rent_budget_max || 0} pcm
+                      £{applicant.rent_budget_min || 0} - £
+                      {applicant.rent_budget_max || 0} pcm
                     </span>
                   </div>
                 )}
@@ -150,19 +133,21 @@ export default function Applicants() {
                 )}
               </CardContent>
               <CardFooter className="flex gap-2">
-                <Button 
-                  variant="default" 
-                  size="sm" 
+                <Button
+                  variant="default"
+                  size="sm"
                   className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                   onClick={() => handleFindMatches(applicant.id)}
                   disabled={matchingMutation.isPending}
                 >
-                  <Sparkles className="h-4 w-4 mr-1" />
-                  {matchingMutation.isPending && selectedApplicantId === applicant.id ? 'Finding...' : 'Find Matches'}
+                  <Sparkles className="mr-1 h-4 w-4" />
+                  {matchingMutation.isPending && selectedApplicantId === applicant.id
+                    ? "Finding..."
+                    : "Find Matches"}
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to={`/applicants/${applicant.id}`}>
-                  <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>
@@ -171,10 +156,12 @@ export default function Applicants() {
         </div>
 
         {applicants?.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No applicants yet</h3>
-            <p className="text-muted-foreground mb-4">Get started by adding your first applicant</p>
+          <div className="py-12 text-center">
+            <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">No applicants yet</h3>
+            <p className="mb-4 text-muted-foreground">
+              Get started by adding your first applicant
+            </p>
             <Button>+ Add Applicant</Button>
           </div>
         )}
@@ -182,27 +169,16 @@ export default function Applicants() {
 
       {/* Matches Dialog */}
       <Dialog open={matchesDialogOpen} onOpenChange={setMatchesDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  AI Property Matches for {matchData?.applicant.name}
-                </DialogTitle>
-                <DialogDescription>
-                  Found {matchData?.total_matches} matching properties (AI Confidence: {((matchData?.ai_confidence || 0) * 100).toFixed(0)}%)
-                </DialogDescription>
-              </div>
-              <Button 
-                onClick={handleSendAllMatches}
-                disabled={sendingMatches}
-                className="bg-gradient-to-r from-primary to-secondary"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {sendingMatches ? 'Sending...' : `Send All ${matchData?.total_matches || 0} Matches`}
-              </Button>
-            </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Property Matches for {matchData?.applicant.name}
+            </DialogTitle>
+            <DialogDescription>
+              Found {matchData?.total_matches} matching properties (AI Confidence:{" "}
+              {((matchData?.ai_confidence || 0) * 100).toFixed(0)}%)
+            </DialogDescription>
           </DialogHeader>
 
           {matchData && (
@@ -215,19 +191,27 @@ export default function Applicants() {
                 <CardContent className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Bedrooms:</span>
-                    <span className="ml-2 font-medium">{matchData.applicant.criteria.bedrooms}</span>
+                    <span className="ml-2 font-medium">
+                      {matchData.applicant.criteria.bedrooms}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Budget:</span>
-                    <span className="ml-2 font-medium">{matchData.applicant.criteria.budget}</span>
+                    <span className="ml-2 font-medium">
+                      {matchData.applicant.criteria.budget}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Locations:</span>
-                    <span className="ml-2 font-medium">{matchData.applicant.criteria.locations}</span>
+                    <span className="ml-2 font-medium">
+                      {matchData.applicant.criteria.locations}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Move-in:</span>
-                    <span className="ml-2 font-medium">{matchData.applicant.criteria.move_in_date || 'Flexible'}</span>
+                    <span className="ml-2 font-medium">
+                      {matchData.applicant.criteria.move_in_date || "Flexible"}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -235,24 +219,34 @@ export default function Applicants() {
               {/* Matched Properties */}
               <div className="space-y-4">
                 {matchData.matches.map((match: PropertyMatch, index: number) => (
-                  <Card key={match.property_id} className="border-2 hover:border-primary transition-colors">
+                  <Card
+                    key={match.property_id}
+                    className="border-2 transition-colors hover:border-primary"
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={match.score >= 75 ? "default" : "secondary"} className="font-bold">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Badge
+                              variant={match.score >= 75 ? "default" : "secondary"}
+                              className="font-bold"
+                            >
                               {match.score}% Match
                             </Badge>
                             {index === 0 && <Badge variant="outline">Best Match</Badge>}
                           </div>
-                          <CardTitle className="text-lg">{match.property.address}</CardTitle>
-                          <CardDescription className="flex items-center gap-2 mt-1">
+                          <CardTitle className="text-lg">
+                            {match.property.address}
+                          </CardTitle>
+                          <CardDescription className="mt-1 flex items-center gap-2">
                             <MapPin className="h-3 w-3" />
                             {match.property.city}, {match.property.postcode}
                           </CardDescription>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">£{match.property.rent}</div>
+                          <div className="text-2xl font-bold text-primary">
+                            £{match.property.rent}
+                          </div>
                           <div className="text-xs text-muted-foreground">per month</div>
                         </div>
                       </div>
@@ -266,13 +260,17 @@ export default function Applicants() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Home className="h-4 w-4 text-muted-foreground" />
-                          <span className="capitalize">{match.property.property_type}</span>
+                          <span className="capitalize">
+                            {match.property.property_type}
+                          </span>
                         </div>
                       </div>
 
                       {/* Match Reasons */}
                       <div>
-                        <div className="text-sm font-medium mb-2">Why this matches:</div>
+                        <div className="mb-2 text-sm font-medium">
+                          Why this matches:
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {match.match_reasons.map((reason, i) => (
                             <Badge key={i} variant="outline" className="text-xs">
@@ -283,14 +281,16 @@ export default function Applicants() {
                       </div>
 
                       {/* Personalized Message */}
-                      <div className="bg-muted/50 p-3 rounded-lg">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">AI-Generated Message:</div>
+                      <div className="rounded-lg bg-muted/50 p-3">
+                        <div className="mb-1 text-xs font-medium text-muted-foreground">
+                          AI-Generated Message:
+                        </div>
                         <p className="text-sm">{match.personalized_message}</p>
                       </div>
 
                       {/* Viewing Slots */}
                       <div>
-                        <div className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <div className="mb-2 flex items-center gap-1 text-sm font-medium">
                           <Calendar className="h-4 w-4" />
                           Available Viewing Slots:
                         </div>
@@ -304,31 +304,14 @@ export default function Applicants() {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleSendMatch(match.property_id, matchData.applicant.id)}
-                        disabled={sendingPropertyId === match.property_id}
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        {sendingPropertyId === match.property_id ? 'Sending...' : 'Send to Applicant'}
+                      <Button size="sm" className="flex-1">
+                        Send to Applicant
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedMatch(match);
-                          setViewingDialogOpen(true);
-                        }}
-                      >
-                        <Calendar className="h-3 w-3 mr-1" />
+                      <Button size="sm" variant="outline">
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to={`/properties/${match.property_id}`}>
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Link>
+                      <Button size="sm" variant="outline">
+                        View Property
                       </Button>
                     </CardFooter>
                   </Card>
@@ -357,18 +340,6 @@ export default function Applicants() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Book Viewing Dialog */}
-      {selectedMatch && matchData && (
-        <BookViewingDialog
-          open={viewingDialogOpen}
-          onOpenChange={setViewingDialogOpen}
-          propertyId={selectedMatch.property_id}
-          applicantId={matchData.applicant.id}
-          propertyAddress={selectedMatch.property.address}
-          applicantName={matchData.applicant.name}
-        />
-      )}
     </div>
   );
 }

@@ -1,24 +1,51 @@
-import { useState } from 'react';
-import { useCommunications } from '@/hooks/useCommunications';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Mail, Phone, MessageSquare, StickyNote, Calendar, Eye, Plus, Filter, TrendingUp, Building2, User, UserCheck } from 'lucide-react';
-import { format } from 'date-fns';
-import Header from '@/components/layout/Header';
+import { useState } from "react";
+import { useCommunications } from "@/hooks/useCommunications";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Mail,
+  Phone,
+  MessageSquare,
+  StickyNote,
+  Calendar,
+  Eye,
+  Plus,
+  Filter,
+  TrendingUp,
+} from "lucide-react";
+import { format } from "date-fns";
 
 // Helper to safely format dates
 const formatDate = (dateString: string) => {
   try {
-    return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
+    return format(new Date(dateString), "MMM dd, yyyy HH:mm");
   } catch {
-    return 'Invalid date';
+    return "Invalid date";
   }
 };
 
@@ -33,13 +60,13 @@ const typeIcons: Record<string, any> = {
 };
 
 const typeColors: Record<string, string> = {
-  email: 'bg-blue-100 text-blue-800',
-  call: 'bg-green-100 text-green-800',
-  sms: 'bg-purple-100 text-purple-800',
-  note: 'bg-yellow-100 text-yellow-800',
-  task: 'bg-orange-100 text-orange-800',
-  meeting: 'bg-pink-100 text-pink-800',
-  viewing: 'bg-indigo-100 text-indigo-800',
+  email: "bg-blue-100 text-blue-800",
+  call: "bg-green-100 text-green-800",
+  sms: "bg-purple-100 text-purple-800",
+  note: "bg-yellow-100 text-yellow-800",
+  task: "bg-orange-100 text-orange-800",
+  meeting: "bg-pink-100 text-pink-800",
+  viewing: "bg-indigo-100 text-indigo-800",
 };
 
 export default function Messages() {
@@ -54,26 +81,27 @@ export default function Messages() {
   } = useCommunications();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filterType, setFilterType] = useState<string>('all');
-  const [filterRead, setFilterRead] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterRead, setFilterRead] = useState<string>("all");
 
   const [newComm, setNewComm] = useState({
-    type: 'note',
-    subject: '',
-    content: '',
-    direction: '',
-    created_by: '',
-    property_id: '',
-    landlord_id: '',
-    applicant_id: '',
+    type: "note",
+    subject: "",
+    content: "",
+    direction: "",
+    created_by: "",
+    property_id: "",
+    landlord_id: "",
+    applicant_id: "",
     is_important: false,
   });
 
   const handleCreate = async () => {
     // Validate that at least one entity is linked
-    const hasEntity = newComm.property_id || newComm.landlord_id || newComm.applicant_id;
+    const hasEntity =
+      newComm.property_id || newComm.landlord_id || newComm.applicant_id;
     if (!hasEntity) {
-      alert('Please link at least one entity (Property, Landlord, or Applicant)');
+      alert("Please link at least one entity (Property, Landlord, or Applicant)");
       return;
     }
 
@@ -94,28 +122,30 @@ export default function Messages() {
       await createCommunication(data);
       setIsDialogOpen(false);
       setNewComm({
-        type: 'note',
-        subject: '',
-        content: '',
-        direction: '',
-        created_by: '',
-        property_id: '',
-        landlord_id: '',
-        applicant_id: '',
+        type: "note",
+        subject: "",
+        content: "",
+        direction: "",
+        created_by: "",
+        property_id: "",
+        landlord_id: "",
+        applicant_id: "",
         is_important: false,
       });
     } catch (err: any) {
-      console.error('Failed to create communication:', err);
-      const errorMsg = err.response?.data?.detail || 'Failed to create communication. Please try again.';
+      console.error("Failed to create communication:", err);
+      const errorMsg =
+        err.response?.data?.detail ||
+        "Failed to create communication. Please try again.";
       alert(errorMsg);
     }
   };
 
   const handleFilter = () => {
     const filters: any = {};
-    if (filterType !== 'all') filters.type = filterType;
-    if (filterRead === 'unread') filters.is_read = false;
-    if (filterRead === 'read') filters.is_read = true;
+    if (filterType !== "all") filters.type = filterType;
+    if (filterRead === "unread") filters.is_read = false;
+    if (filterRead === "read") filters.is_read = true;
     fetchCommunications(filters);
   };
 
@@ -125,7 +155,7 @@ export default function Messages() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value || 0}</p>
+            <p className="text-2xl font-bold">{value}</p>
           </div>
           <Icon className={`h-8 w-8 ${color}`} />
         </div>
@@ -134,191 +164,38 @@ export default function Messages() {
   );
 
   return (
-    <div>
-      <Header title="Communications" />
-      <div className="p-8 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Communications</h1>
-            <p className="text-gray-500 mt-1">Activity feed and communication log</p>
-          </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> New Communication
-          </Button>
+    <div className="p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Communications</h1>
+          <p className="mt-1 text-gray-500">Activity feed and communication log</p>
         </div>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> New Communication
+        </Button>
 
-        {/* Stats Dashboard */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <StatCard 
-            title="Total Communications" 
-            value={stats?.total || 0} 
-            icon={TrendingUp} 
-            color="text-blue-600" 
-          />
-          <StatCard 
-            title="Unread" 
-            value={stats?.unread || 0} 
-            icon={Mail} 
-            color="text-red-600" 
-          />
-          <StatCard 
-            title="Properties" 
-            value={stats?.by_entity?.properties || 0} 
-            icon={Building2} 
-            color="text-green-600" 
-          />
-          <StatCard 
-            title="People" 
-            value={(stats?.by_entity?.landlords || 0) + (stats?.by_entity?.applicants || 0)} 
-            icon={User} 
-            color="text-purple-600" 
-          />
-        </div>
-
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Filters</CardTitle>
-              <Button variant="outline" size="sm" onClick={handleFilter}>
-                <Filter className="h-4 w-4 mr-2" />
-                Apply
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <Label>Type</Label>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="sms">SMS</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                    <SelectItem value="task">Task</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                    <SelectItem value="viewing">Viewing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Read Status</Label>
-                <Select value={filterRead} onValueChange={setFilterRead}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="unread">Unread Only</SelectItem>
-                    <SelectItem value="read">Read Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Communications List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Communications</CardTitle>
-            <CardDescription>{communications.length} communication(s)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading && <p className="text-center text-muted-foreground py-8">Loading...</p>}
-            {error && <p className="text-center text-red-600 py-8">{error}</p>}
-            {!loading && !error && communications.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No communications found</p>
-            )}
-            {!loading && !error && communications.length > 0 && (
-              <div className="space-y-4">
-                {communications.map((comm) => {
-                  const Icon = typeIcons[comm.type] || StickyNote;
-                  return (
-                    <div 
-                      key={comm.id} 
-                      className={`p-4 border rounded-lg ${!comm.is_read ? 'bg-blue-50 border-blue-200' : ''}`}
-                      onClick={() => !comm.is_read && markAsRead(comm.id)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className={`p-2 rounded-lg ${typeColors[comm.type]}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant={typeColors[comm.type] as any}>{comm.type}</Badge>
-                              {comm.is_important && (
-                                <Badge variant="destructive">Important</Badge>
-                              )}
-                              {!comm.is_read && (
-                                <Badge variant="secondary">Unread</Badge>
-                              )}
-                            </div>
-                            {comm.subject && (
-                              <h4 className="font-semibold mb-1">{comm.subject}</h4>
-                            )}
-                            <p className="text-sm text-muted-foreground">{comm.content}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              {comm.property_id && (
-                                <span className="flex items-center gap-1">
-                                  <Building2 className="h-3 w-3" />
-                                  Property #{comm.property_id}
-                                </span>
-                              )}
-                              {comm.landlord_id && (
-                                <span className="flex items-center gap-1">
-                                  <UserCheck className="h-3 w-3" />
-                                  Landlord #{comm.landlord_id}
-                                </span>
-                              )}
-                              {comm.applicant_id && (
-                                <span className="flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  Applicant #{comm.applicant_id}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDate(comm.created_at)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Create Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Log New Communication</DialogTitle>
               <DialogDescription>
                 Record a call, email, note, or other interaction
               </DialogDescription>
             </DialogHeader>
-
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="type">Type *</Label>
-                  <Select value={newComm.type} onValueChange={(v) => setNewComm({...newComm, type: v})}>
-                    <SelectTrigger id="type">
+                  <Label>Type</Label>
+                  <Select
+                    value={newComm.type}
+                    onValueChange={(value) => setNewComm({ ...newComm, type: value })}
+                  >
+                    <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="call">Call</SelectItem>
+                      <SelectItem value="call">Phone Call</SelectItem>
                       <SelectItem value="sms">SMS</SelectItem>
                       <SelectItem value="note">Note</SelectItem>
                       <SelectItem value="task">Task</SelectItem>
@@ -328,12 +205,18 @@ export default function Messages() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="direction">Direction</Label>
-                  <Select value={newComm.direction} onValueChange={(v) => setNewComm({...newComm, direction: v})}>
-                    <SelectTrigger id="direction">
+                  <Label>Direction</Label>
+                  <Select
+                    value={newComm.direction}
+                    onValueChange={(value) =>
+                      setNewComm({ ...newComm, direction: value })
+                    }
+                  >
+                    <SelectTrigger>
                       <SelectValue placeholder="Select direction" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">None</SelectItem>
                       <SelectItem value="inbound">Inbound</SelectItem>
                       <SelectItem value="outbound">Outbound</SelectItem>
                     </SelectContent>
@@ -342,106 +225,274 @@ export default function Messages() {
               </div>
 
               <div>
-                <Label htmlFor="subject">Subject</Label>
-                <Input 
-                  id="subject"
-                  value={newComm.subject} 
-                  onChange={(e) => setNewComm({...newComm, subject: e.target.value})}
-                  placeholder="Optional subject line"
+                <Label>Subject (Optional)</Label>
+                <Input
+                  value={newComm.subject}
+                  onChange={(e) => setNewComm({ ...newComm, subject: e.target.value })}
+                  placeholder="Brief subject line"
                 />
               </div>
 
               <div>
-                <Label htmlFor="content">Content *</Label>
-                <Textarea 
-                  id="content"
-                  value={newComm.content} 
-                  onChange={(e) => setNewComm({...newComm, content: e.target.value})}
-                  placeholder="Enter communication details..."
+                <Label>Content *</Label>
+                <Textarea
+                  value={newComm.content}
+                  onChange={(e) => setNewComm({ ...newComm, content: e.target.value })}
+                  placeholder="Details of the communication..."
                   rows={4}
-                  required
                 />
               </div>
 
               <div>
-                <Label htmlFor="created_by">Created By</Label>
-                <Input 
-                  id="created_by"
-                  value={newComm.created_by} 
-                  onChange={(e) => setNewComm({...newComm, created_by: e.target.value})}
-                  placeholder="Your name"
-                />
-              </div>
-
-              <div className="border-t pt-4">
-                <Label className="text-red-600">Linked Entities * (at least one required)</Label>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Link this communication to a Property, Landlord, or Applicant
+                <Label className="text-sm font-medium">
+                  Link to Entity <span className="text-red-500">*</span>
+                </Label>
+                <p className="mb-2 text-xs text-gray-500">
+                  At least one entity (Property, Landlord, or Applicant) is required
                 </p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="property_id">Property ID</Label>
-                    <Input 
-                      id="property_id"
+                    <Label className="text-xs">Property ID</Label>
+                    <Input
                       type="number"
-                      value={newComm.property_id} 
-                      onChange={(e) => setNewComm({...newComm, property_id: e.target.value})}
-                      placeholder="Property ID"
+                      value={newComm.property_id}
+                      onChange={(e) =>
+                        setNewComm({ ...newComm, property_id: e.target.value })
+                      }
+                      placeholder="Optional"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="landlord_id">Landlord ID</Label>
-                    <Input 
-                      id="landlord_id"
+                    <Label className="text-xs">Landlord ID</Label>
+                    <Input
                       type="number"
-                      value={newComm.landlord_id} 
-                      onChange={(e) => setNewComm({...newComm, landlord_id: e.target.value})}
-                      placeholder="Landlord ID"
+                      value={newComm.landlord_id}
+                      onChange={(e) =>
+                        setNewComm({ ...newComm, landlord_id: e.target.value })
+                      }
+                      placeholder="Optional"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="applicant_id">Applicant ID</Label>
-                    <Input 
-                      id="applicant_id"
+                    <Label className="text-xs">Applicant ID</Label>
+                    <Input
                       type="number"
-                      value={newComm.applicant_id} 
-                      onChange={(e) => setNewComm({...newComm, applicant_id: e.target.value})}
-                      placeholder="Applicant ID"
+                      value={newComm.applicant_id}
+                      onChange={(e) =>
+                        setNewComm({ ...newComm, applicant_id: e.target.value })
+                      }
+                      placeholder="Optional"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="is_important"
-                  checked={newComm.is_important}
-                  onCheckedChange={(checked) => setNewComm({...newComm, is_important: checked as boolean})}
+              <div>
+                <Label>Created By</Label>
+                <Input
+                  value={newComm.created_by}
+                  onChange={(e) =>
+                    setNewComm({ ...newComm, created_by: e.target.value })
+                  }
+                  placeholder="Your name"
                 />
-                <Label htmlFor="is_important" className="cursor-pointer">
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="important"
+                  checked={newComm.is_important}
+                  onChange={(e) =>
+                    setNewComm({ ...newComm, is_important: e.target.checked })
+                  }
+                  className="rounded"
+                />
+                <Label htmlFor="important" className="cursor-pointer">
                   Mark as important
                 </Label>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreate}
-                disabled={
-                  !newComm.content ||
-                  (!newComm.property_id && !newComm.landlord_id && !newComm.applicant_id)
-                }
-              >
-                Create
-              </Button>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreate}
+                  disabled={
+                    !newComm.content ||
+                    (!newComm.property_id &&
+                      !newComm.landlord_id &&
+                      !newComm.applicant_id)
+                  }
+                >
+                  Create
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Stats */}
+      {stats && stats.by_entity ? (
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <StatCard
+            title="Total Communications"
+            value={stats.total || 0}
+            icon={MessageSquare}
+            color="text-blue-600"
+          />
+          <StatCard
+            title="Unread"
+            value={stats.unread || 0}
+            icon={Mail}
+            color="text-orange-600"
+          />
+          <StatCard
+            title="Important"
+            value={stats.important || 0}
+            icon={TrendingUp}
+            color="text-red-600"
+          />
+          <StatCard
+            title="Properties"
+            value={stats.by_entity.properties || 0}
+            icon={TrendingUp}
+            color="text-green-600"
+          />
+        </div>
+      ) : loading ? (
+        <div className="py-4 text-center text-gray-500">Loading stats...</div>
+      ) : (
+        <div className="py-4 text-center text-gray-500">Stats not available</div>
+      )}
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-end gap-4">
+            <div>
+              <Label>Type</Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="call">Call</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="note">Note</SelectItem>
+                  <SelectItem value="task">Task</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="viewing">Viewing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={filterRead} onValueChange={setFilterRead}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="unread">Unread</SelectItem>
+                  <SelectItem value="read">Read</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleFilter}>
+              <Filter className="mr-2 h-4 w-4" /> Apply Filters
+            </Button>
+            {(filterType !== "all" || filterRead !== "all") && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilterType("all");
+                  setFilterRead("all");
+                  fetchCommunications();
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Communications List */}
+      {loading ? (
+        <div className="py-12 text-center">Loading communications...</div>
+      ) : error ? (
+        <div className="py-12 text-center text-red-600">{error}</div>
+      ) : communications.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <MessageSquare className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <p className="text-gray-500">
+              No communications yet. Create one to get started!
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {communications.map((comm) => {
+            const Icon = typeIcons[comm.type] || MessageSquare;
+            return (
+              <Card
+                key={comm.id}
+                className={`${!comm.is_read ? "border-l-4 border-l-blue-500 bg-blue-50/50" : ""} cursor-pointer transition-shadow hover:shadow-md`}
+                onClick={() => !comm.is_read && markAsRead(comm.id)}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className={`rounded-lg p-2 ${typeColors[comm.type]}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={typeColors[comm.type]}>
+                              {comm.type}
+                            </Badge>
+                            {comm.direction && (
+                              <Badge variant="secondary">{comm.direction}</Badge>
+                            )}
+                            {comm.is_important && (
+                              <Badge variant="destructive">Important</Badge>
+                            )}
+                            {!comm.is_read && <Badge>Unread</Badge>}
+                          </div>
+                          {comm.subject && (
+                            <h3 className="mt-2 text-lg font-semibold">
+                              {comm.subject}
+                            </h3>
+                          )}
+                        </div>
+                        <p className="whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(comm.created_at)}
+                        </p>
+                      </div>
+                      <p className="mb-2 text-gray-700">{comm.content}</p>
+                      <div className="flex gap-4 text-sm text-gray-500">
+                        {comm.created_by && <span>By: {comm.created_by}</span>}
+                        {comm.property_id && <span>Property #{comm.property_id}</span>}
+                        {comm.landlord_id && <span>Landlord #{comm.landlord_id}</span>}
+                        {comm.applicant_id && (
+                          <span>Applicant #{comm.applicant_id}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
-

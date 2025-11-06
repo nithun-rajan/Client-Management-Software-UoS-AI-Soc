@@ -3,19 +3,20 @@ Seed script to populate database with realistic test data
 Run with: python seed_data.py
 """
 
-from faker import Faker
 import random
-import json
-from datetime import datetime, timedelta
+
+from faker import Faker
 from sqlalchemy.orm import Session
 
 # Import your database and models
-from app.core.database import SessionLocal, engine, Base
-from app.models.property import Property
-from app.models.enums import PropertyStatus, ApplicantStatus, CommunicationType, CommunicationDirection
-from app.models.landlord import Landlord
+from app.core.database import Base, SessionLocal, engine
 from app.models.applicant import Applicant
-from app.models.communication import Communication
+from app.models.enums import ApplicantStatus, PropertyStatus
+from app.models.landlord import Landlord
+from app.models.property import Property
+
+
+# Ensure all mapped classes are loaded; avoid importing unused models directly
 
 fake = Faker('en_GB')
 
@@ -29,61 +30,37 @@ def clear_database():
 def create_properties(db: Session, count: int = 20):
     """Create realistic properties"""
     print(f"\n🏠 Creating {count} properties...")
-    
+
     property_types = ["flat", "house", "maisonette"]
-    statuses = ["available", "let_by", "tenanted"]
-    
+    statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
+
     uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
-    
+
     properties = []
     for i in range(count):
         city = random.choice(uk_cities)
         property_type = random.choice(property_types)
         bedrooms = random.randint(1, 5)
-        
-        # ADD THESE LINES HERE
+
         address_line1 = fake.street_address()
         address_line2 = fake.secondary_address() if random.choice([True, False]) else None
-        
-        # Realistic rent based on bedrooms and city
-        base_rent = 800 if city != "London" else 1500
-        rent = base_rent + (bedrooms * 200) + random.randint(-100, 300)
-        
-        # Create full address from components
-        full_address = f"{address_line1}, {city}"
-        if address_line2:
-            full_address = f"{address_line1}, {address_line2}, {city}"
-        
-        # Generate property features for matching
-        feature_options = ['parking', 'garden', 'balcony', 'pets_allowed', 'near_school', 'modern', 'renovated', 'transport_links']
-        num_features = random.randint(2, 5)
-        features = random.sample(feature_options, num_features)
-        features_json = json.dumps(features)
-        
         property = Property(
-            address=full_address,  # Required field
             address_line1=address_line1,
             address_line2=address_line2,
             city=city,
             postcode=fake.postcode(),
             status=random.choice(statuses),
             property_type=property_type,
-            bedrooms=bedrooms,
-            bathrooms=random.randint(1, min(bedrooms, 3)),
-            rent=round(rent, 2),
-            furnished=random.choice([True, False]),
-            features=features_json,
-            description=f"Beautiful {property_type} in {city} with {bedrooms} bedrooms. "
-                    f"{'Modern and spacious' if rent > 1500 else 'Cozy and affordable'} property. "
-                    f"{'Close to transport links.' if random.choice([True, False]) else 'Quiet neighborhood.'}"
+            bedrooms=str(bedrooms),
+            bathrooms=str(random.randint(1, min(bedrooms, 3)))
         )
-        
+
         db.add(property)
         properties.append(property)
-        
+
         if (i + 1) % 5 == 0:
             print(f"   Created {i + 1}/{count} properties...")
-    
+
     db.commit()
     print(f"✅ Created {count} properties")
     return properties
@@ -91,7 +68,7 @@ def create_properties(db: Session, count: int = 20):
 def create_landlords(db: Session, count: int = 10):
     """Create realistic landlords"""
     print(f"\n👔 Creating {count} landlords...")
-    
+
     landlords = []
     for i in range(count):
         landlord = Landlord(
@@ -107,196 +84,91 @@ def create_landlords(db: Session, count: int = 10):
             notes=f"{'Experienced' if random.choice([True, False]) else 'New'} landlord. "
                 f"Owns {random.randint(1, 8)} properties."
         )
-        
+
         db.add(landlord)
         landlords.append(landlord)
-        
+
         if (i + 1) % 3 == 0:
             print(f"   Created {i + 1}/{count} landlords...")
-    
+
     db.commit()
     print(f"✅ Created {count} landlords")
     return landlords
 
 def create_applicants(db: Session, count: int = 15):
+    """Create realistic applicants"""
     print(f"\n👥 Creating {count} applicants...")
-    
-    statuses = ["new", "qualified", "viewing_booked", "offer_submitted", "let_agreed"]
+
+    statuses = list(ApplicantStatus)
     uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
-    cities = ["Southampton", "Manchester", "Bristol", "Leeds", "London"]
-    property_types = ["flat", "house", "maisonette"]
-    
+
     applicants = []
     for i in range(count):
         bedrooms_min = random.randint(1, 3)
         bedrooms_max = bedrooms_min + random.randint(0, 2)
-        
+        desired_bedrooms = f"{bedrooms_min}-{bedrooms_max}"
         rent_min = random.randint(800, 1500)
         rent_max = rent_min + random.randint(500, 1500)
-        
         move_date = fake.date_between(start_date='today', end_date='+3m')
-        has_pets = random.choice([True, False, False])
-        
-        # Generate realistic special requirements
-        requirements = []
-        if random.choice([True, False]):
-            requirements.append("Near schools")
-        if random.choice([True, False]):
-            requirements.append("Parking required")
-        if random.choice([True, False]):
-            requirements.append("Good transport links")
-        
+        has_pets = random.choice([True, False])
         applicant = Applicant(
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            desired_bedrooms=str(bedrooms_min),
-            desired_property_type=random.choice(property_types),
+            date_of_birth=fake.date_between(start_date='-40y', end_date='-18y'),
+            status=random.choice(statuses),
+            desired_bedrooms=desired_bedrooms,
+            desired_property_type=random.choice(["flat", "house", "maisonette"]),
             rent_budget_min=rent_min,
             rent_budget_max=rent_max,
-            preferred_locations=f"{random.choice(cities)}, {random.choice(cities)}",
+            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
             move_in_date=move_date,
-            status=random.choice(statuses),
             has_pets=has_pets,
-            pet_details="Small dog" if has_pets and random.choice([True, False]) else ("Cat" if has_pets else None),
-            special_requirements=", ".join(requirements) if requirements else None
+            pet_details=("Has a small dog" if has_pets else None),
+            special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
         )
-        
+
         db.add(applicant)
         applicants.append(applicant)
-        
+
         if (i + 1) % 5 == 0:
             print(f"   Created {i + 1}/{count} applicants...")
-    
+
     db.commit()
     print(f"✅ Created {count} applicants")
     return applicants
-
-def create_communications(db: Session, properties, landlords, applicants, count: int = 30):
-    """Create realistic communications"""
-    print(f"\n📧 Creating {count} communications...")
-    
-    communication_types = ["email", "call", "sms", "note", "meeting", "viewing"]
-    directions = ["inbound", "outbound"]
-    
-    communication_messages = {
-        "email": [
-            "Regarding property viewing request",
-            "Follow-up on rental application",
-            "Monthly rent payment confirmation",
-            "Maintenance request submitted",
-            "Property availability inquiry"
-        ],
-        "call": [
-            "Discussed property details",
-            "Answered questions about tenancy",
-            "Scheduled property viewing",
-            "Follow-up call after viewing",
-            "Rent payment reminder"
-        ],
-        "sms": [
-            "Viewing confirmation for tomorrow",
-            "Quick question about property",
-            "Thank you for viewing",
-            "Documents received",
-            "Rent payment received"
-        ],
-        "note": [
-            "Applicant showed strong interest",
-            "Landlord requested callback",
-            "Property needs minor repairs",
-            "Good tenant prospect",
-            "Follow-up required next week"
-        ],
-        "meeting": [
-            "Property viewing completed",
-            "Discussed lease terms",
-            "Contract signing meeting",
-            "Property handover meeting",
-            "Quarterly review meeting"
-        ],
-        "viewing": [
-            "Property viewing - positive feedback",
-            "Viewing completed - applicant interested",
-            "Viewing scheduled for next week",
-            "Second viewing requested",
-            "Viewing cancelled - rescheduled"
-        ]
-    }
-    
-    communications = []
-    for i in range(count):
-        comm_type = random.choice(communication_types)
-        direction = random.choice(directions)
-        
-        # Random property, landlord, or applicant
-        property_id = random.choice(properties).id if random.choice([True, False, False]) else None
-        landlord_id = random.choice(landlords).id if random.choice([True, False, False]) else None
-        applicant_id = random.choice(applicants).id if random.choice([True, False, True]) else None
-        
-        # Random date within last 30 days
-        days_ago = random.randint(0, 30)
-        created_date = datetime.now() - timedelta(days=days_ago)
-        
-        content = fake.paragraph(nb_sentences=3) if comm_type in ["email", "note"] else random.choice(communication_messages[comm_type])
-        
-        communication = Communication(
-            type=comm_type,
-            direction=direction,
-            subject=random.choice(communication_messages[comm_type]),
-            content=content,
-            property_id=property_id,
-            landlord_id=landlord_id,
-            applicant_id=applicant_id,
-            is_read=random.choice([True, False]),
-            is_important=random.choice([True, False, False, False]),  # 25% chance of being important
-            created_at=created_date,
-            updated_at=created_date
-        )
-        
-        db.add(communication)
-        communications.append(communication)
-        
-        if (i + 1) % 10 == 0:
-            print(f"   Created {i + 1}/{count} communications...")
-    
-    db.commit()
-    print(f"✅ Created {count} communications")
-    return communications
 
 def main():
     """Main seed function"""
     print("\n" + "="*60)
     print("🌱 TEAM 67 CRM - DATABASE SEEDING SCRIPT")
     print("="*60)
-    
+
     # Create database session
     db = SessionLocal()
-    
+
     try:
         # Clear existing data
         clear_database()
-        
+
         # Create all data
         properties = create_properties(db, count=20)
         landlords = create_landlords(db, count=10)
         applicants = create_applicants(db, count=15)
-        communications = create_communications(db, properties, landlords, applicants, count=30)
-        
+
         # Summary
         print("\n" + "="*60)
         print("✅ SEEDING COMPLETE!")
         print("="*60)
-        print(f"📊 Summary:")
+        print("📊 Summary:")
         print(f"   • {len(properties)} Properties")
         print(f"   • {len(landlords)} Landlords")
         print(f"   • {len(applicants)} Applicants")
-        print(f"   • {len(communications)} Communications")
         print("\n🚀 Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
-        
+
     except Exception as e:
         print(f"\n❌ Error during seeding: {e}")
         db.rollback()

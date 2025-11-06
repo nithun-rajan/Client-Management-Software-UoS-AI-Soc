@@ -2,10 +2,8 @@
 Enums for the CRM system
 All status types and categories in one place
 """
-from enum import Enum
 
-
-class PropertyStatus(str, Enum):
+class PropertyStatus:
     """Property status enum - Blueprint page 13"""
     AVAILABLE = "available"
     LET_AGREED = "let_agreed"
@@ -16,7 +14,7 @@ class PropertyStatus(str, Enum):
     MAINTENANCE = "maintenance"
     WITHDRAWN = "withdrawn"
 
-class ApplicantStatus(str, Enum):
+class ApplicantStatus:
     """Applicant status enum - Blueprint page 23"""
     NEW = "new"
     QUALIFIED = "qualified"
@@ -28,7 +26,7 @@ class ApplicantStatus(str, Enum):
     TENANCY_STARTED = "tenancy_started"
     ARCHIVED = "archived"
 
-class TenancyStatus(str, Enum):
+class TenancyStatus:
     """Tenancy status"""
     PENDING = "pending"
     ACTIVE = "active"
@@ -36,7 +34,7 @@ class TenancyStatus(str, Enum):
     TERMINATED = "terminated"
     RENEWED = "renewed"
 
-class DocumentType(str, Enum):
+class DocumentType:
     """Document types"""
     # Property compliance
     EPC = "epc"
@@ -60,7 +58,7 @@ class DocumentType(str, Enum):
     PROPERTY_PHOTO = "property_photo"
     DAMAGE_PHOTO = "damage_photo"
 
-class DocumentStatus(str, Enum):
+class DocumentStatus:
     """Document status"""
     PENDING = "pending"
     VALID = "valid"
@@ -68,7 +66,7 @@ class DocumentStatus(str, Enum):
     EXPIRED = "expired"
     REJECTED = "rejected"
 
-class EventType(str, Enum):
+class EventType:
     """Event types for event bus"""
     # Property events
     PROPERTY_LISTED = "property.listed"
@@ -100,21 +98,21 @@ class EventType(str, Enum):
     OFFER_ACCEPTED = "offer.accepted"
     OFFER_REJECTED = "offer.rejected"
 
-class TaskPriority(str, Enum):
+class TaskPriority:
     """Task priority levels"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     URGENT = "urgent"
 
-class TaskStatus(str, Enum):
+class TaskStatus:
     """Task status"""
     TODO = "todo"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
-class VendorStatus(str, Enum):
+class VendorStatus:
     """Vendor/Sales status"""
     NEW = "new"
     INSTRUCTED = "instructed"
@@ -123,14 +121,14 @@ class VendorStatus(str, Enum):
     WITHDRAWN = "withdrawn"
     LOST = "lost"
 
-class UserRole(str, Enum):
+class UserRole:
     """User roles for RBAC"""
     ADMIN = "admin"
     MANAGER = "manager"
     AGENT = "agent"
     VIEWER = "viewer"
 
-class CommunicationType(str, Enum):
+class CommunicationType:
     """Communication/Activity types for activity feed"""
     EMAIL = "email"
     CALL = "call"
@@ -140,7 +138,7 @@ class CommunicationType(str, Enum):
     MEETING = "meeting"
     VIEWING = "viewing"
 
-class CommunicationDirection(str, Enum):
+class CommunicationDirection:
     """Communication direction"""
     INBOUND = "inbound"
     OUTBOUND = "outbound"

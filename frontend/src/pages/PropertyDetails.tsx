@@ -1,35 +1,46 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, Bed, Bath, PoundSterling, MapPin, ArrowLeft, Mail, Calendar } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import Header from '@/components/layout/Header';
-import StatusBadge from '@/components/shared/StatusBadge';
-import api from '@/lib/api';
-import { format } from 'date-fns';
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Building2,
+  Bed,
+  Bath,
+  PoundSterling,
+  MapPin,
+  ArrowLeft,
+  Activity,
+  Eye,
+  Pencil,
+  FileText,
+  Upload,
+  Mail,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import Header from "@/components/layout/Header";
+import StatusBadge from "@/components/shared/StatusBadge";
+import api from "@/lib/api";
 
 export default function PropertyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const handleSendEmail = () => {
+    console.log("📧 Sending email for property:", property.id);
+    toast({
+      title: "Email Sent",
+      description: `Property details sent to interested parties`,
+    });
+  };
   const { data: property, isLoading } = useQuery({
-    queryKey: ['property', id],
+    queryKey: ["property", id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/properties/${id}`);
+      const response = await api.get(`/api/v1/properties/${id}/`);
       return response.data;
     },
   });
-
-  const handleSendEmail = () => {
-    toast({
-      title: 'Email Sent',
-      description: 'Property details sent to interested parties',
-    });
-  };
 
   if (isLoading) {
     return (
@@ -47,50 +58,42 @@ export default function PropertyDetails() {
       <div>
         <Header title="Property Details" />
         <div className="p-6">
-          <div className="text-center py-12">
-            <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Property not found</h3>
-            <Button onClick={() => navigate('/properties')}>Back to Properties</Button>
+          <div className="py-12 text-center">
+            <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">Property not found</h3>
+            <Button onClick={() => navigate("/properties")}>Back to Properties</Button>
           </div>
         </div>
       </div>
     );
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set';
-    try {
-      return format(new Date(dateString), 'MMM dd, yyyy');
-    } catch {
-      return 'Invalid date';
-    }
-  };
-
   return (
     <div>
       <Header title="Property Details" />
-      <div className="p-6 space-y-6">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/properties')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Properties
-          </Button>
-          <Button onClick={handleSendEmail}>
-            <Mail className="h-4 w-4 mr-2" />
-            Send Details
-          </Button>
-        </div>
-
+      <div className="space-y-6 p-6">
+        <Button variant="outline" onClick={() => navigate("/properties")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Properties
+        </Button>
+        <Button onClick={handleSendEmail}>
+          <Mail className="mr-2 h-4 w-4" />
+          Send Details
+        </Button>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{property.address_line1 || property.address}</CardTitle>
-                  {property.address_line2 && <p className="text-muted-foreground">{property.address_line2}</p>}
-                  <div className="flex items-center gap-2 mt-2">
+                  <CardTitle className="text-2xl">{property.address_line1}</CardTitle>
+                  {property.address_line2 && (
+                    <p className="text-muted-foreground">{property.address_line2}</p>
+                  )}
+                  <div className="mt-2 flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{property.city}, {property.postcode}</span>
+                    <span className="text-muted-foreground">
+                      {property.city}, {property.postcode}
+                    </span>
                   </div>
                 </div>
                 <StatusBadge status={property.status} />
@@ -98,66 +101,44 @@ export default function PropertyDetails() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+              <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                {/* <img 
+                  src={`https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=450&fit=crop&crop=entropy&auto=format&q=75`}
+                  alt={property.address_line1}
+                  className="w-full h-full object-cover"
+                /> */}
+                {/* sorry but i have to do this */}
                 <img
                   src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                  alt={property.address_line1 || property.address}
-                  className="w-full h-full object-cover"
+                  alt={property.address_line1}
+                  className="h-full w-full object-cover"
                 />
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <Bed className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Bedrooms</p>
-                    <p className="font-semibold">{property.bedrooms}</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="rounded-lg bg-muted p-4 text-center">
+                  <Bed className="mx-auto mb-2 h-6 w-6 text-primary" />
+                  <div className="text-2xl font-bold">{property.bedrooms}</div>
+                  <div className="text-sm text-muted-foreground">Bedrooms</div>
+                </div>
+                <div className="rounded-lg bg-muted p-4 text-center">
+                  <Bath className="mx-auto mb-2 h-6 w-6 text-primary" />
+                  <div className="text-2xl font-bold">{property.bathrooms}</div>
+                  <div className="text-sm text-muted-foreground">Bathrooms</div>
+                </div>
+                <div className="rounded-lg bg-muted p-4 text-center">
+                  <Building2 className="mx-auto mb-2 h-6 w-6 text-primary" />
+                  <div className="text-sm font-medium capitalize">
+                    {property.property_type}
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Bath className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Bathrooms</p>
-                    <p className="font-semibold">{property.bathrooms}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PoundSterling className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Rent (PCM)</p>
-                    <p className="font-semibold">£{property.asking_rent || property.rent}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Type</p>
-                    <p className="font-semibold capitalize">{property.property_type}</p>
-                  </div>
-                </div>
-              </div>
-
-              {property.floor_area_sqft && (
-                <div className="border-t pt-4">
-                  <p className="text-sm text-muted-foreground">Floor Area</p>
-                  <p className="font-semibold">{property.floor_area_sqft} sq ft</p>
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-2">Features</h3>
-                <div className="flex flex-wrap gap-2">
-                  {property.furnished && <Badge>Furnished</Badge>}
-                  {property.parking && <Badge>Parking</Badge>}
-                  {property.garden && <Badge>Garden</Badge>}
-                  {property.epc_rating && <Badge>EPC: {property.epc_rating}</Badge>}
+                  <div className="text-sm text-muted-foreground">Type</div>
                 </div>
               </div>
 
               {property.description && (
-                <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-sm text-muted-foreground">{property.description}</p>
+                <div>
+                  <h3 className="mb-2 font-semibold">Description</h3>
+                  <p className="text-muted-foreground">{property.description}</p>
                 </div>
               )}
             </CardContent>
@@ -166,78 +147,165 @@ export default function PropertyDetails() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Timeline</CardTitle>
+                <CardTitle>Pricing</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground mt-1" />
-                  <div>
-                    <p className="text-sm font-medium">Listed</p>
-                    <p className="text-sm text-muted-foreground">{formatDate(property.listed_date)}</p>
-                  </div>
-                </div>
-                {property.let_agreed_date && (
-                  <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">Let Agreed</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(property.let_agreed_date)}</p>
+              <CardContent>
+                {property.rent ? (
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 text-3xl font-bold text-primary">
+                      <PoundSterling className="h-8 w-8" />
+                      {property.rent.toLocaleString()}
                     </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      per calendar month
+                    </p>
                   </div>
-                )}
-                {property.let_date && (
-                  <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">Let Date</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(property.let_date)}</p>
-                    </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    Price on application
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {property.deposit && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Financial</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Deposit</p>
-                    <p className="font-semibold">£{property.deposit}</p>
-                  </div>
-                  {property.rent && property.asking_rent && property.rent !== property.asking_rent && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Asking Rent</p>
-                      <p className="font-semibold">£{property.asking_rent}</p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Property Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="font-medium capitalize">
+                    {property.status.replace("_", " ")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Property Type</span>
+                  <span className="font-medium capitalize">
+                    {property.property_type}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bedrooms</span>
+                  <span className="font-medium">{property.bedrooms}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bathrooms</span>
+                  <span className="font-medium">{property.bathrooms}</span>
+                </div>
+                {/* maybe here???? cuz it kinda makes sense to be here; Activity Timeline */}
+              </CardContent>
+            </Card>
+            {/* Activity Timeline */}
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+                      <Building2 className="h-5 w-5 text-accent" />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {property.landlord_id && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Landlord</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/landlords/${property.landlord_id}`)}
-                    className="w-full"
-                  >
-                    View Landlord Details
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Property Created</p>
+                      <p className="text-sm text-muted-foreground">
+                        {property.created_at
+                          ? new Date(property.created_at).toLocaleDateString()
+                          : "Recently"}
+                      </p>
+                    </div>
+                  </div>
+                  {property.updated_at &&
+                    property.updated_at !== property.created_at && (
+                      <div className="flex gap-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                          <Pencil className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">Property Updated</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(property.updated_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  <div className="flex gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                      <Eye className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Viewed Just Now</p>
+                      <p className="text-sm text-muted-foreground">
+                        You are viewing this property
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Documents Section */}
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Documents
+                  </CardTitle>
+                  <Button size="sm" variant="outline">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
                   </Button>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-blue-100">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          Energy Performance Certificate
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Valid until Dec 2025
+                        </p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-green-100">
+                        <FileText className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Gas Safety Certificate</p>
+                        <p className="text-xs text-muted-foreground">
+                          Valid until Jan 2026
+                        </p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    + Add more documents
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

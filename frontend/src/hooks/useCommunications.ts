@@ -1,25 +1,37 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = "http://localhost:8000/api/v1";
 
-interface Communication {
+export interface Communication {
   id: number;
   type: string;
-  subject: string | null;
+  subject?: string;
   content: string;
-  direction: string | null;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string | null;
+  direction?: string;
+  created_by?: string;
   is_important: boolean;
   is_read: boolean;
-  property_id: number | null;
-  landlord_id: number | null;
-  applicant_id: number | null;
+  property_id?: number;
+  landlord_id?: number;
+  applicant_id?: number;
+  created_at: string;
+  updated_at?: string;
 }
 
-interface CommunicationStats {
+export interface CommunicationCreate {
+  type: string;
+  subject?: string;
+  content: string;
+  direction?: string;
+  created_by?: string;
+  is_important?: boolean;
+  property_id?: number;
+  landlord_id?: number;
+  applicant_id?: number;
+}
+
+export interface CommunicationStats {
   total: number;
   by_type: Record<string, number>;
   by_entity: {
@@ -27,15 +39,8 @@ interface CommunicationStats {
     landlords: number;
     applicants: number;
   };
+  important: number;
   unread: number;
-}
-
-interface CommunicationFilters {
-  type?: string;
-  entity_type?: string;
-  entity_id?: number;
-  is_important?: boolean;
-  is_read?: boolean;
 }
 
 export function useCommunications() {
@@ -44,23 +49,29 @@ export function useCommunications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCommunications = async (filters?: CommunicationFilters) => {
+  const fetchCommunications = async (filters?: {
+    type?: string;
+    entity_type?: string;
+    entity_id?: number;
+    is_important?: boolean;
+    is_read?: boolean;
+  }) => {
     setLoading(true);
     setError(null);
-    
     try {
       const params = new URLSearchParams();
-      if (filters?.type) params.append('type', filters.type);
-      if (filters?.entity_type) params.append('entity_type', filters.entity_type);
-      if (filters?.entity_id) params.append('entity_id', filters.entity_id.toString());
-      if (filters?.is_important !== undefined) params.append('is_important', filters.is_important.toString());
-      if (filters?.is_read !== undefined) params.append('is_read', filters.is_read.toString());
-      
-      const response = await axios.get(`${API_URL}/api/v1/messaging?${params.toString()}`);
+      if (filters?.type) params.append("type", filters.type);
+      if (filters?.entity_type) params.append("entity_type", filters.entity_type);
+      if (filters?.entity_id) params.append("entity_id", filters.entity_id.toString());
+      if (filters?.is_important !== undefined)
+        params.append("is_important", filters.is_important.toString());
+      if (filters?.is_read !== undefined)
+        params.append("is_read", filters.is_read.toString());
+
+      const response = await axios.get(`${API_URL}/messaging?${params.toString()}`);
       setCommunications(response.data);
     } catch (err: any) {
-      console.error('Failed to fetch communications:', err);
-      setError(err.message || 'Failed to fetch communications');
+      setError(err.message || "Failed to fetch communications");
     } finally {
       setLoading(false);
     }
@@ -68,60 +79,22 @@ export function useCommunications() {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/v1/messaging/stats/summary`);
+      const response = await axios.get(`${API_URL}/messaging/stats/summary`);
       setStats(response.data);
     } catch (err: any) {
-      console.error('Failed to fetch stats:', err);
+      console.error("Failed to fetch stats:", err);
     }
   };
 
-  const createCommunication = async (data: any) => {
+  const createCommunication = async (data: CommunicationCreate) => {
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await axios.post(`${API_URL}/api/v1/messaging`, data);
-      await fetchCommunications();
-      await fetchStats();
-      return response.data;
-    } catch (err: any) {
-      console.error('Failed to create communication:', err);
-      setError(err.response?.data?.detail || 'Failed to create communication');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateCommunication = async (id: number, data: any) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axios.put(`${API_URL}/api/v1/messaging/${id}`, data);
-      await fetchCommunications();
-      await fetchStats();
-      return response.data;
-    } catch (err: any) {
-      console.error('Failed to update communication:', err);
-      setError(err.message || 'Failed to update communication');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteCommunication = async (id: number) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await axios.delete(`${API_URL}/api/v1/messaging/${id}`);
+      await axios.post(`${API_URL}/messaging`, data);
       await fetchCommunications();
       await fetchStats();
     } catch (err: any) {
-      console.error('Failed to delete communication:', err);
-      setError(err.message || 'Failed to delete communication');
+      setError(err.response?.data?.detail || "Failed to create communication");
       throw err;
     } finally {
       setLoading(false);
@@ -129,7 +102,59 @@ export function useCommunications() {
   };
 
   const markAsRead = async (id: number) => {
-    return updateCommunication(id, { is_read: true });
+    try {
+      await axios.put(`${API_URL}/messaging/${id}`, { is_read: true });
+      await fetchCommunications();
+      await fetchStats();
+    } catch (err: any) {
+      console.error("Failed to mark as read:", err);
+    }
+  };
+
+  const deleteCommunication = async (id: number) => {
+    try {
+      await axios.delete(`${API_URL}/messaging/${id}`);
+      await fetchCommunications();
+      await fetchStats();
+    } catch (err: any) {
+      console.error("Failed to delete communication:", err);
+    }
+  };
+
+  const getPropertyCommunications = async (propertyId: number) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/messaging/property/${propertyId}`);
+      setCommunications(response.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getLandlordCommunications = async (landlordId: number) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/messaging/landlord/${landlordId}`);
+      setCommunications(response.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getApplicantCommunications = async (applicantId: number) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/messaging/applicant/${applicantId}`);
+      setCommunications(response.data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -143,11 +168,11 @@ export function useCommunications() {
     loading,
     error,
     fetchCommunications,
-    fetchStats,
     createCommunication,
-    updateCommunication,
-    deleteCommunication,
     markAsRead,
+    deleteCommunication,
+    getPropertyCommunications,
+    getLandlordCommunications,
+    getApplicantCommunications,
   };
 }
-

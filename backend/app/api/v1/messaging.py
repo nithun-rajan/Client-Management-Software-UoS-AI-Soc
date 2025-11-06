@@ -7,7 +7,7 @@ Links communications to Properties, Landlords, and Applicants
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, or_
 from typing import List, Optional
 from datetime import datetime
 
@@ -43,7 +43,7 @@ def list_communications(
     db: Session = Depends(get_db),
     type: Optional[str] = Query(None, description="Filter by type (email, call, sms, note, task, meeting, viewing)"),
     entity_type: Optional[str] = Query(None, description="Filter by entity type (property, landlord, applicant)"),
-    entity_id: Optional[str] = Query(None, description="Filter by specific entity ID"),
+    entity_id: Optional[int] = Query(None, description="Filter by specific entity ID"),
     start_date: Optional[datetime] = Query(None, description="Filter by start date"),
     end_date: Optional[datetime] = Query(None, description="Filter by end date"),
     is_important: Optional[bool] = Query(None, description="Filter by importance"),
@@ -90,7 +90,7 @@ def list_communications(
     # Order by most recent first
     query = query.order_by(Communication.created_at.desc())
     
-    # Pagination
+    # Apply pagination
     communications = query.offset(offset).limit(limit).all()
     
     return communications
@@ -101,13 +101,13 @@ def get_communication(
     communication_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get a specific communication by ID"""
+    """Get a single communication by ID"""
     communication = db.query(Communication).filter(Communication.id == communication_id).first()
     
     if not communication:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Communication not found"
+            detail=f"Communication with ID {communication_id} not found"
         )
     
     return communication
@@ -120,23 +120,23 @@ def update_communication(
     db: Session = Depends(get_db)
 ):
     """Update an existing communication"""
-    communication = db.query(Communication).filter(Communication.id == communication_id).first()
+    db_communication = db.query(Communication).filter(Communication.id == communication_id).first()
     
-    if not communication:
+    if not db_communication:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Communication not found"
+            detail=f"Communication with ID {communication_id} not found"
         )
     
-    # Update fields
+    # Update only provided fields
     update_data = communication_update.dict(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(communication, field, value)
+        setattr(db_communication, field, value)
     
     db.commit()
-    db.refresh(communication)
+    db.refresh(db_communication)
     
-    return communication
+    return db_communication
 
 
 @router.delete("/{communication_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -145,59 +145,128 @@ def delete_communication(
     db: Session = Depends(get_db)
 ):
     """Delete a communication"""
-    communication = db.query(Communication).filter(Communication.id == communication_id).first()
+    db_communication = db.query(Communication).filter(Communication.id == communication_id).first()
     
-    if not communication:
+    if not db_communication:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Communication not found"
+            detail=f"Communication with ID {communication_id} not found"
         )
     
-    db.delete(communication)
+    db.delete(db_communication)
     db.commit()
     
     return None
 
 
+# Entity-specific endpoints
+
+@router.get("/property/{property_id}", response_model=List[CommunicationResponse])
+def get_property_communications(
+    property_id: int,
+    db: Session = Depends(get_db),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Get all communications for a specific property
+    
+    Returns chronological activity feed for compliance and relationship tracking
+    """
+    communications = db.query(Communication)\
+        .filter(Communication.property_id == property_id)\
+        .order_by(Communication.created_at.desc())\
+        .offset(offset)\
+        .limit(limit)\
+        .all()
+    
+    return communications
+
+
+@router.get("/landlord/{landlord_id}", response_model=List[CommunicationResponse])
+def get_landlord_communications(
+    landlord_id: int,
+    db: Session = Depends(get_db),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Get all communications for a specific landlord
+    
+    Returns chronological activity feed showing all interactions
+    """
+    communications = db.query(Communication)\
+        .filter(Communication.landlord_id == landlord_id)\
+        .order_by(Communication.created_at.desc())\
+        .offset(offset)\
+        .limit(limit)\
+        .all()
+    
+    return communications
+
+
+@router.get("/applicant/{applicant_id}", response_model=List[CommunicationResponse])
+def get_applicant_communications(
+    applicant_id: int,
+    db: Session = Depends(get_db),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    """
+    Get all communications for a specific applicant
+    
+    Returns chronological activity feed for tenant relationship management
+    """
+    communications = db.query(Communication)\
+        .filter(Communication.applicant_id == applicant_id)\
+        .order_by(Communication.created_at.desc())\
+        .offset(offset)\
+        .limit(limit)\
+        .all()
+    
+    return communications
+
+
 @router.get("/stats/summary")
-def get_communication_stats(db: Session = Depends(get_db)):
+def get_communication_stats(
+    db: Session = Depends(get_db),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None)
+):
     """
     Get communication statistics summary
     
-    Returns:
-    - Total count
-    - Count by type
-    - Count by entity
-    - Unread count
+    Returns counts by type and entity for reporting/analytics
     """
-    # Total count
-    total = db.query(func.count(Communication.id)).scalar()
+    query = db.query(Communication)
+    
+    if start_date:
+        query = query.filter(Communication.created_at >= start_date)
+    if end_date:
+        query = query.filter(Communication.created_at <= end_date)
+    
+    all_comms = query.all()
     
     # Count by type
-    by_type_query = db.query(
-        Communication.type,
-        func.count(Communication.id).label('count')
-    ).group_by(Communication.type).all()
+    type_counts = {}
+    for comm in all_comms:
+        type_counts[comm.type] = type_counts.get(comm.type, 0) + 1
     
-    by_type = {row.type: row.count for row in by_type_query}
-    
-    # Count by entity
-    properties_count = db.query(func.count(Communication.id)).filter(Communication.property_id.isnot(None)).scalar()
-    landlords_count = db.query(func.count(Communication.id)).filter(Communication.landlord_id.isnot(None)).scalar()
-    applicants_count = db.query(func.count(Communication.id)).filter(Communication.applicant_id.isnot(None)).scalar()
-    
-    by_entity = {
-        "properties": properties_count,
-        "landlords": landlords_count,
-        "applicants": applicants_count
+    # Count by entity type
+    entity_counts = {
+        "properties": sum(1 for c in all_comms if c.property_id),
+        "landlords": sum(1 for c in all_comms if c.landlord_id),
+        "applicants": sum(1 for c in all_comms if c.applicant_id),
     }
     
-    # Unread count
-    unread = db.query(func.count(Communication.id)).filter(Communication.is_read == False).scalar()
+    # Important/unread counts
+    important_count = sum(1 for c in all_comms if c.is_important)
+    unread_count = sum(1 for c in all_comms if not c.is_read)
     
     return {
-        "total": total,
-        "by_type": by_type,
-        "by_entity": by_entity,
-        "unread": unread
+        "total": len(all_comms),
+        "by_type": type_counts,
+        "by_entity": entity_counts,
+        "important": important_count,
+        "unread": unread_count
     }

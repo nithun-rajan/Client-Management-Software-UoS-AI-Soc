@@ -1,5 +1,5 @@
-import pytest
 from fastapi import status
+
 
 def test_create_property(client):
     """Test creating a new property"""
@@ -12,9 +12,9 @@ def test_create_property(client):
         "rent": 1200.00,
         "description": "Beautiful test property"
     }
-    
+
     response = client.post("/api/v1/properties/", json=property_data)
-    
+
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["address"] == property_data["address"]
@@ -35,10 +35,10 @@ def test_list_properties(client):
         "rent": 1500.00
     }
     client.post("/api/v1/properties/", json=property_data)
-    
+
     # List properties
     response = client.get("/api/v1/properties/")
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert isinstance(data, list)
@@ -58,10 +58,10 @@ def test_get_property(client):
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]
-    
+
     # Get the property
     response = client.get(f"/api/v1/properties/{property_id}")
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["id"] == property_id
@@ -81,14 +81,14 @@ def test_update_property(client):
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]
-    
+
     # Update the property
     update_data = {
         "rent": 950.00,
         "status": "let_by"
     }
     response = client.put(f"/api/v1/properties/{property_id}", json=update_data)
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["rent"] == 950.00
@@ -108,12 +108,12 @@ def test_delete_property(client):
     }
     create_response = client.post("/api/v1/properties/", json=property_data)
     property_id = create_response.json()["id"]
-    
+
     # Delete the property
     response = client.delete(f"/api/v1/properties/{property_id}")
-    
+
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    
+
     # Verify it's deleted
     get_response = client.get(f"/api/v1/properties/{property_id}")
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
