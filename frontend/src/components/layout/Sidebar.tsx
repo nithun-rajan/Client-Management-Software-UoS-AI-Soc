@@ -1,4 +1,4 @@
-import { Home, Building2, Users, UserCheck, Search, BarChart3, Settings } from 'lucide-react';
+import { Home, Building2, Users, UserCheck, MessageSquare, Search, BarChart3, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +7,7 @@ const navigation = [
   { name: 'Properties', href: '/properties', icon: Building2 },
   { name: 'Landlords', href: '/landlords', icon: UserCheck },
   { name: 'Applicants', href: '/applicants', icon: Users },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Search', href: '/search', icon: Search },
   { name: 'KPIs', href: '/kpis', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },

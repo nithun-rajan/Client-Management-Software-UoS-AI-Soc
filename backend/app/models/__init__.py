@@ -4,6 +4,7 @@ from .property import Property
 from .tenancy import Tenancy
 from .task import Task
 from .vendor import Vendor
+from .communication import Communication
 
 __all__ = [
     "Applicant",
@@ -12,5 +13,6 @@ __all__ = [
     "Tenancy",
     "Task",
     "Vendor",
+    "Communication",
 ]
 

@@ -54,6 +54,7 @@ class Property(BaseModel):
     landlord = relationship("Landlord", back_populates="properties")
     
     tenancies = relationship("Tenancy", back_populates="property")
+    communications = relationship("Communication", back_populates="property")
     
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)

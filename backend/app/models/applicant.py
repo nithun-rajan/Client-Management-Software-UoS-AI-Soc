@@ -31,3 +31,4 @@ class Applicant(BaseModel):
     
     # Relationships
     # tenancies = relationship("Tenancy", back_populates="applicant")
+    communications = relationship("Communication", back_populates="applicant")

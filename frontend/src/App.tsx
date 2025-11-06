@@ -8,6 +8,10 @@ import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import Landlords from "./pages/Landlords";
 import Applicants from "./pages/Applicants";
+import Messages from "./pages/Messages";
+import PropertyDetails from "./pages/PropertyDetails";
+import LandlordDetails from "./pages/LandlordDetails";
+import ApplicantDetails from "./pages/ApplicantDetails";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
@@ -35,8 +39,12 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/:id" element={<PropertyDetails />} />
               <Route path="/landlords" element={<Landlords />} />
+              <Route path="/landlords/:id" element={<LandlordDetails />} />
               <Route path="/applicants" element={<Applicants />} />
+              <Route path="/applicants/:id" element={<ApplicantDetails />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/search" element={<Search />} />
               <Route path="/kpis" element={<KPIsDashboard />} />
               <Route path="/settings" element={<Settings />} />
