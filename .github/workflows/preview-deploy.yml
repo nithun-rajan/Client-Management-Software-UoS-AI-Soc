@@ -1,0 +1,252 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  BRANCH_NAME: ${{ github.head_ref }}
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend Preview
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel Environment Information
+        working-directory: ./frontend
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        working-directory: ./frontend
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        id: deploy-frontend
+        working-directory: ./frontend
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -o 'https://[^ ]*')
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Frontend deployed to: $DEPLOYMENT_URL"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment PR with Frontend Preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.deploy-frontend.outputs.url }}';
+            const comment = `### 🎨 Frontend Preview Deployed
+
+            **Preview URL:** ${deploymentUrl}
+
+            - 🌐 Frontend: ${deploymentUrl}
+            - 📊 Branch: \`${{ env.BRANCH_NAME }}\`
+            - 🔢 Commit: \`${{ github.sha }}\`
+
+            The preview will be automatically updated with new commits.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  deploy-backend:
+    name: Deploy Backend Preview
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Deploy to Railway
+        id: deploy-backend
+        run: |
+          cd backend
+
+          # FR-019: Explicit per-PR environment creation for isolation
+          ENVIRONMENT_NAME="pr-${{ env.PR_NUMBER }}"
+          SERVICE_NAME="backend-preview-pr-${{ env.PR_NUMBER }}"
+
+          echo "🔧 Linking to Railway project..."
+          railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+
+          # Check if environment exists, create if not
+          echo "🌍 Setting up environment: $ENVIRONMENT_NAME"
+          railway environment list | grep -q "$ENVIRONMENT_NAME" || {
+            echo "Creating new environment: $ENVIRONMENT_NAME"
+            railway environment create "$ENVIRONMENT_NAME"
+          }
+
+          # Switch to PR-specific environment
+          echo "🔄 Switching to environment: $ENVIRONMENT_NAME"
+          railway environment use "$ENVIRONMENT_NAME"
+
+          # Set environment-specific variables
+          echo "⚙️ Configuring environment variables..."
+          railway variables set ENVIRONMENT=preview
+          railway variables set PR_NUMBER=${{ env.PR_NUMBER }}
+          railway variables set BRANCH_NAME=${{ env.BRANCH_NAME }}
+
+          # Deploy to the PR-specific environment
+          echo "🚀 Deploying to Railway environment: $ENVIRONMENT_NAME"
+          DEPLOYMENT_URL=$(railway up --detach --environment "$ENVIRONMENT_NAME" 2>&1 | grep -o 'https://[^ ]*' | head -1)
+
+          # Fallback: if URL not captured from deploy output, fetch from Railway
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "⚠️ Deployment URL not found in output, fetching from Railway..."
+            sleep 10  # Wait for Railway to register deployment
+            DEPLOYMENT_URL=$(railway status --environment "$ENVIRONMENT_NAME" 2>&1 | grep -o 'https://[^ ]*' | head -1)
+          fi
+
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "environment=$ENVIRONMENT_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Backend deployed to: $DEPLOYMENT_URL (environment: $ENVIRONMENT_NAME)"
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Wait for Backend Health Check
+        run: |
+          BACKEND_URL="${{ steps.deploy-backend.outputs.url }}"
+          echo "Waiting for backend at $BACKEND_URL/health"
+
+          # Wait up to 3 minutes for health check
+          for i in {1..36}; do
+            if curl -sf "$BACKEND_URL/health" > /dev/null 2>&1; then
+              echo "✅ Backend is healthy!"
+              exit 0
+            fi
+            echo "⏳ Waiting for backend to be ready... (attempt $i/36)"
+            sleep 5
+          done
+
+          echo "❌ Backend health check timeout"
+          exit 1
+
+      - name: Comment PR with Backend Preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.deploy-backend.outputs.url }}';
+            const environment = '${{ steps.deploy-backend.outputs.environment }}';
+            const comment = `### 🚀 Backend Preview Deployed
+
+            **API URL:** ${deploymentUrl}
+
+            - 🔧 Backend API: ${deploymentUrl}
+            - 📖 API Docs: ${deploymentUrl}/docs
+            - 💚 Health Check: ${deploymentUrl}/health
+            - 🌍 Environment: \`${environment}\` (FR-019: Isolated per-PR)
+            - 📊 Branch: \`${{ env.BRANCH_NAME }}\`
+            - 🔢 Commit: \`${{ github.sha }}\`
+
+            The preview will be automatically updated with new commits.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  preview-summary:
+    name: Preview Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend, deploy-backend]
+    if: always()
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Create Deployment Summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const frontendSuccess = '${{ needs.deploy-frontend.result }}' === 'success';
+            const backendSuccess = '${{ needs.deploy-backend.result }}' === 'success';
+
+            let status = '✅ All deployments successful!';
+            if (!frontendSuccess || !backendSuccess) {
+              status = '⚠️ Some deployments failed';
+            }
+
+            const comment = `## 🚀 Preview Deployment Summary
+
+            ${status}
+
+            | Service | Status |
+            |---------|--------|
+            | Frontend | ${frontendSuccess ? '✅ Deployed' : '❌ Failed'} |
+            | Backend | ${backendSuccess ? '✅ Deployed' : '❌ Failed'} |
+
+            **Preview Environment:** \`pr-${{ env.PR_NUMBER }}\`
+            **Branch:** \`${{ env.BRANCH_NAME }}\`
+            **Commit:** \`${{ github.sha }}\`
+
+            ---
+
+            💡 **Tips:**
+            - Preview environments are automatically cleaned up when PR is closed
+            - Database is isolated per preview environment
+            - Environment variables are configured via platform secrets
+            - Check the individual deployment comments above for URLs
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

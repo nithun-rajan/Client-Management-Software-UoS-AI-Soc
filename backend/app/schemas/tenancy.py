@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 from datetime import date, datetime
-from typing import Optional, Literal
+from typing import Optional
 
+
+from app.models.enums import TenancyStatus
 
 # Fields common to Create and Response
 class TenancyBase(BaseModel):
@@ -11,8 +13,9 @@ class TenancyBase(BaseModel):
     deposit_amount: float
     start_date: date
     end_date: Optional[date] = None
-    status: Literal["pending", "active", "ending", "ended", "cancelled"] = "pending"
+    status: TenancyStatus = TenancyStatus.PENDING
     
+
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = 30
@@ -26,16 +29,14 @@ class TenancyBase(BaseModel):
     right_to_rent_verified_date: Optional[date] = None
     inventory_completed: Optional[bool] = False
     inventory_completed_date: Optional[date] = None
-    additional_occupants: Optional[str] = None  # JSON as a string
+    additional_occupants: Optional[str] = None # Assuming JSON as a string
     notes: Optional[str] = None
 
-
-# Schema for CREATING a tenancy
+# Schema for CREATING a tenancy (matches your other 'Create' schemas)
 class TenancyCreate(TenancyBase):
     pass
 
-
-# Schema for UPDATING a tenancy
+# Schema for UPDATING a tenancy (matches your other 'Update' schemas)
 class TenancyUpdate(BaseModel):
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
@@ -43,7 +44,7 @@ class TenancyUpdate(BaseModel):
     deposit_amount: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    status: Optional[Literal["pending", "active", "ending", "ended", "cancelled"]] = None
+    status: Optional[TenancyStatus] = None
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = None
@@ -60,8 +61,7 @@ class TenancyUpdate(BaseModel):
     additional_occupants: Optional[str] = None
     notes: Optional[str] = None
 
-
-# Schema for RESPONDING with a tenancy
+# Schema for RESPONDING with a tenancy (matches your other 'Response' schemas)
 class TenancyResponse(TenancyBase):
     id: str
     created_at: datetime
@@ -69,4 +69,3 @@ class TenancyResponse(TenancyBase):
 
     class Config:
         from_attributes = True
-

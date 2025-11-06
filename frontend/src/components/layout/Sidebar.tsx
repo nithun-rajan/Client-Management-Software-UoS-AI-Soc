@@ -1,22 +1,26 @@
-import { Home, Building2, Users, UserCheck, MessageSquare, Search, BarChart3, Settings } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+// src/components/Sidebar.tsx
 import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Home, Building2, Users, UserCheck, Search,
+  BarChart3, Settings, MessageSquare
+} from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Properties', href: '/properties', icon: Building2 },
-  { name: 'Landlords', href: '/landlords', icon: UserCheck },
-  { name: 'Applicants', href: '/applicants', icon: Users },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Search', href: '/search', icon: Search },
-  { name: 'KPIs', href: '/kpis', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: "Dashboard", href: "/", icon: Home },
+  { name: "Properties", href: "/properties", icon: Building2 },
+  { name: "Landlords", href: "/landlords", icon: UserCheck },
+  { name: "Applicants", href: "/applicants", icon: Users },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
+  { name: "Search", href: "/search", icon: Search },
+  { name: "KPIs", href: "/kpis", icon: BarChart3 },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
