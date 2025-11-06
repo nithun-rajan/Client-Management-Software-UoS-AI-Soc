@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+
 
 # Check for .env files being committed (but allow .env.example and .env.*.example)
 if git diff --cached --name-only | grep -E '\.env$|\.env\..*$' | grep -v '\.example$'; then
