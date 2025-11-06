@@ -40,20 +40,20 @@ import { Link } from "react-router-dom";
 
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
-  const [selectedApplicantId, setSelectedApplicantId] = useState<number | null>(null);
+  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
 
-  const matchingMutation = usePropertyMatching(
-    selectedApplicantId ? String(selectedApplicantId) : "",
-    5,
-    50
-  );
+  const matchingMutation = usePropertyMatching(5, 50);
 
-  const handleFindMatches = async (applicantId: number) => {
+  const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
-    const result = await matchingMutation.mutateAsync();
-    if (result.matches.length > 0) {
-      setMatchesDialogOpen(true);
+    try {
+      const result = await matchingMutation.mutateAsync(applicantId);
+      if (result.matches.length > 0) {
+        setMatchesDialogOpen(true);
+      }
+    } catch (error) {
+      // Error is already handled by the mutation's onError
     }
   };
 

@@ -2,13 +2,11 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
-from app.models.enums import TaskStatus, TaskPriority
-
 
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
-    status: TaskStatus = TaskStatus.TODO
+    status: str = "todo"
     priority: str = "medium"  # low/medium/high/urgent
     due_date: Optional[datetime] = None
     related_entity_type: Optional[str] = None
@@ -25,7 +23,7 @@ class TaskCreate(TaskBase):
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    status: Optional[TaskStatus] = None
+    status: Optional[str] = None
     priority: Optional[str] = None
     due_date: Optional[datetime] = None
     assigned_to: Optional[str] = None

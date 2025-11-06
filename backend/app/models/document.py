@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime, Date, Boolean, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
+from builtins import property as builtin_property
 from app.models.base import BaseModel
 
 class DocumentType:
@@ -82,18 +83,18 @@ class Document(BaseModel):
     reminder_sent = Column(Boolean, default=False)
     reminder_sent_at = Column(DateTime)
     
-    @property
+    @builtin_property
     def days_until_expiry(self):
         if not self.expiry_date:
             return None
         return (self.expiry_date - datetime.now().date()).days
     
-    @property
+    @builtin_property
     def is_expiring(self):
         days = self.days_until_expiry
         return days is not None and 0 < days <= 30
     
-    @property
+    @builtin_property
     def is_expired(self):
         days = self.days_until_expiry
         return days is not None and days < 0

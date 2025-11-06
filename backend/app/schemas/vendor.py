@@ -2,8 +2,6 @@ from pydantic import BaseModel
 from datetime import datetime, date
 from typing import Optional
 
-from app.models.enums import VendorStatus
-
 
 class VendorBase(BaseModel):
     title: Optional[str] = None
@@ -16,7 +14,7 @@ class VendorBase(BaseModel):
     date_of_birth: Optional[date] = None
     nationality: Optional[str] = None
     aml_status: str = "pending"
-    status: str = VendorStatus.NEW
+    status: str = "new"
     instruction_type: Optional[str] = None  # sole_agency, multi_agency
     agreed_commission: Optional[str] = None  # e.g., "1.5% + VAT"
     minimum_fee: Optional[str] = None

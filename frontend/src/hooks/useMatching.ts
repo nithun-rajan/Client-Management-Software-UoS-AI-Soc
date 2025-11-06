@@ -43,12 +43,14 @@ export interface MatchingResponse {
 }
 
 export function usePropertyMatching(
-  applicantId: string,
   limit: number = 5,
   minScore: number = 50
 ) {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (applicantId: string) => {
+      if (!applicantId) {
+        throw new Error("Applicant ID is required");
+      }
       const { data } = await api.post(
         `/api/v1/ai/match-proposals?applicant_id=${applicantId}&limit=${limit}&min_score=${minScore}`
       );

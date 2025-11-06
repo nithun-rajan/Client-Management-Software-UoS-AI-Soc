@@ -41,9 +41,11 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post("/properties/", {
-        address_line1: formData.get("address"),
-        city: formData.get("city"),
+      const address = formData.get("address") as string;
+      const city = formData.get("city") as string;
+      await api.post("/api/v1/properties/", {
+        address: address ? `${address}, ${city}` : city,
+        city: city,
         postcode: formData.get("postcode"),
         property_type: formData.get("property_type"),
         bedrooms: parseInt(formData.get("bedrooms") as string),
@@ -67,7 +69,7 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post("/landlords/", {
+      await api.post("/api/v1/landlords/", {
         full_name: formData.get("full_name"),
         email: formData.get("email"),
         phone: formData.get("phone"),
@@ -89,7 +91,7 @@ export default function Header({ title }: HeaderProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     try {
-      await api.post("/applicants/", {
+      await api.post("/api/v1/applicants/", {
         first_name: formData.get("first_name"),
         last_name: formData.get("last_name"),
         email: formData.get("email"),

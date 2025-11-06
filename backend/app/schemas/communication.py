@@ -18,9 +18,9 @@ class CommunicationBase(BaseModel):
     is_read: bool = Field(False, description="Track if communication has been reviewed")
     
     # Entity associations (at least one required)
-    property_id: Optional[int] = Field(None, description="Link to property")
-    landlord_id: Optional[int] = Field(None, description="Link to landlord")
-    applicant_id: Optional[int] = Field(None, description="Link to applicant")
+    property_id: Optional[str] = Field(None, description="Link to property")
+    landlord_id: Optional[str] = Field(None, description="Link to landlord")
+    applicant_id: Optional[str] = Field(None, description="Link to applicant")
 
 
 class CommunicationCreate(CommunicationBase):
@@ -69,7 +69,7 @@ class CommunicationUpdate(BaseModel):
 
 class CommunicationResponse(CommunicationBase):
     """Schema for API responses"""
-    id: int
+    id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
     

@@ -3,8 +3,6 @@ from datetime import date, datetime
 from typing import Optional
 
 
-from app.models.enums import TenancyStatus
-
 # Fields common to Create and Response
 class TenancyBase(BaseModel):
     property_id: str
@@ -13,7 +11,7 @@ class TenancyBase(BaseModel):
     deposit_amount: float
     start_date: date
     end_date: Optional[date] = None
-    status: TenancyStatus = TenancyStatus.PENDING
+    status: str = "pending"
     
 
     deposit_scheme: Optional[str] = None
@@ -44,7 +42,7 @@ class TenancyUpdate(BaseModel):
     deposit_amount: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    status: Optional[TenancyStatus] = None
+    status: Optional[str] = None
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = None

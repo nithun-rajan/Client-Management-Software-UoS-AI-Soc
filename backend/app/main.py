@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.core.database import Base, engine, get_db
 import app.models  # ensure all models are registered before table creation
-from app.api.v1 import properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy
+from app.api.v1 import properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy, tasks, vendors, viewings, offers
 from app.models import Property, Landlord, Applicant
 
 
@@ -246,6 +246,10 @@ app.include_router(property_matching.router, prefix="/api/v1")  # 🤖 AI Proper
 app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Registry Integration (FREE!)
 app.include_router(messaging.router, prefix="/api/v1")  # 💬 Communication Log / Activity Feed
 app.include_router(tenancy.router, prefix="/api/v1")  # 🏠 Tenancy Management (by Abdullah)
+app.include_router(tasks.router, prefix="/api/v1")  # ✅ Task Management
+app.include_router(vendors.router, prefix="/api/v1")  # 🏪 Vendor Management
+app.include_router(viewings.router, prefix="/api/v1")  # 📅 Viewing Management
+app.include_router(offers.router, prefix="/api/v1")  # 💰 Offer Management
 
 #add a router for auth.py (by Anthony)
 # app.include_router(auth.router, prefix="/api/v1")
