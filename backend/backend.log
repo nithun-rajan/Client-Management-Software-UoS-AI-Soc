@@ -1,28 +1,167 @@
 INFO:     Will watch for changes in these directories: ['/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [90799] using WatchFiles
-INFO:     Started server process [90802]
+INFO:     Started reloader process [16760] using WatchFiles
+INFO:     Started server process [16763]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 🚀 Creating database tables...
 ✅ Database ready
-INFO:     127.0.0.1:55530 - "OPTIONS /api/v1/land-registry/ai-rent-estimate?house_number=2&postcode=SW1A+1AA HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55533 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55530 - "POST /api/v1/land-registry/ai-rent-estimate?house_number=2&postcode=SW1A+1AA HTTP/1.1" 200 OK
-WARNING:  WatchFiles detected changes in 'app/services/llm_service.py'. Reloading...
+INFO:     127.0.0.1:65366 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/api/v1/landlords.py'. Reloading...
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [90802]
-INFO:     Started server process [90840]
+INFO:     Finished server process [16763]
+INFO:     Started server process [16806]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 🚀 Creating database tables...
 ✅ Database ready
-INFO:     127.0.0.1:55554 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55573 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55583 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55585 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55598 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55601 - "GET /api/v1/events/log HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55624 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65380 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65381 - "GET /api/v1/properties/?landlord_id=b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65380 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65388 - "GET /api/v1/properties/?landlord_id=b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65388 - "GET /api/v1/properties/?landlord_id=b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65388 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65388 - "GET /api/v1/landlords/b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65386 - "GET /api/v1/properties/?landlord_id=b120e551-e34a-42aa-9a1c-333ebf957052 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65388 - "GET /api/v1/landlords HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65386 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65388 - "GET /api/v1/landlords/ea25d46b-0acf-4d07-911b-7239a7487714/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65386 - "GET /api/v1/properties/?landlord_id=ea25d46b-0acf-4d07-911b-7239a7487714 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65388 - "GET /api/v1/landlords/ea25d46b-0acf-4d07-911b-7239a7487714 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65408 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "POST /api/v1/messaging HTTP/1.1" 201 Created
+INFO:     127.0.0.1:65418 - "POST /api/v1/messaging HTTP/1.1" 422 Unprocessable Content
+INFO:     127.0.0.1:65420 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65422 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65425 - "GET /api/v1/properties/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65427 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65430 - "POST /api/v1/tenancies/ HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/uvicorn/protocols/http/httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1134, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 124, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 110, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 390, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 291, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/starlette/concurrency.py", line 38, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/anyio/to_thread.py", line 56, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2485, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 976, in run
+    result = context.run(func, *args)
+  File "/Users/nithunsundarrajan/Client-Management-Software-UoS-AI-Soc/backend/app/api/v1/tenancy.py", line 46, in create_tenancy
+    db_tenancy = Tenancy(
+        **tenancy_data.model_dump(),
+        status=TenancyStatus.ACTIVE
+    )
+TypeError: app.models.tenancy.Tenancy() got multiple values for keyword argument 'status'
+INFO:     127.0.0.1:65433 - "GET /api/v1/tenancies/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65438 - "GET /api/v1/properties/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65441 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65443 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65445 - "GET /api/v1/properties/6261d991-ceea-4459-9afe-056c59f77499/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65447 - "GET /api/v1/landlords/ea25d46b-0acf-4d07-911b-7239a7487714 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65449 - "GET /api/v1/applicants/5f487ded-bd19-4b05-869c-bf199cd90caf/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65451 - "GET /api/v1/properties/99999999/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65453 - "GET /api/v1/landlords/99999999 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65455 - "GET /api/v1/applicants/99999999/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65493 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65492 - "GET /api/v1/kpis/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65493 - "GET /api/v1/landlords HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65492 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65493 - "GET /api/v1/applicants HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:65492 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65493 - "POST /api/v1/ai/match-proposals?applicant_id=5f487ded-bd19-4b05-869c-bf199cd90caf&limit=5&min_score=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49272 - "GET /api/v1/landlords HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:49272 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49272 - "GET /api/v1/properties HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:49272 - "GET /api/v1/properties/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49272 - "GET /api/v1/landlords/ea25d46b-0acf-4d07-911b-7239a7487714/ HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:49273 - "GET /api/v1/properties/?landlord_id=ea25d46b-0acf-4d07-911b-7239a7487714 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49272 - "GET /api/v1/landlords/ea25d46b-0acf-4d07-911b-7239a7487714 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/api/v1/land_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16806]
+INFO:     Started server process [18583]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+🚀 Creating database tables...
+✅ Database ready
+INFO:     127.0.0.1:50875 - "GET /api/v1/applicants HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50875 - "GET /api/v1/applicants/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50875 - "POST /api/v1/ai/match-proposals?applicant_id=5f487ded-bd19-4b05-869c-bf199cd90caf&limit=5&min_score=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50875 - "GET /api/v1/landlords HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50875 - "GET /api/v1/landlords/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50875 - "GET /api/v1/properties HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50875 - "GET /api/v1/properties/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50884 - "GET /api/v1/events/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50875 - "GET /api/v1/kpis/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50891 - "GET /api/v1/messaging HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50892 - "GET /api/v1/messaging/stats/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50898 - "POST /api/v1/ai/match-proposals?applicant_id=db0781fe-3870-490c-a0b3-e8d232c5f022&limit=5&min_score=50 HTTP/1.1" 200 OK
