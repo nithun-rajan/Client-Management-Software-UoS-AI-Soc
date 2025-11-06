@@ -2,7 +2,7 @@
 Enums for the CRM system
 All status types and categories in one place
 """
-
+import enum
 class PropertyStatus:
     """Property status enum - Blueprint page 13"""
     AVAILABLE = "available"
@@ -26,7 +26,7 @@ class ApplicantStatus:
     TENANCY_STARTED = "tenancy_started"
     ARCHIVED = "archived"
 
-class TenancyStatus:
+class TenancyStatus(str, enum.Enum):
     """Tenancy status"""
     PENDING = "pending"
     ACTIVE = "active"
@@ -128,7 +128,7 @@ class UserRole:
     AGENT = "agent"
     VIEWER = "viewer"
 
-class TicketStatus:
+class TicketStatus(str, enum.Enum):
     NEW = "new"
     QUOTED = "quoted"
     ASSIGNED = "assigned"
@@ -136,7 +136,7 @@ class TicketStatus:
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
-class TicketUrgency:
+class TicketUrgency(str, enum.Enum):
     EMERGENCY = "emergency"
     URGENT = "urgent"
     ROUTINE = "routine"

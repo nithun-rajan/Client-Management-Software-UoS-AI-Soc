@@ -4,8 +4,8 @@ from typing import List
 
 from app.core.database import get_db
 
-from app.models.ticket import Ticket
-from app.schemas.ticket import TicketCreate, TicketResponse, TicketUpdate
+from app.models.tickets import Ticket
+from app.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate
 from app.models.enums import TicketStatus
 from app.models.property import Property
 

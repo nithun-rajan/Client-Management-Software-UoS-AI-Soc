@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 from datetime import date, datetime
 from typing import Optional
+from pydantic import ConfigDict
 
 
 from app.models.enums import TenancyStatus
 
 # Fields common to Create and Response
 class TenancyBase(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     property_id: str
     primary_applicant_id: str
     rent_amount: float
@@ -38,6 +40,7 @@ class TenancyCreate(TenancyBase):
 
 # Schema for UPDATING a tenancy (matches your other 'Update' schemas)
 class TenancyUpdate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
     rent_amount: Optional[float] = None
