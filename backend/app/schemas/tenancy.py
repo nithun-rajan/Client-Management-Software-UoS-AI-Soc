@@ -1,10 +1,11 @@
-from pydantic import BaseModel
+from app.schemas.model_config import AppBaseModel
+
 from datetime import date, datetime
 from typing import Optional
 
 
 # Fields common to Create and Response
-class TenancyBase(BaseModel):
+class TenancyBase(AppBaseModel):
     property_id: str
     primary_applicant_id: str
     rent_amount: float
@@ -35,7 +36,7 @@ class TenancyCreate(TenancyBase):
     pass
 
 # Schema for UPDATING a tenancy (matches your other 'Update' schemas)
-class TenancyUpdate(BaseModel):
+class TenancyUpdate(AppBaseModel):
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
     rent_amount: Optional[float] = None
@@ -64,6 +65,3 @@ class TenancyResponse(TenancyBase):
     id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True

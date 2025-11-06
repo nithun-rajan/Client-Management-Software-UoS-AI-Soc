@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, computed_field
 
@@ -50,3 +50,4 @@ class ApplicantResponse(ApplicantBase):
         return f"{self.first_name} {self.last_name}"
 
     model_config = ConfigDict(from_attributes=True)
+   
