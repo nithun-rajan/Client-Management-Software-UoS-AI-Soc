@@ -8,7 +8,10 @@ class TicketBase(BaseModel):
     title: str
     description: Optional[str] = None
     property_id: str 
-    reported_by_id: Optional[str] = None  
+    reported_by_id: Optional[str] = None 
+    model_config = {
+    "arbitrary_types_allowed": True
+} 
     
     # These fields use enumss.py to allow only specific values.
     status: TicketStatus = TicketStatus.NEW
@@ -23,7 +26,9 @@ class TicketUpdate(BaseModel):
     status: Optional[TicketStatus] = None
     urgency: Optional[TicketUrgency] = None
     assigned_contractor_id: Optional[str] = None 
-
+    model_config = {
+        "arbitrary_types_allowed": True
+    }
 
 # What the API sends back 
 class TicketResponse(TicketBase):
@@ -33,5 +38,6 @@ class TicketResponse(TicketBase):
     assigned_contractor_id: Optional[str] = None 
     
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
