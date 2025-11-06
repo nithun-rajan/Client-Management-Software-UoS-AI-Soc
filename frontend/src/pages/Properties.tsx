@@ -151,6 +151,13 @@ export default function Properties() {
     <div>
       <Header title="Properties" />
       <div className="p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">All Properties</h2>
+          <Button onClick={handleExportCSV} variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {properties?.map((property) => (
             <Card
@@ -163,13 +170,6 @@ export default function Properties() {
                 </div>
                 <div className="flex aspect-video items-center justify-center rounded-lg bg-muted">
                   <Building2 className="h-16 w-16 text-muted-foreground" />
-                </div>
-                <div className="mb-6 flex items-center justify-between">
-                  <h1 className="text-3xl font-bold">Properties</h1>
-                  <Button onClick={handleExportCSV} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">

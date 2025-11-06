@@ -52,6 +52,27 @@ def create_properties(db: Session, count: int = 20):
         address_parts.append(city)
         full_address = ", ".join(address_parts)
         
+        # Calculate realistic rent based on bedrooms, city, and property type
+        base_rent = {
+            "Southampton": {1: 600, 2: 800, 3: 1100, 4: 1400, 5: 1700},
+            "London": {1: 1200, 2: 1800, 3: 2500, 4: 3200, 5: 4000},
+            "Manchester": {1: 500, 2: 700, 3: 950, 4: 1200, 5: 1500},
+            "Birmingham": {1: 450, 2: 650, 3: 850, 4: 1100, 5: 1350},
+            "Leeds": {1: 450, 2: 650, 3: 850, 4: 1100, 5: 1350},
+            "Bristol": {1: 650, 2: 900, 3: 1200, 4: 1500, 5: 1800},
+        }
+        
+        city_rents = base_rent.get(city, base_rent["Southampton"])
+        base_rent_value = city_rents.get(bedrooms, city_rents.get(5, 1000))
+        
+        # Add variation (±20%)
+        rent_variation = random.uniform(0.8, 1.2)
+        rent = round(base_rent_value * rent_variation, 0)
+        
+        # House typically costs more than flat/maisonette
+        if property_type == "house":
+            rent = round(rent * 1.15, 0)
+        
         property = Property(
             address=full_address,  # Required field
             address_line1=address_line1,
@@ -61,7 +82,10 @@ def create_properties(db: Session, count: int = 20):
             status=random.choice(statuses),
             property_type=property_type,
             bedrooms=bedrooms,  # Integer, not string
-            bathrooms=random.randint(1, min(bedrooms, 3))  # Integer, not string
+            bathrooms=random.randint(1, min(bedrooms, 3)),  # Integer, not string
+            rent=rent,  # Set realistic rent value
+            asking_rent=round(rent * 1.05, 0),  # Asking rent is typically 5% higher
+            description=fake.text(max_nb_chars=200) if random.choice([True, False]) else None
         )
 
         db.add(property)
