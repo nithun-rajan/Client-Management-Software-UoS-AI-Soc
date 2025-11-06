@@ -12,28 +12,43 @@ import {
   FileText,
   Upload,
   Mail,
+  ArrowRight,
+  Workflow,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import api from "@/lib/api";
+import {
+  useAvailableTransitions,
+  useTransitionStatus,
+} from "@/hooks/useWorkflows";
+import { useState } from "react";
 
 export default function PropertyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
+  const [selectedTransition, setSelectedTransition] = useState<string | null>(
+    null
+  );
+  const [transitionNotes, setTransitionNotes] = useState("");
 
-  const handleSendEmail = () => {
-    console.log("📧 Sending email for property:", property.id);
-    toast({
-      title: "Email Sent",
-      description: `Property details sent to interested parties`,
-    });
-  };
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", id],
     queryFn: async () => {
@@ -41,6 +56,52 @@ export default function PropertyDetails() {
       return response.data;
     },
   });
+
+  const { data: availableTransitions } = useAvailableTransitions(
+    "property",
+    id || ""
+  );
+  const transitionMutation = useTransitionStatus();
+
+  const handleSendEmail = () => {
+    console.log("📧 Sending email for property:", property?.id);
+    toast({
+      title: "Email Sent",
+      description: `Property details sent to interested parties`,
+    });
+  };
+
+  const handleTransition = (newStatus: string) => {
+    setSelectedTransition(newStatus);
+    setTransitionDialogOpen(true);
+  };
+
+  const confirmTransition = () => {
+    if (!selectedTransition || !id) return;
+
+    transitionMutation.mutate({
+      domain: "property",
+      entityId: id,
+      new_status: selectedTransition,
+      notes: transitionNotes || undefined,
+    });
+
+    setTransitionDialogOpen(false);
+    setSelectedTransition(null);
+    setTransitionNotes("");
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      available: "Available",
+      under_offer: "Under Offer",
+      let_agreed: "Let Agreed",
+      tenanted: "Tenanted",
+      withdrawn: "Withdrawn",
+      maintenance: "Maintenance",
+    };
+    return labels[status] || status;
+  };
 
   if (isLoading) {
     return (
@@ -179,6 +240,34 @@ export default function PropertyDetails() {
                     {property.status.replace("_", " ")}
                   </span>
                 </div>
+                {/* Workflow Transitions */}
+                {availableTransitions &&
+                  availableTransitions.available_transitions.length > 0 && (
+                    <div className="pt-3 border-t">
+                      <div className="mb-1.5 flex items-center gap-1.5">
+                        <Workflow className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Actions
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableTransitions.available_transitions.map(
+                          (transition) => (
+                            <Button
+                              key={transition}
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleTransition(transition)}
+                              className="h-7 px-2 text-xs"
+                            >
+                              <ArrowRight className="mr-1 h-2.5 w-2.5" />
+                              {getStatusLabel(transition)}
+                            </Button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Property Type</span>
                   <span className="font-medium capitalize">
@@ -306,6 +395,67 @@ export default function PropertyDetails() {
           </div>
         </div>
       </div>
+
+      {/* Transition Dialog */}
+      <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Property Status</DialogTitle>
+            <DialogDescription>
+              Transition property from{" "}
+              <strong>{getStatusLabel(property?.status || "")}</strong> to{" "}
+              <strong>
+                {selectedTransition
+                  ? getStatusLabel(selectedTransition)
+                  : ""}
+              </strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Add any notes about this status change..."
+                value={transitionNotes}
+                onChange={(e) => setTransitionNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+            {selectedTransition &&
+              availableTransitions?.side_effects[selectedTransition] &&
+              availableTransitions.side_effects[selectedTransition].length >
+                0 && (
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-sm font-medium mb-2">
+                    Automated actions that will run:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {availableTransitions.side_effects[selectedTransition].map(
+                      (effect, idx) => (
+                        <li key={idx}>• {effect.replace(/_/g, " ")}</li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTransitionDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmTransition}
+              disabled={transitionMutation.isPending}
+            >
+              {transitionMutation.isPending ? "Updating..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

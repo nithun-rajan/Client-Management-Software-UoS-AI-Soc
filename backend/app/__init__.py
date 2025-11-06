@@ -14,4 +14,4 @@ env_path = project_root / '.env'
 if env_path.exists():
     from dotenv import load_dotenv
     load_dotenv(env_path)
-    print(f"✓ Loaded environment from: {env_path}")
+    print(f"Loaded environment from: {env_path}")

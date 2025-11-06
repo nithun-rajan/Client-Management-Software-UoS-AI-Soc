@@ -70,6 +70,11 @@ class WorkflowManager:
         # Define side effects for transitions (automated actions)
         self.side_effects = {
             # Property transitions
+            ("property", "available", "under_offer"): [
+                "log_offer_received",  # Log that an offer has been received
+                "create_activity_log",  # Create activity entry for tracking
+                "notify_landlord"  # Notify landlord of offer
+            ],
             ("property", "let_agreed", "tenanted"): [
                 "update_portal_status",  # Page 29: 1.3 - Mark as let on Rightmove/Zoopla
                 "create_tenancy_record",  # Page 33: 5.2
@@ -149,6 +154,28 @@ class WorkflowManager:
     async def execute_start_referencing_process(self, domain: Domain, entity_id: str, db):
         """Start referencing process - Page 30: 2.1"""
         print(f"Starting referencing process for tenancy {entity_id}")
+    
+    async def execute_log_offer_received(self, domain: Domain, entity_id: str, db):
+        """Log that an offer has been received for a property"""
+        # This will be logged via the WorkflowTransition model in the API endpoint
+        print(f"Offer received for property {entity_id} - logging transition")
+    
+    async def execute_create_activity_log(self, domain: Domain, entity_id: str, db):
+        """Create activity log entry for the transition"""
+        # Activity will be logged via WorkflowTransition model in the API
+        # This ensures proper audit trail without type conflicts
+        print(f"Activity log will be created via WorkflowTransition for {entity_id}")
+    
+    async def execute_notify_landlord(self, domain: Domain, entity_id: str, db):
+        """Notify landlord that an offer has been received"""
+        from app.models.property import Property
+        
+        property_obj = db.query(Property).filter(Property.id == entity_id).first()
+        if property_obj and property_obj.landlord_id:
+            # In a real implementation, this would send an email/notification
+            print(f"Notifying landlord {property_obj.landlord_id} about offer on property {entity_id}")
+        else:
+            print(f"No landlord associated with property {entity_id}")
 
 # Global workflow manager instance
 workflow_manager = WorkflowManager()

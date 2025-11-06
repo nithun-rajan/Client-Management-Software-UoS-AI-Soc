@@ -1,0 +1,75 @@
+car drifting on kpi screen 
+
+
+Reviewing the codebase to understand the current workflow structure, then outlining how a property management pipeline would work:
+Explaining how a property management pipeline works based on your codebase and workflow system:
+How a property management pipeline works in your CRM:
+Property Management Pipeline Overview
+A pipeline tracks a property through stages from listing to tenancy management. Your workflow system supports this.
+The Complete Pipeline Flow
+1. PROPERTY LISTING → 2. APPLICANT MATCHING → 3. OFFER & PROGRESSION → 4. TENANCY SETUP → 5. MOVE-IN → 6. ACTIVE MANAGEMENT → 7. END OF TENANCY
+Stage-by-Stage Breakdown
+Stage 1: Property Listing (available)
+Property is listed on portals (Rightmove/Zoopla)
+Status: available
+Actions: Marketing, viewings scheduled
+Stage 2: Applicant Matching (under_offer)
+Applicant submits offer
+Status transitions: available → under_offer
+Your AI matching system finds properties for applicants
+Actions: Viewings, offer negotiations
+Stage 3: Offer Accepted → Let Agreed (let_agreed)
+Offer accepted triggers workflow transition:
+  POST /api/v1/workflows/property/{property_id}/transitions  {    "new_status": "let_agreed",    "notes": "Offer accepted at £1200/month"  }
+Automated side effects (from your workflows.py):
+Update portal status (remove from Rightmove/Zoopla)
+Create tenancy progression record
+Send offer confirmation emails
+Collect holding deposit
+Generate pre-tenancy statement
+Stage 4: Tenancy Progression (referencing → legal_docs → ready_to_move_in)
+Status transitions in Tenancy model:
+  offer_accepted → referencing → referenced → legal_docs → ready_to_move_in
+Each transition triggers automated tasks:
+Referencing: Start Goodlord API integration, track status
+Right to Rent: Mandatory compliance check
+Legal Docs: Draft AST, send statutory documents
+Move-in prep: Collect monies, register deposit, arrange inventory
+Stage 5: Move-In (tenanted)
+Final transition: ready_to_move_in → active
+Automated actions:
+Archive applicant record
+Create active tenancy record
+Change property status to tenanted
+Assign property manager
+Schedule first rent payment
+Stage 6: Active Management (tenanted / managed)
+Ongoing property management tasks:
+Rent collection & arrears tracking
+Maintenance requests
+Inspections (mid-term, annual)
+Document management (EPC, gas safety, etc.)
+Landlord communication
+Stage 7: End of Tenancy
+Status: active → expired or terminated
+Actions:
+Check-out inspection
+Deposit reconciliation
+Property re-marketing
+Status back to available
+How Your Workflow System Powers This
+Your WorkflowManager class enforces valid transitions:
+# Example: Property pipeline transitionsProperty: available → under_offer → let_agreed → tenanted → availableTenancy: offer_accepted → referencing → referenced → legal_docs → activeApplicant: new → qualified → viewing_booked → offer_submitted → offer_accepted
+API Usage Example
+# 1. Property goes under offerPOST /api/v1/workflows/property/{id}/transitions{"new_status": "under_offer"}# 2. Offer accepted - triggers automated actionsPOST /api/v1/workflows/property/{id}/transitions{"new_status": "let_agreed"}# Automatically: Updates portals, creates tenancy, sends emails# 3. Start referencingPOST /api/v1/workflows/tenancy/{id}/transitions{"new_status": "referencing"}# Automatically: Starts Goodlord API, collects deposit# 4. Move-in completePOST /api/v1/workflows/tenancy/{id}/transitions{"new_status": "active"}# Automatically: Archives applicant, assigns property manager
+Benefits of This Pipeline Approach
+Enforced transitions: prevents invalid status changes
+Automated actions: side effects run on transitions
+Audit trail: WorkflowTransition records all changes
+Compliance: mandatory checks (Right to Rent, deposit registration)
+Task automation: creates tasks at each stage
+UI guidance: shows only valid next steps
+Visual Pipeline View
+┌─────────────┐│  AVAILABLE  │ ← Property listed└──────┬──────┘       │ Applicant views & offers       ▼┌─────────────┐│ UNDER_OFFER │ ← Offer submitted└──────┬──────┘       │ Offer accepted       ▼┌─────────────┐│ LET_AGREED  │ ← Auto: Remove from portals, collect deposit└──────┬──────┘       │ Referencing complete       ▼┌─────────────┐│  TENANTED   │ ← Auto: Create tenancy, assign manager└──────┬──────┘       │ Active management       ▼┌─────────────┐│   MANAGED   │ ← Ongoing rent, maintenance, inspections└─────────────┘
+This pipeline is already implemented in your workflow system. Each status change triggers the appropriate automated actions, ensuring compliance and reducing manual work.
+Want me to show how to add a new pipeline stage or customize the automated actions?
