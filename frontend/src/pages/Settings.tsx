@@ -77,39 +77,39 @@ export default function Settings() {
   return (
     <div>
       <Header title="Settings" />
-      <div className="space-y-8 p-6 max-w-5xl mx-auto">
+      <div className="space-y-6 p-6 max-w-4xl mx-auto">
 
         {/* LIVE AGENT EDITOR */}
-        <Card className="shadow-2xl border-2 border-indigo-100">
-          <CardHeader className="bg-gradient-to-r from-indigo-600 to-blue-700 text-white">
-            <CardTitle className="text-2xl flex items-center gap-3">
-              <SettingsIcon className="h-7 w-7" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SettingsIcon className="h-5 w-5" />
               Agent Profile
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="pt-10 space-y-10">
+          <CardContent className="space-y-6">
 
             {/* AVATAR + DELETE */}
-            <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-4">
               <div className="relative group">
-                <Avatar className="h-36 w-36 border-8 border-white shadow-2xl ring-4 ring-indigo-200">
+                <Avatar className="h-20 w-20">
                   <AvatarImage src={agent.avatarUrl} />
-                  <AvatarFallback className="text-5xl font-bold bg-gradient-to-br from-indigo-600 to-blue-700 text-white">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                     {agent.name.split(" ").map(n => n[0]).join("")}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                  <Camera className="h-10 w-10 text-white" />
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                  <Camera className="h-5 w-5 text-white" />
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
                 {agent.avatarUrl && (
                   <button
                     onClick={() => setAgent(prev => ({ ...prev, avatarUrl: "" }))}
-                    className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-xl"
+                    className="absolute -top-1 -right-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full p-1.5 shadow-sm"
                   >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 )}
@@ -117,61 +117,68 @@ export default function Settings() {
             </div>
 
             {/* FORM GRID */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-lg font-semibold">Name</Label>
-                <Input value={agent.name} onChange={e => setAgent(prev => ({ ...prev, name: e.target.value }))} className="h-12" />
+                <Label>Name</Label>
+                <Input value={agent.name} onChange={e => setAgent(prev => ({ ...prev, name: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label className="text-lg font-semibold">Title</Label>
-                <Input value={agent.title} onChange={e => setAgent(prev => ({ ...prev, title: e.target.value }))} className="h-12" />
+                <Label>Title</Label>
+                <Input value={agent.title} onChange={e => setAgent(prev => ({ ...prev, title: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Mail className="h-5 w-5" /> Email</Label>
-                <Input type="email" value={agent.email} onChange={e => setAgent(prev => ({ ...prev, email: e.target.value }))} className="h-12" />
+                <Label className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" /> Email
+                </Label>
+                <Input type="email" value={agent.email} onChange={e => setAgent(prev => ({ ...prev, email: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Phone className="h-5 w-5" /> Phone</Label>
-                <Input value={agent.phone} onChange={e => setAgent(prev => ({ ...prev, phone: e.target.value }))} className="h-12" />
+                <Label className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" /> Phone
+                </Label>
+                <Input value={agent.phone} onChange={e => setAgent(prev => ({ ...prev, phone: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Building2 className="h-5 w-5" /> Office</Label>
-                <Input value={agent.office} onChange={e => setAgent(prev => ({ ...prev, office: e.target.value }))} className="h-12" />
+                <Label className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" /> Office
+                </Label>
+                <Input value={agent.office} onChange={e => setAgent(prev => ({ ...prev, office: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2"><Award className="h-5 w-5" /> Qualifications</Label>
-                <Input value={agent.qualifications} onChange={e => setAgent(prev => ({ ...prev, qualifications: e.target.value }))} className="h-12" />
+                <Label className="flex items-center gap-2">
+                  <Award className="h-4 w-4" /> Qualifications
+                </Label>
+                <Input value={agent.qualifications} onChange={e => setAgent(prev => ({ ...prev, qualifications: e.target.value }))} />
               </div>
             </div>
 
             {/* SAVE BUTTON */}
-            <div className="flex justify-center pt-8 border-t">
+            <div className="flex justify-end pt-4 border-t">
               <Button
                 onClick={saveAgent}
-                size="lg"
-                className="px-16 py-8 text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 shadow-2xl"
+                className="gap-2"
               >
-                <Save className="h-8 w-8 mr-4" />
-                {saved ? "SAVED SUCCESSFULY!" : "SAVE CHANGES"}
+                <Save className="h-4 w-4" />
+                {saved ? "Saved!" : "Save Changes"}
               </Button>
             </div>
-            </CardContent>
+          </CardContent>
         </Card>
-        {/* BACKEND API – BACK BY POPULAR DEMAND */}
-        <Card className="shadow-lg border-2 border-cyan-100">
-          <CardHeader className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white">
-            <CardTitle className="text-xl">Backend API</CardTitle>
+        {/* BACKEND API */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Backend API</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6 space-y-4">
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>API Base URL</Label>
               <Input defaultValue="http://localhost:8000" placeholder="https://api.uos-crm.co.uk" />
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 animate-pulse rounded-full bg-green-400" />
-              <span className="text-sm font-medium text-green-600">Connected</span>
-    </div>
-    <Button className="w-full" variant="outline">Test Connection</Button>
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span className="text-sm text-muted-foreground">Connected</span>
+            </div>
+            <Button className="w-full" variant="outline">Test Connection</Button>
           </CardContent>
         </Card>
       </div>
