@@ -8,6 +8,7 @@ class WorkflowTransition(BaseModel):
     """Tracks all status transitions for audit purposes"""
     __tablename__ = "workflow_transitions"
     
+
     domain = Column(String, nullable=False)  # property, tenancy, vendor, applicant
     entity_id = Column(String, nullable=False)  # UUID of the entity
     from_status = Column(String, nullable=False)

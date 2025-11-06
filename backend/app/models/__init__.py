@@ -1,3 +1,5 @@
+"""
+
 from .applicant import Applicant
 from .landlord import Landlord
 from .property import Property
@@ -17,3 +19,4 @@ __all__ = [
     "Communication",
 ]
 
+"""

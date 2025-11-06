@@ -1,12 +1,13 @@
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.base import BaseModel
 from app.models.enums import PropertyStatus
 
-class Property(BaseModel):
+class Property(BaseModel): 
     __tablename__ = "properties"
     
+
     address = Column(String, nullable=False)
     address_line1 = Column(String)
     address_line2 = Column(String)
@@ -24,10 +25,10 @@ class Property(BaseModel):
     deposit = Column(Float)
     
     status = Column(String, default=PropertyStatus.AVAILABLE)
-    listed_date = Column(DateTime, default=datetime.utcnow)  # When first listed
+    listed_date = Column(DateTime, default=datetime.now(timezone.utc) ) # When first listed
     let_agreed_date = Column(DateTime, nullable=True)  # When offer accepted
     let_date = Column(DateTime, nullable=True)  # When tenancy started
-    last_status_change = Column(DateTime, default=datetime.utcnow)
+    last_status_change = Column(DateTime, default=datetime.now(timezone.utc))
     
     # Engagement tracking
     viewing_count = Column(Integer, default=0)
@@ -63,7 +64,7 @@ class Property(BaseModel):
     def days_on_market(self):
         if self.let_date:
             return (self.let_date - self.listed_date).days
-        return (datetime.utcnow() - self.listed_date).days if self.listed_date else 0
+        return (datetime.now(timezone.utc)  - self.listed_date).days if self.listed_date else 0
     
     @property
     def price_achievement_rate(self):
@@ -73,7 +74,7 @@ class Property(BaseModel):
     
     @property
     def is_compliant(self):
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         checks = [
             self.epc_expiry and self.epc_expiry > today,
             self.gas_cert_expiry and self.gas_cert_expiry > today,
@@ -84,7 +85,7 @@ class Property(BaseModel):
     @property
     def expiring_documents(self):
         from datetime import timedelta
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         soon = today + timedelta(days=30)
         
         expiring = []

@@ -4,11 +4,12 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 
-from app.core.database import Base, engine, get_db
+from .core.database import Base, engine, get_db
 #import app.models  # ensure all models are registered before table creation
-from app.api.v1 import api_router  #properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy
-from app.models import Property, Landlord, Applicant
-
+from .api.v1 import api_router  #properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy
+from .models.property import Property
+from .models.landlord import Landlord
+from .models.applicant import Applicant
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

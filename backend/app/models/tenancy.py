@@ -7,6 +7,7 @@ from app.models.enums import TenancyStatus
 
 class Tenancy(BaseModel):
     __tablename__ = "tenancies"
+    
 
     # Core tenancy details
     start_date = Column(Date, nullable=False)
