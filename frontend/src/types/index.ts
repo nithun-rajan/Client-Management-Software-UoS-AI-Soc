@@ -4,12 +4,20 @@ export interface Property {
   address_line2?: string;
   city: string;
   postcode: string;
-  status: 'available' | 'let_agreed' | 'let_by' | 'tenanted' | 'under_offer' | 'blocked' | 'maintenance';
+  status:
+    | "available"
+    | "let_agreed"
+    | "let_by"
+    | "tenanted"
+    | "under_offer"
+    | "blocked"
+    | "maintenance";
   property_type: string;
   bedrooms: number;
   bathrooms: number;
   rent?: number;
   landlord_id?: number;
+  virtual_tour_url?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -22,6 +30,7 @@ export interface Landlord {
   address?: string;
   aml_verified: boolean;
   aml_verification_date?: string;
+  aml_check_expiry?: string;
   bank_account_name?: string;
   sort_code?: string;
   account_number?: string;
@@ -37,7 +46,16 @@ export interface Applicant {
   email: string;
   phone: string;
   date_of_birth?: string;
-  status: 'new' | 'qualified' | 'viewing_booked' | 'offer_submitted' | 'offer_accepted' | 'references' | 'let_agreed' | 'tenancy_started' | 'archived';
+  status:
+    | "new"
+    | "qualified"
+    | "viewing_booked"
+    | "offer_submitted"
+    | "offer_accepted"
+    | "references"
+    | "let_agreed"
+    | "tenancy_started"
+    | "archived";
   desired_bedrooms?: string;
   desired_property_type?: string;
   rent_budget_min?: number;
