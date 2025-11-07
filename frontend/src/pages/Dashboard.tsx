@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Building2,
   UserCheck,
@@ -5,6 +6,8 @@ import {
   PoundSterling,
   Activity,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   Card,
@@ -13,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useEvents } from "@/hooks/useEvents";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +26,7 @@ import { formatDistanceToNow } from "date-fns";
 export default function Dashboard() {
   const { data: kpis, isLoading } = useKPIs();
   const { data: events, isLoading: isLoadingEvents } = useEvents();
+  const [complianceOpen, setComplianceOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -51,21 +56,21 @@ export default function Dashboard() {
       icon: UserCheck,
       value: kpis?.landlords.total || 0,
       subtitle: `${kpis?.landlords.verification_rate.toFixed(0) || 0}% AML verified`,
-      gradient: "from-accent to-emerald-500",
+      gradient: "from-accent to-emerald-500 dark:from-teal-600 dark:to-emerald-600",
     },
     {
       title: "Applicants",
       icon: Users,
       value: kpis?.applicants.total || 0,
       subtitle: `${kpis?.applicants.qualification_rate.toFixed(0) || 0}% qualified`,
-      gradient: "from-orange-500 to-red-500",
+      gradient: "from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600",
     },
     {
       title: "Average Rent",
       icon: PoundSterling,
       value: `£${kpis?.properties.avg_rent.toFixed(0) || 0}`,
       subtitle: "per calendar month",
-      gradient: "from-blue-500 to-purple-500",
+      gradient: "from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600",
     },
   ];
 
@@ -93,34 +98,6 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-        {/* Compliance Alert Card */}
-        <Card className="border-orange-200 bg-orange-50 md:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="h-5 w-5" />
-              Compliance Alerts
-            </CardTitle>
-            <CardDescription>Documents requiring attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">0</div>
-                <div className="text-sm text-muted-foreground">Expiring Soon</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">0</div>
-                <div className="text-sm text-muted-foreground">Expired</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {kpis?.properties.total || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Compliant</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
         {/* Recent Activity */}
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="shadow-card md:col-span-2">
@@ -215,6 +192,53 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Compliance Alert - Fixed Bottom Corner */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {complianceOpen && (
+          <Card className="mb-2 shadow-lg w-80">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4" />
+                Compliance Alerts
+              </CardTitle>
+              <CardDescription className="text-xs">Documents requiring attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-muted-foreground">0</div>
+                  <div className="text-xs text-muted-foreground">Expiring Soon</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-destructive">0</div>
+                  <div className="text-xs text-muted-foreground">Expired</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-primary">
+                    {kpis?.properties.total || 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Compliant</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        <Button
+          variant="outline"
+          onClick={() => setComplianceOpen(!complianceOpen)}
+          className="shadow-lg"
+          size="lg"
+        >
+          <AlertCircle className="h-5 w-5 mr-2" />
+          <span>Compliance Alerts</span>
+          {complianceOpen ? (
+            <ChevronDown className="h-4 w-4 ml-2" />
+          ) : (
+            <ChevronUp className="h-4 w-4 ml-2" />
+          )}
+        </Button>
       </div>
     </div>
   );

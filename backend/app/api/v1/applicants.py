@@ -1,4 +1,5 @@
 
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -23,7 +24,7 @@ def create_applicant(applicant_data: ApplicantCreate, db: Session = Depends(get_
     db.refresh(db_applicant)
     return db_applicant
 
-@router.get("/", response_model=list[ApplicantResponse])
+@router.get("/", response_model=List[ApplicantResponse])
 def list_applicants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all applicants"""
     applicants = db.query(Applicant).offset(skip).limit(limit).all()

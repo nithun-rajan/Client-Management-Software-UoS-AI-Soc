@@ -39,6 +39,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { format } from "date-fns";
+import EmptyState from "@/components/shared/EmptyState";
 
 // Helper to safely format dates
 const formatDate = (dateString: string) => {
@@ -167,8 +168,8 @@ export default function Messages() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Communications</h1>
-          <p className="mt-1 text-gray-500">Activity feed and communication log</p>
+          <h1 className="text-3xl font-bold text-foreground">Communications</h1>
+          <p className="mt-1 text-muted-foreground">Activity feed and communication log</p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Communication
@@ -247,7 +248,7 @@ export default function Messages() {
                 <Label className="text-sm font-medium">
                   Link to Entity <span className="text-red-500">*</span>
                 </Label>
-                <p className="mb-2 text-xs text-gray-500">
+                <p className="mb-2 text-xs text-muted-foreground">
                   At least one entity (Property, Landlord, or Applicant) is required
                 </p>
                 <div className="grid grid-cols-3 gap-4">
@@ -363,9 +364,9 @@ export default function Messages() {
           />
         </div>
       ) : loading ? (
-        <div className="py-4 text-center text-gray-500">Loading stats...</div>
+        <div className="py-4 text-center text-muted-foreground">Loading stats...</div>
       ) : (
-        <div className="py-4 text-center text-gray-500">Stats not available</div>
+        <div className="py-4 text-center text-muted-foreground">Stats not available</div>
       )}
 
       {/* Filters */}
@@ -428,14 +429,13 @@ export default function Messages() {
       ) : error ? (
         <div className="py-12 text-center text-red-600">{error}</div>
       ) : communications.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <MessageSquare className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <p className="text-gray-500">
-              No communications yet. Create one to get started!
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={MessageSquare}
+          title="No communications yet"
+          description="Start a conversation by creating your first communication"
+          actionLabel="Create Communication"
+          onAction={() => {}}
+        />
       ) : (
         <div className="space-y-3">
           {communications.map((comm) => {
@@ -472,12 +472,12 @@ export default function Messages() {
                             </h3>
                           )}
                         </div>
-                        <p className="whitespace-nowrap text-sm text-gray-500">
+                        <p className="whitespace-nowrap text-sm text-muted-foreground">
                           {formatDate(comm.created_at)}
                         </p>
                       </div>
-                      <p className="mb-2 text-gray-700">{comm.content}</p>
-                      <div className="flex gap-4 text-sm text-gray-500">
+                      <p className="mb-2 text-foreground">{comm.content}</p>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
                         {comm.created_by && <span>By: {comm.created_by}</span>}
                         {comm.property_id && <span>Property #{comm.property_id}</span>}
                         {comm.landlord_id && <span>Landlord #{comm.landlord_id}</span>}

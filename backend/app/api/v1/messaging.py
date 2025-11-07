@@ -43,7 +43,7 @@ def list_communications(
     db: Session = Depends(get_db),
     type: Optional[str] = Query(None, description="Filter by type (email, call, sms, note, task, meeting, viewing)"),
     entity_type: Optional[str] = Query(None, description="Filter by entity type (property, landlord, applicant)"),
-    entity_id: Optional[int] = Query(None, description="Filter by specific entity ID"),
+    entity_id: Optional[str] = Query(None, description="Filter by specific entity ID"),
     start_date: Optional[datetime] = Query(None, description="Filter by start date"),
     end_date: Optional[datetime] = Query(None, description="Filter by end date"),
     is_important: Optional[bool] = Query(None, description="Filter by importance"),
@@ -98,7 +98,7 @@ def list_communications(
 
 @router.get("/{communication_id}", response_model=CommunicationResponse)
 def get_communication(
-    communication_id: int,
+    communication_id: str,
     db: Session = Depends(get_db)
 ):
     """Get a single communication by ID"""
@@ -115,7 +115,7 @@ def get_communication(
 
 @router.put("/{communication_id}", response_model=CommunicationResponse)
 def update_communication(
-    communication_id: int,
+    communication_id: str,
     communication_update: CommunicationUpdate,
     db: Session = Depends(get_db)
 ):
@@ -141,7 +141,7 @@ def update_communication(
 
 @router.delete("/{communication_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_communication(
-    communication_id: int,
+    communication_id: str,
     db: Session = Depends(get_db)
 ):
     """Delete a communication"""
@@ -163,7 +163,7 @@ def delete_communication(
 
 @router.get("/property/{property_id}", response_model=List[CommunicationResponse])
 def get_property_communications(
-    property_id: int,
+    property_id: str,
     db: Session = Depends(get_db),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0)
@@ -185,7 +185,7 @@ def get_property_communications(
 
 @router.get("/landlord/{landlord_id}", response_model=List[CommunicationResponse])
 def get_landlord_communications(
-    landlord_id: int,
+    landlord_id: str,
     db: Session = Depends(get_db),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0)
@@ -207,7 +207,7 @@ def get_landlord_communications(
 
 @router.get("/applicant/{applicant_id}", response_model=List[CommunicationResponse])
 def get_applicant_communications(
-    applicant_id: int,
+    applicant_id: str,
     db: Session = Depends(get_db),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0)

@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/shared/EmptyState";
 import {
   usePropertySearch,
   usePropertySearchCount,
@@ -232,25 +233,25 @@ export default function Search() {
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center">
-                <SearchIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                <h3 className="mb-2 text-lg font-semibold">No properties found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search filters
-                </p>
-              </div>
+              <EmptyState
+                icon={SearchIcon}
+                title="No properties found"
+                description="Try adjusting your search filters to find more properties"
+                onAction={() => handleClear()}
+                actionLabel="Clear Filters"
+              />
             )}
           </>
         )}
 
         {!hasSearched && (
-          <div className="py-12 text-center">
-            <SearchIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">Start your search</h3>
-            <p className="text-muted-foreground">
-              Use the filters above to find properties
-            </p>
-          </div>
+          <EmptyState
+            icon={SearchIcon}
+            title="Start your search"
+            description="Use the filters above to find properties that match your criteria"
+            actionLabel="Search Properties"
+            onAction={() => handleSearch()}
+          />
         )}
       </div>
     </div>

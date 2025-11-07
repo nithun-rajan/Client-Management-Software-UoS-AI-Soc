@@ -35,10 +35,34 @@ class PropertyMatcher:
         
         max_score += 30
         if applicant.desired_bedrooms:
-            if str(property.bedrooms) == applicant.desired_bedrooms:
-                score += 30
-            elif abs(int(property.bedrooms) - int(applicant.desired_bedrooms)) == 1:
-                score += 15  # 1 bedroom off is half credit
+            # Handle range format like "2-4" or single number like "3"
+            desired_bedrooms_str = str(applicant.desired_bedrooms).strip()
+            property_bedrooms = int(property.bedrooms)
+            
+            if '-' in desired_bedrooms_str:
+                # Range format: "2-4"
+                try:
+                    min_bedrooms, max_bedrooms = map(int, desired_bedrooms_str.split('-'))
+                    if min_bedrooms <= property_bedrooms <= max_bedrooms:
+                        score += 30  # Exact match within range
+                    elif property_bedrooms == min_bedrooms - 1 or property_bedrooms == max_bedrooms + 1:
+                        score += 15  # 1 bedroom off is half credit
+                except (ValueError, IndexError):
+                    # Invalid range format, try exact match
+                    if str(property_bedrooms) == desired_bedrooms_str:
+                        score += 30
+            else:
+                # Single number format: "3"
+                try:
+                    desired_bedrooms = int(desired_bedrooms_str)
+                    if property_bedrooms == desired_bedrooms:
+                        score += 30
+                    elif abs(property_bedrooms - desired_bedrooms) == 1:
+                        score += 15  # 1 bedroom off is half credit
+                except ValueError:
+                    # Not a number, try exact string match
+                    if str(property_bedrooms) == desired_bedrooms_str:
+                        score += 30
         
         max_score += 25
         if property.rent:
@@ -54,7 +78,7 @@ class PropertyMatcher:
                     score += 15
         
         max_score += 20
-        if applicant.preferred_locations and property.postcode:
+        if applicant.preferred_locations and property.postcode and property.city:
             preferred = applicant.preferred_locations.lower()
             property_location = f"{property.city} {property.postcode}".lower()
             
@@ -64,7 +88,7 @@ class PropertyMatcher:
                 score += 10  # Partial postcode match
         
         max_score += 15
-        if applicant.desired_property_type:
+        if applicant.desired_property_type and property.property_type:
             if applicant.desired_property_type.lower() in property.property_type.lower():
                 score += 15
         
@@ -97,9 +121,13 @@ class PropertyMatcher:
             message_parts.append("Here's a property you might be interested in. ")
         
         # Property description
+        if property.rent:
+            rent_text = f" for £{property.rent:,.0f}/month"
+        else:
+            rent_text = ""
         message_parts.append(
-            f"This {property.bedrooms}-bedroom {property.property_type} in {property.city} "
-            f"is available for £{property.rent:,.0f}/month. "
+            f"This {property.bedrooms}-bedroom {property.property_type} in {property.city}"
+            f"{rent_text}. "
         )
         
         if applicant.has_pets and applicant.pet_details:
@@ -189,11 +217,30 @@ async def ai_match_properties(
             
             # Generate match reasoning
             reasons = []
-            if applicant.desired_bedrooms and str(property.bedrooms) == applicant.desired_bedrooms:
-                reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+            if applicant.desired_bedrooms:
+                desired_bedrooms_str = str(applicant.desired_bedrooms).strip()
+                property_bedrooms = int(property.bedrooms)
+                
+                # Check if property bedrooms match the desired range or number
+                if '-' in desired_bedrooms_str:
+                    try:
+                        min_bedrooms, max_bedrooms = map(int, desired_bedrooms_str.split('-'))
+                        if min_bedrooms <= property_bedrooms <= max_bedrooms:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds within {desired_bedrooms_str} range)")
+                    except (ValueError, IndexError):
+                        if str(property_bedrooms) == desired_bedrooms_str:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+                else:
+                    try:
+                        desired_bedrooms = int(desired_bedrooms_str)
+                        if property_bedrooms == desired_bedrooms:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+                    except ValueError:
+                        if str(property_bedrooms) == desired_bedrooms_str:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
             if property.rent and applicant.rent_budget_max and property.rent <= applicant.rent_budget_max:
                 reasons.append(f"Within budget (£{property.rent:,.0f})")
-            if applicant.preferred_locations:
+            if applicant.preferred_locations and property.city and property.postcode:
                 locs = [l.strip() for l in applicant.preferred_locations.split(',')]
                 if any(loc.lower() in f"{property.city} {property.postcode}".lower() for loc in locs):
                     reasons.append(f"Preferred location ({property.city})")

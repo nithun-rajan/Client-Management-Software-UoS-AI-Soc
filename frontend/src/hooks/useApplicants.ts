@@ -49,7 +49,7 @@ export function useUpdateApplicant() {
     mutationFn: async ({
       id,
       ...applicantData
-    }: Partial<Applicant> & { id: number }) => {
+    }: Partial<Applicant> & { id: string }) => {
       const { data } = await api.put(`/api/v1/applicants/${id}`, applicantData);
       return data;
     },
@@ -67,7 +67,7 @@ export function useDeleteApplicant() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await api.delete(`/api/v1/applicants/${id}`);
     },
     onSuccess: () => {

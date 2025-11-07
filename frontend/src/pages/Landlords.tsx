@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   UserCheck,
   Mail,
@@ -12,13 +13,71 @@ import {
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useLandlords } from "@/hooks/useLandlords";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useLandlords, useDeleteLandlord, useUpdateLandlord } from "@/hooks/useLandlords";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
+import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
+import { Landlord } from "@/types";
 
 export default function Landlords() {
   const { data: landlords, isLoading } = useLandlords();
+  const deleteLandlord = useDeleteLandlord();
+  const updateLandlord = useUpdateLandlord();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
+
+  const handleEdit = (landlord: Landlord) => {
+    setSelectedLandlord(landlord);
+    setEditOpen(true);
+  };
+
+  const handleDelete = (landlord: Landlord) => {
+    setSelectedLandlord(landlord);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedLandlord) return;
+    try {
+      await deleteLandlord.mutateAsync(selectedLandlord.id);
+      setDeleteOpen(false);
+      setSelectedLandlord(null);
+    } catch (error) {
+      // Error toast is handled by the hook
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLandlord) return;
+    
+    const formData = new FormData(e.currentTarget);
+    try {
+      await updateLandlord.mutateAsync({
+        id: selectedLandlord.id,
+        full_name: formData.get("full_name") as string,
+        email: formData.get("email") as string,
+        phone: formData.get("phone") as string || undefined,
+        address: formData.get("address") as string || undefined,
+      });
+      setEditOpen(false);
+      setSelectedLandlord(null);
+    } catch (error) {
+      // Error toast is handled by the hook
+    }
+  };
 
   if (isLoading) {
     return (
@@ -102,10 +161,18 @@ export default function Landlords() {
                     View Details
                   </Link>
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(landlord)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(landlord)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -114,16 +181,105 @@ export default function Landlords() {
         </div>
 
         {landlords?.length === 0 && (
-          <div className="py-12 text-center">
-            <UserCheck className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No landlords yet</h3>
-            <p className="mb-4 text-muted-foreground">
-              Get started by adding your first landlord
-            </p>
-            <Button>+ Add Landlord</Button>
-          </div>
+          <EmptyState
+            icon={UserCheck}
+            title="No landlords yet"
+            description="Start building your network by adding your first landlord"
+            actionLabel="+ Add Landlord"
+            onAction={() => {}}
+          />
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Landlord</DialogTitle>
+            <DialogDescription>
+              Update the landlord information below
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLandlord && (
+            <form onSubmit={handleEditSubmit}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <Input
+                    id="full_name"
+                    name="full_name"
+                    defaultValue={selectedLandlord.full_name}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    defaultValue={selectedLandlord.email}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    defaultValue={selectedLandlord.phone || ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    defaultValue={selectedLandlord.address || ""}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Landlord</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedLandlord?.full_name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
