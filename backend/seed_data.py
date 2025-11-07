@@ -15,6 +15,7 @@ from app.models.property import Property
 from app.models.enums import PropertyStatus, ApplicantStatus
 from app.models.landlord import Landlord
 from app.models.applicant import Applicant
+from app.models.tickets import Ticket
 
 fake = Faker('en_GB')
 
@@ -172,6 +173,42 @@ def create_applicants(db: Session, count: int = 15):
     print(f"✅ Created {count} applicants")
     return applicants
 
+def create_tickets(db: Session, properties, applicants, count: int = 15):
+    print(f"Creating {count} tickets...")
+    
+    ticket_statuses = ["open", "in_progress", "resolved", "closed"]
+    ticket_types = ["maintenance", "request", "complaint"]
+    
+    tickets = []
+    for i in range(count):
+        # Link to an existing Property and Applicant
+        property = random.choice(properties)
+        applicant = random.choice(applicants)
+        
+        # Calculate a report date
+        report_date = datetime.now() - timedelta(days=random.randint(1, 90))
+        
+        ticket = Ticket(
+            title=fake.catch_phrase(),
+            description=f"Issue at {property.address}: {fake.paragraph(nb_sentences=2)}",
+            status=random.choice(ticket_statuses),
+            ticket_category=random.choice(ticket_types),
+            priority=random.choice(["low", "medium", "high"]),
+            reported_date=report_date.date(),
+            property_id=property.id,      # Use the ID of a created property
+            applicant_id=applicant.id,    # Use the ID of a created applicant
+        )
+        
+        db.add(ticket)
+        tickets.append(ticket)
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} tickets...")
+            
+    db.commit()
+    print(f"✅ Created {count} tickets")
+    return tickets
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -189,6 +226,7 @@ def main():
         properties = create_properties(db, count=20)
         landlords = create_landlords(db, count=10)
         applicants = create_applicants(db, count=15)
+        tickets = create_tickets(db, properties, applicants, count=15)
         
         # Summary
         print("\n" + "="*60)
@@ -198,6 +236,7 @@ def main():
         print(f"   • {len(properties)} Properties")
         print(f"   • {len(landlords)} Landlords")
         print(f"   • {len(applicants)} Applicants")
+        print(f"    • {len(tickets)} Tickets")
         print("\n🚀 Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")

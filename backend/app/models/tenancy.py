@@ -13,7 +13,7 @@ class Tenancy(BaseModel):
     
     # Primary Applicant/Tenant
     primary_applicant_id = Column(String, ForeignKey('applicants.id'))
-    # primary_applicant = relationship("Applicant", back_populates="tenancies")
+    applicant = relationship("Applicant", back_populates="tenancies")
     
     # Financial
     rent_amount = Column(Float, nullable=False)

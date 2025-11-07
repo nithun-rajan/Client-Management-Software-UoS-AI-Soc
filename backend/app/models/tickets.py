@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, ForeignKey
+from sqlalchemy import Column, String, Text, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
@@ -19,6 +19,9 @@ class Ticket(BaseModel):
     
     # Urgency tracking from enums.py
     urgency = Column(String, nullable=False, default=TicketUrgency.ROUTINE)
+    ticket_category = Column(String, nullable=False)
+    priority = Column(String, nullable=False, default="low")
+    reported_date = Column(Date, nullable=False)
 
     # Required Relationships 
     
@@ -27,7 +30,7 @@ class Ticket(BaseModel):
     property = relationship("Property", back_populates="tickets")
 
     # 2. Link to the Applicant 
-    reported_by_id = Column(String, ForeignKey('applicants.id'), nullable=True)
+    applicant_id = Column(String, ForeignKey('applicants.id'), nullable=True)
     reporter = relationship("Applicant", back_populates="reported_tickets")
     
     # 3. Link to the Contractor (Not built yet)
