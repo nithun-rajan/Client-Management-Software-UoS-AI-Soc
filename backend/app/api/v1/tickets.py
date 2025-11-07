@@ -9,16 +9,19 @@ from app.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate
 from app.models.enums import TicketStatus
 from app.models.property import Property
 
+# Creates a ticket
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.post("/", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
 def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
+
     
-    # Check if the property actually exists
+    # Validate that the property_id exists before creating the ticket
     db_property = db.query(Property).filter(Property.id == ticket_data.property_id).first()
     if not db_property:
         raise HTTPException(status_code=404, detail="Property not found")
         
+    # Manually map data from the Pydantic schema to the database model
     db_ticket = Ticket(
         title=ticket_data.title,
         description=ticket_data.description,
@@ -28,6 +31,7 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
         urgency=ticket_data.urgency,
         ticket_category=ticket_data.ticket_category,
         priority=ticket_data.priority,
+        reported_date=ticket_data.reported_date,
     )
     
     db.add(db_ticket)
@@ -69,6 +73,7 @@ def update_ticket(
     
     update_data = ticket_data.model_dump(exclude_unset=True)
     
+    # Iterate through and apply updates only for fields that were sent
     for key, value in update_data.items():
         setattr(ticket, key, value)
     
