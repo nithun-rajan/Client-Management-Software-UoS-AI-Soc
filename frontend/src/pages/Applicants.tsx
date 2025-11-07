@@ -36,24 +36,25 @@ import { usePropertyMatching, PropertyMatch } from "@/hooks/useMatching";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
-  const [selectedApplicantId, setSelectedApplicantId] = useState<number | null>(null);
+  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
 
-  const matchingMutation = usePropertyMatching(
-    selectedApplicantId ? String(selectedApplicantId) : "",
-    5,
-    50
-  );
+  const matchingMutation = usePropertyMatching(5, 50);
 
-  const handleFindMatches = async (applicantId: number) => {
+  const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
-    const result = await matchingMutation.mutateAsync();
-    if (result.matches.length > 0) {
-      setMatchesDialogOpen(true);
+    try {
+      const result = await matchingMutation.mutateAsync(applicantId);
+      if (result.matches.length > 0) {
+        setMatchesDialogOpen(true);
+      }
+    } catch (error) {
+      // Error is already handled by the mutation's onError
     }
   };
 
@@ -155,16 +156,15 @@ export default function Applicants() {
           ))}
         </div>
 
-        {applicants?.length === 0 && (
-          <div className="py-12 text-center">
-            <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No applicants yet</h3>
-            <p className="mb-4 text-muted-foreground">
-              Get started by adding your first applicant
-            </p>
-            <Button>+ Add Applicant</Button>
-          </div>
-        )}
+          {applicants?.length === 0 && (
+            <EmptyState
+              icon={Users}
+              title="No applicants yet"
+              description="Start building your applicant database by adding your first applicant"
+              actionLabel="+ Add Applicant"
+              onAction={() => {}}
+            />
+          )}
       </div>
 
       {/* Matches Dialog */}
@@ -244,10 +244,18 @@ export default function Applicants() {
                           </CardDescription>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">
-                            £{match.property.rent}
-                          </div>
-                          <div className="text-xs text-muted-foreground">per month</div>
+                          {match.property.rent ? (
+                            <>
+                              <div className="text-2xl font-bold text-primary">
+                                £{match.property.rent.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">per month</div>
+                            </>
+                          ) : (
+                            <div className="text-lg font-semibold text-muted-foreground">
+                              POA
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardHeader>

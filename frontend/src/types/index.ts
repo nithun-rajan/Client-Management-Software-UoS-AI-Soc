@@ -1,5 +1,5 @@
 export interface Property {
-  id: number;
+  id: string;
   address_line1: string;
   address_line2?: string;
   city: string;
@@ -23,7 +23,7 @@ export interface Property {
 }
 
 export interface Landlord {
-  id: number;
+  id: string;
   full_name: string;
   email: string;
   phone?: string;
@@ -40,7 +40,7 @@ export interface Landlord {
 }
 
 export interface Applicant {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;

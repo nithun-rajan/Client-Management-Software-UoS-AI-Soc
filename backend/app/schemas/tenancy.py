@@ -1,19 +1,18 @@
-from pydantic import BaseModel
+from app.schemas.model_config import AppBaseModel
+
 from datetime import date, datetime
 from typing import Optional
 
 
-from app.models.enums import TenancyStatus
-
 # Fields common to Create and Response
-class TenancyBase(BaseModel):
+class TenancyBase(AppBaseModel):
     property_id: str
     primary_applicant_id: str
     rent_amount: float
     deposit_amount: float
     start_date: date
     end_date: Optional[date] = None
-    status: TenancyStatus = TenancyStatus.PENDING
+    status: str = "pending"
     
 
     deposit_scheme: Optional[str] = None
@@ -37,14 +36,14 @@ class TenancyCreate(TenancyBase):
     pass
 
 # Schema for UPDATING a tenancy (matches your other 'Update' schemas)
-class TenancyUpdate(BaseModel):
+class TenancyUpdate(AppBaseModel):
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
     rent_amount: Optional[float] = None
     deposit_amount: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    status: Optional[TenancyStatus] = None
+    status: Optional[str] = None
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = None
@@ -66,6 +65,3 @@ class TenancyResponse(TenancyBase):
     id: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True

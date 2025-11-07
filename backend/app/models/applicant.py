@@ -5,7 +5,7 @@ from app.models.enums import ApplicantStatus
 
 class Applicant(BaseModel):
     __tablename__ = "applicants"
-    
+
     # Basic identity (from page 22-23)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
@@ -30,5 +30,5 @@ class Applicant(BaseModel):
     special_requirements = Column(Text)
     
     # Relationships
-    # tenancies = relationship("Tenancy", back_populates="applicant")
+    tenancies = relationship("Tenancy", back_populates="applicant")
     communications = relationship("Communication", back_populates="applicant")
