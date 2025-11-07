@@ -9,20 +9,26 @@ from app.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate
 from app.models.enums import TicketStatus
 from app.models.property import Property
 
-# Creates a ticket
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.post("/", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
 def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
-
     
     # Check if the property actually exists
     db_property = db.query(Property).filter(Property.id == ticket_data.property_id).first()
     if not db_property:
         raise HTTPException(status_code=404, detail="Property not found")
         
-    #This part takes data from the frontend and creates a new ticket in the database
-    db_ticket = Ticket(**ticket_data.model_dump())
+    db_ticket = Ticket(
+        title=ticket_data.title,
+        description=ticket_data.description,
+        property_id=ticket_data.property_id,
+        applicant_id=ticket_data.applicant_id,
+        status=ticket_data.status,
+        urgency=ticket_data.urgency,
+        ticket_category=ticket_data.ticket_category,
+        priority=ticket_data.priority,
+    )
     
     db.add(db_ticket)
     db.commit()
