@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { useLandlords, useDeleteLandlord, useUpdateLandlord } from "@/hooks/useLandlords";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
+import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Landlord } from "@/types";
 
@@ -180,14 +181,13 @@ export default function Landlords() {
         </div>
 
         {landlords?.length === 0 && (
-          <div className="py-12 text-center">
-            <UserCheck className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No landlords yet</h3>
-            <p className="mb-4 text-muted-foreground">
-              Get started by adding your first landlord
-            </p>
-            <Button>+ Add Landlord</Button>
-          </div>
+          <EmptyState
+            icon={UserCheck}
+            title="No landlords yet"
+            description="Start building your network by adding your first landlord"
+            actionLabel="+ Add Landlord"
+            onAction={() => {}}
+          />
         )}
       </div>
 

@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Activity,
   Eye,
-  Pencil,
   FileText,
   Upload,
   Mail,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -38,6 +38,7 @@ import {
   useTransitionStatus,
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
+import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -97,6 +98,7 @@ export default function PropertyDetails() {
       under_offer: "Under Offer",
       let_agreed: "Let Agreed",
       tenanted: "Tenanted",
+      managed: "Managed",
       withdrawn: "Withdrawn",
       maintenance: "Maintenance",
     };
@@ -133,160 +135,142 @@ export default function PropertyDetails() {
     <div>
       <Header title="Property Details" />
       <div className="space-y-6 p-6">
-        <Button variant="outline" onClick={() => navigate("/properties")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Properties
-        </Button>
-        <Button onClick={handleSendEmail}>
-          <Mail className="mr-2 h-4 w-4" />
-          Send Details
-        </Button>
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-2xl">{property.address_line1}</CardTitle>
-                  {property.address_line2 && (
-                    <p className="text-muted-foreground">{property.address_line2}</p>
-                  )}
-                  <div className="mt-2 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {property.city}, {property.postcode}
-                    </span>
+        {/* Header Bar */}
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => navigate("/properties")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Properties
+          </Button>
+          <StatusBadge status={property.status} />
+        </div>
+
+        {/* Property Header Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-2xl">{property.address_line1}</CardTitle>
+                {property.address_line2 && (
+                  <p className="text-muted-foreground">{property.address_line2}</p>
+                )}
+                <div className="mt-2 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {property.city}, {property.postcode}
+                  </span>
+                </div>
+              </div>
+              {property.rent && (
+                <div className="text-right">
+                  <div className="flex items-center gap-2 text-3xl font-bold text-primary">
+                    <PoundSterling className="h-8 w-8" />
+                    {property.rent.toLocaleString()}
                   </div>
-                </div>
-                <StatusBadge status={property.status} />
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                {/* <img 
-                  src={`https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=450&fit=crop&crop=entropy&auto=format&q=75`}
-                  alt={property.address_line1}
-                  className="w-full h-full object-cover"
-                /> */}
-                {/* sorry but i have to do this */}
-                <img
-                  src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                  alt={property.address_line1}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="rounded-lg bg-muted p-4 text-center">
-                  <Bed className="mx-auto mb-2 h-6 w-6 text-primary" />
-                  <div className="text-2xl font-bold">{property.bedrooms}</div>
-                  <div className="text-sm text-muted-foreground">Bedrooms</div>
-                </div>
-                <div className="rounded-lg bg-muted p-4 text-center">
-                  <Bath className="mx-auto mb-2 h-6 w-6 text-primary" />
-                  <div className="text-2xl font-bold">{property.bathrooms}</div>
-                  <div className="text-sm text-muted-foreground">Bathrooms</div>
-                </div>
-                <div className="rounded-lg bg-muted p-4 text-center">
-                  <Building2 className="mx-auto mb-2 h-6 w-6 text-primary" />
-                  <div className="text-sm font-medium capitalize">
-                    {property.property_type}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Type</div>
-                </div>
-              </div>
-
-              {property.description && (
-                <div>
-                  <h3 className="mb-2 font-semibold">Description</h3>
-                  <p className="text-muted-foreground">{property.description}</p>
+                  <p className="text-sm text-muted-foreground">per calendar month</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </CardHeader>
+        </Card>
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {property.rent ? (
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 text-3xl font-bold text-primary">
-                      <PoundSterling className="h-8 w-8" />
-                      {property.rent.toLocaleString()}
+        {/* Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Property Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="aspect-video overflow-hidden rounded-lg bg-muted">
+                    <img
+                      src={`https://picsum.photos/seed/building${property.id}/800/450`}
+                      alt={property.address_line1}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded-lg bg-muted p-4 text-center">
+                      <Bed className="mx-auto mb-2 h-6 w-6 text-primary" />
+                      <div className="text-2xl font-bold">{property.bedrooms}</div>
+                      <div className="text-sm text-muted-foreground">Bedrooms</div>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      per calendar month
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    Price on application
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Property Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium capitalize">
-                    {property.status.replace("_", " ")}
-                  </span>
-                </div>
-                {/* Workflow Transitions */}
-                {availableTransitions &&
-                  availableTransitions.available_transitions.length > 0 && (
-                    <div className="pt-3 border-t">
-                      <div className="mb-1.5 flex items-center gap-1.5">
-                        <Workflow className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Actions
-                        </span>
+                    <div className="rounded-lg bg-muted p-4 text-center">
+                      <Bath className="mx-auto mb-2 h-6 w-6 text-primary" />
+                      <div className="text-2xl font-bold">{property.bathrooms}</div>
+                      <div className="text-sm text-muted-foreground">Bathrooms</div>
+                    </div>
+                    <div className="rounded-lg bg-muted p-4 text-center">
+                      <Building2 className="mx-auto mb-2 h-6 w-6 text-primary" />
+                      <div className="text-sm font-medium capitalize">
+                        {property.property_type}
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {availableTransitions.available_transitions.map(
-                          (transition) => (
-                            <Button
-                              key={transition}
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleTransition(transition)}
-                              className="h-7 px-2 text-xs"
-                            >
-                              <ArrowRight className="mr-1 h-2.5 w-2.5" />
-                              {getStatusLabel(transition)}
-                            </Button>
-                          )
-                        )}
-                      </div>
+                      <div className="text-sm text-muted-foreground">Type</div>
+                    </div>
+                  </div>
+                  {property.description && (
+                    <div>
+                      <h3 className="mb-2 font-semibold">Description</h3>
+                      <p className="text-muted-foreground">{property.description}</p>
                     </div>
                   )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Property Type</span>
-                  <span className="font-medium capitalize">
-                    {property.property_type}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bedrooms</span>
-                  <span className="font-medium">{property.bedrooms}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bathrooms</span>
-                  <span className="font-medium">{property.bathrooms}</span>
-                </div>
-                {/* maybe here???? cuz it kinda makes sense to be here; Activity Timeline */}
-              </CardContent>
-            </Card>
-            {/* Activity Timeline */}
-            <Card className="md:col-span-3">
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Details</CardTitle>
+                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Details
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Property Type</span>
+                      <span className="font-medium capitalize">
+                        {property.property_type}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bedrooms</span>
+                      <span className="font-medium">{property.bedrooms}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bathrooms</span>
+                      <span className="font-medium">{property.bathrooms}</span>
+                    </div>
+                    {property.rent && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Rent</span>
+                        <span className="font-medium">£{property.rent.toLocaleString()}/month</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Pipeline Tab */}
+          <TabsContent value="pipeline" className="mt-6">
+            <PropertyPipeline propertyId={property.id} />
+          </TabsContent>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity" className="mt-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
@@ -312,7 +296,7 @@ export default function PropertyDetails() {
                     property.updated_at !== property.created_at && (
                       <div className="flex gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                          <Pencil className="h-5 w-5 text-primary" />
+                          <Eye className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">Property Updated</p>
@@ -336,8 +320,11 @@ export default function PropertyDetails() {
                 </div>
               </CardContent>
             </Card>
-            {/* Documents Section */}
-            <Card className="md:col-span-3">
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="mt-6">
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
@@ -392,8 +379,8 @@ export default function PropertyDetails() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Transition Dialog */}
@@ -427,10 +414,10 @@ export default function PropertyDetails() {
               availableTransitions.side_effects[selectedTransition].length >
                 0 && (
                 <div className="rounded-lg bg-muted p-3">
-                  <p className="text-sm font-medium mb-2">
+                  <p className="mb-2 text-sm font-medium">
                     Automated actions that will run:
                   </p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
+                  <ul className="space-y-1 text-sm text-muted-foreground">
                     {availableTransitions.side_effects[selectedTransition].map(
                       (effect, idx) => (
                         <li key={idx}>• {effect.replace(/_/g, " ")}</li>

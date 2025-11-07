@@ -72,14 +72,14 @@ export default function ApplicantDetails() {
     <div>
       <Header title="Applicant Details" />
       <div className="space-y-6 p-6">
-        <Button variant="outline" onClick={() => navigate("/applicants")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Applicants
-        </Button>
-        <Button onClick={handleSendEmail}>
-          <Mail className="mr-2 h-4 w-4" />
-          Send Details
-        </Button>
+        {/* Header Bar */}
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => navigate("/applicants")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Applicants
+          </Button>
+          <StatusBadge status={applicant.status} />
+        </div>
 
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2">
@@ -100,7 +100,13 @@ export default function ApplicantDetails() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="mb-3 font-semibold">Contact Information</h3>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-semibold">Contact Information</h3>
+                  <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Details
+                  </Button>
+                </div>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
@@ -219,20 +225,6 @@ export default function ApplicantDetails() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Application Status</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className="font-medium capitalize">
-                    {applicant.status.replace("_", " ")}
-                  </span>
-                </div>
               </CardContent>
             </Card>
 

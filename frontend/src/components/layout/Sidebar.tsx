@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Home, Building2, Users, UserCheck, Search,
@@ -101,26 +102,33 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Agent Profile – 100% ORIGINAL LOOK */}
-        <div className="border-t border-white/10 p-4">
+        {/* Theme Toggle */}
+        <div className="border-t border-white/10 p-3">
+          <div className="flex items-center justify-center">
+            <ThemeToggle variant="sidebar" />
+          </div>
+        </div>
+
+        {/* Agent Profile - Compact & Clean */}
+        <div className="border-t border-white/10 p-3">
           <button
             onClick={() => setAgentOpen(true)}
-            className="group flex w-full items-center gap-3 rounded-lg p-2 transition-all hover:bg-white/10"
+            className="group flex w-full items-center gap-2.5 rounded-lg p-2 transition-all hover:bg-white/10"
           >
             <div className="relative">
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-9 w-9 ring-2 ring-white/20">
                 <AvatarImage src={agent.avatarUrl} />
-                <AvatarFallback className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-lg">
+                <AvatarFallback className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
                   {agent.name.split(" ").map(n => n[0]).join("").toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -right-1 -top-1 h-4 w-4 animate-pulse rounded-full border-2 border-indigo-900 bg-green-400"></div>
+              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-white">{agent.name}</p>
-              <p className="text-xs text-white/70">• Live</p>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-semibold text-white truncate">{agent.name}</p>
+              <p className="text-[10px] text-white/60">Online</p>
             </div>
-            <Sparkles className="h-4 w-4 text-yellow-400 opacity-0 transition group-hover:opacity-100" />
+            <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />
           </button>
         </div>
 

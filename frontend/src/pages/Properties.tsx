@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 
@@ -235,14 +236,13 @@ export default function Properties() {
         </div>
 
         {properties?.length === 0 && (
-          <div className="py-12 text-center">
-            <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No properties yet</h3>
-            <p className="mb-4 text-muted-foreground">
-              Get started by adding your first property
-            </p>
-            <Button>+ Add Property</Button>
-          </div>
+          <EmptyState
+            icon={Building2}
+            title="No properties yet"
+            description="Get started by adding your first property to begin managing your portfolio"
+            actionLabel="+ Add Property"
+            onAction={() => {}}
+          />
         )}
       </div>
 

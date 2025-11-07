@@ -36,6 +36,7 @@ import { usePropertyMatching, PropertyMatch } from "@/hooks/useMatching";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 
 export default function Applicants() {
@@ -155,16 +156,15 @@ export default function Applicants() {
           ))}
         </div>
 
-        {applicants?.length === 0 && (
-          <div className="py-12 text-center">
-            <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <h3 className="mb-2 text-lg font-semibold">No applicants yet</h3>
-            <p className="mb-4 text-muted-foreground">
-              Get started by adding your first applicant
-            </p>
-            <Button>+ Add Applicant</Button>
-          </div>
-        )}
+          {applicants?.length === 0 && (
+            <EmptyState
+              icon={Users}
+              title="No applicants yet"
+              description="Start building your applicant database by adding your first applicant"
+              actionLabel="+ Add Applicant"
+              onAction={() => {}}
+            />
+          )}
       </div>
 
       {/* Matches Dialog */}
