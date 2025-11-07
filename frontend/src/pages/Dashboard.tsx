@@ -56,21 +56,21 @@ export default function Dashboard() {
       icon: UserCheck,
       value: kpis?.landlords.total || 0,
       subtitle: `${kpis?.landlords.verification_rate.toFixed(0) || 0}% AML verified`,
-      gradient: "from-accent to-emerald-500",
+      gradient: "from-accent to-emerald-500 dark:from-teal-600 dark:to-emerald-600",
     },
     {
       title: "Applicants",
       icon: Users,
       value: kpis?.applicants.total || 0,
       subtitle: `${kpis?.applicants.qualification_rate.toFixed(0) || 0}% qualified`,
-      gradient: "from-orange-500 to-red-500",
+      gradient: "from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600",
     },
     {
       title: "Average Rent",
       icon: PoundSterling,
       value: `£${kpis?.properties.avg_rent.toFixed(0) || 0}`,
       subtitle: "per calendar month",
-      gradient: "from-blue-500 to-purple-500",
+      gradient: "from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600",
     },
   ];
 

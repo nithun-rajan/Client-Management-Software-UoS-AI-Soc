@@ -1,6 +1,6 @@
 // src/pages/Settings.tsx
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera } from "lucide-react";
+import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow } from "lucide-react";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/layout/Header";
+import Pipeline from "./Pipeline";
 
 // GLOBAL AGENT STORE (shared with Sidebar & Dialog)
 interface Agent {
@@ -77,10 +79,16 @@ export default function Settings() {
   return (
     <div>
       <Header title="Settings" />
-      <div className="space-y-6 p-6 max-w-4xl mx-auto">
+      <div className="p-6">
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          </TabsList>
 
-        {/* LIVE AGENT EDITOR */}
-        <Card>
+          <TabsContent value="profile" className="space-y-6 max-w-4xl mx-auto mt-6">
+            {/* LIVE AGENT EDITOR */}
+            <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <SettingsIcon className="h-5 w-5" />
@@ -181,6 +189,12 @@ export default function Settings() {
             <Button className="w-full" variant="outline">Test Connection</Button>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="pipeline" className="mt-6">
+            <Pipeline />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
