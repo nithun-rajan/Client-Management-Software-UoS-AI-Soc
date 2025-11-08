@@ -6,6 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -26,6 +27,19 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
+import { useNotifications, useMarkAllNotificationsRead, useDeleteAllNotifications, useMarkNotificationRead } from "@/hooks/useNotifications";
+import { formatDistanceToNow } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface HeaderProps {
   title: string;
@@ -35,7 +49,47 @@ export default function Header({ title }: HeaderProps) {
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [landlordOpen, setLandlordOpen] = useState(false);
   const [applicantOpen, setApplicantOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { data: notifications = [] } = useNotifications();
+  const markAllRead = useMarkAllNotificationsRead();
+  const deleteAllNotifications = useDeleteAllNotifications();
+  const markNotificationRead = useMarkNotificationRead();
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllRead.mutateAsync();
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllNotifications.mutateAsync();
+      setDeleteDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "All notifications deleted",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete notifications",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePropertySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -111,10 +165,10 @@ export default function Header({ title }: HeaderProps) {
     }
   };
 
-  return (
+ return (
     <>
       <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <h1 className="text-2xl font-bold">{title}</h1>
+      <h1 className="text-2xl font-bold">{title}</h1>
 
         <div className="flex items-center gap-4">
           <DropdownMenu>
@@ -137,12 +191,147 @@ export default function Header({ title }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-              3
-            </span>
-          </Button>
+                  {/* Live Bell */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="flex items-center justify-between px-3 py-2">
+              <span className="font-semibold">Notifications</span>
+              {unreadCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={handleMarkAllRead}
+                  disabled={markAllRead.isPending}
+                >
+                  {markAllRead.isPending ? "Marking..." : "Mark all read"}
+                </Button>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+
+            {notifications.length === 0 ? (
+              <DropdownMenuItem className="text-center opacity-70">
+                No notifications
+              </DropdownMenuItem>
+            ) : (
+              notifications.slice(0, 8).map((n) => (
+                <DropdownMenuItem 
+                  key={n.id} 
+                  className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                  onClick={() => {
+                    if (!n.body) return;
+                    
+                    const entityId = n.body.trim();
+                    
+                    // Check if it's the old format (contains "Email:" or "Phone:")
+                    // Old notifications had body like "Email: ... | Phone: ..."
+                    if (entityId.includes("Email:") || entityId.includes("Phone:")) {
+                      // Old notification format - don't navigate
+                      return;
+                    }
+                    
+                    // UUID validation
+                    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    if (!uuidRegex.test(entityId)) return;
+                    
+                    // Mark notification as read
+                    if (!n.is_read) {
+                      markNotificationRead.mutate(n.id);
+                    }
+                    
+                    // Navigate based on notification type
+                    if (n.type === "applicant") {
+                      navigate(`/applicants/${entityId}`);
+                    } else if (n.type === "landlord") {
+                      navigate(`/landlords/${entityId}`);
+                    } else if (n.type === "property") {
+                      navigate(`/properties/${entityId}`);
+                    }
+                  }}
+                >
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm">{n.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Priority badge */}
+                      {(n.priority || "medium") === "high" && (
+                        <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-destructive/20 text-destructive">
+                          High
+                        </span>
+                      )}
+                      {(n.priority || "medium") === "medium" && (
+                        <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-yellow-500/20 text-yellow-700 dark:text-yellow-400">
+                          Med
+                        </span>
+                      )}
+                      {(n.priority || "medium") === "low" && (
+                        <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-muted text-muted-foreground">
+                          Low
+                        </span>
+                      )}
+                      {!n.is_read && <div className="h-2 w-2 rounded-full bg-destructive" />}
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                  </span>
+                </DropdownMenuItem>
+              ))
+            )}
+            
+            {/* Clear all button - only show when there are notifications */}
+            {notifications.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    disabled={deleteAllNotifications.isPending}
+                  >
+                    {deleteAllNotifications.isPending ? "Deleting..." : "Clear all"}
+                  </Button>
+                </div>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all notifications. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAll}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete All
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </div>
       </header>
 
