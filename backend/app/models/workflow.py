@@ -8,14 +8,15 @@ class WorkflowTransition(BaseModel):
     """Tracks all status transitions for audit purposes"""
     __tablename__ = "workflow_transitions"
     
-
     domain = Column(String, nullable=False)  # property, tenancy, vendor, applicant
     entity_id = Column(String, nullable=False)  # UUID of the entity
     from_status = Column(String, nullable=False)
     to_status = Column(String, nullable=False)
     user_id = Column(String)  # Who performed the transition
     notes = Column(Text)
-    workflow_metadata = Column(JSON)  # Store additional context
+    # 'metadata' is a reserved attribute name on declarative classes (Base.metadata).
+    # Use a different attribute name but keep the DB column name as 'metadata'
+    metadata_json = Column('metadata', JSON)  # Store additional context
     side_effects_executed = Column(JSON)  # List of automated actions
     
     # Index for faster queries

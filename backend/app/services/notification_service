@@ -1,0 +1,14 @@
+# app/services/notification_service.py
+from app.models.notification import Notification
+
+def notify(db, user_id, title, body=None, type="info"):
+    n = Notification(
+        user_id=user_id,
+        title=title,
+        body=body,
+        type=type
+    )
+    db.add(n)
+    db.commit()
+    db.refresh(n)
+    return n
