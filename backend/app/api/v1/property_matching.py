@@ -251,6 +251,8 @@ async def ai_match_properties(
                 "property": {
                     "id": property.id,
                     "address": property.address,
+                    "address_line1": property.address_line1,
+                    "address_line2": property.address_line2,
                     "city": property.city,
                     "postcode": property.postcode,
                     "bedrooms": property.bedrooms,

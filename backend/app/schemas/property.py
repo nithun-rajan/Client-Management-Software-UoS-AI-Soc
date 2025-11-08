@@ -15,6 +15,7 @@ class PropertyBase(AppBaseModel):
 
 class PropertyCreate(PropertyBase):
     city: str
+    landlord_id: str | None = None
 
 class PropertyUpdate(AppBaseModel):
     address: str | None = None
@@ -26,8 +27,18 @@ class PropertyUpdate(AppBaseModel):
     rent: float | None = None
     status: str | None = None
     description: str | None = None
+    landlord_id: str | None = None
+
+class LandlordInfo(AppBaseModel):
+    """Basic landlord information for property responses"""
+    id: str
+    full_name: str
+    email: str
+    phone: str | None = None
 
 class PropertyResponse(PropertyBase):
     id: str
     status: PropertyStatus
     city: str
+    landlord_id: str | None = None
+    landlord: LandlordInfo | None = None  # Landlord information if property has a landlord

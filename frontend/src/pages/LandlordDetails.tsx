@@ -10,6 +10,10 @@ import {
   AlertCircle,
   Activity,
   FileText,
+  Eye,
+  Bed,
+  Bath,
+  PoundSterling,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +24,52 @@ import Header from "@/components/layout/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import StatusBadge from "@/components/shared/StatusBadge";
+import EmptyState from "@/components/shared/EmptyState";
+
+// Helper function to extract flat/unit number from address
+const getFlatOrUnitNumber = (addressLine1: string | undefined, address: string | undefined, city?: string): string => {
+  const addressStr = addressLine1 || address?.split('\n')[0]?.trim() || "";
+  
+  if (!addressStr) return "";
+  
+  // Look for flat/unit patterns anywhere in the string (Studio, Flat, Unit, etc.)
+  const flatMatch = addressStr.match(/\b(Studio|Flat|Unit|Apartment|Apt|Suite|Room)\s+[\w\d]+/i);
+  if (flatMatch) {
+    return flatMatch[0];
+  }
+  
+  // If no flat/unit pattern found, check if there are commas
+  const parts = addressStr.split(',').map(p => p.trim()).filter(p => p.length > 0);
+  
+  if (parts.length > 1) {
+    // Remove city from parts if it matches
+    const filteredParts = city 
+      ? parts.filter(p => p.toLowerCase() !== city.toLowerCase())
+      : parts;
+    
+    // Return the last part (likely the flat/unit, or street if no flat/unit found)
+    if (filteredParts.length > 0) {
+      return filteredParts[filteredParts.length - 1];
+    }
+  }
+  
+  // If no comma, return the whole string (but remove city if present)
+  if (city && addressStr.toLowerCase().endsWith(city.toLowerCase())) {
+    return addressStr.replace(new RegExp(`[, ]*${city}`, 'gi'), '').trim();
+  }
+  
+  return addressStr;
+};
+
+// Helper function to capitalize first letter of each word
+const capitalizeWords = (str: string): string => {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 export default function LandlordDetails() {
   const { id } = useParams();
@@ -231,20 +281,10 @@ export default function LandlordDetails() {
 
           {/* Properties Tab */}
           <TabsContent value="properties" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Properties Portfolio</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="py-12 text-center">
-                  <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                  <h3 className="mb-2 text-lg font-semibold">No properties yet</h3>
-                  <p className="text-muted-foreground">
-                    Properties associated with this landlord will appear here
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <PropertiesListByLandlord 
+              landlordId={id || ""} 
+              propertiesCount={landlord.properties_count ?? 0}
+            />
           </TabsContent>
 
           {/* Activity Tab */}
@@ -332,5 +372,117 @@ export default function LandlordDetails() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// Component to display properties owned by a landlord
+function PropertiesListByLandlord({ 
+  landlordId, 
+  propertiesCount 
+}: { 
+  landlordId: string;
+  propertiesCount: number;
+}) {
+  const { data: properties, isLoading } = useQuery({
+    queryKey: ["properties", "landlord", landlordId],
+    queryFn: async () => {
+      // Use landlord_id query parameter to filter on the backend
+      const response = await api.get(`/api/v1/properties/`, {
+        params: { landlord_id: landlordId, limit: 1000 } // Increase limit to get all properties for this landlord
+      });
+      return response.data;
+    },
+    enabled: !!landlordId,
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Properties Portfolio ({propertiesCount})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!properties || properties.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Properties Portfolio ({propertiesCount})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            icon={Building2}
+            title="No properties yet"
+            description="Properties owned by this landlord will appear here"
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Properties Portfolio ({propertiesCount})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {properties.map((property: any) => (
+            <Card key={property.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold leading-tight">
+                      {capitalizeWords(
+                        getFlatOrUnitNumber(property.address_line1, property.address, property.city) || property.city
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {property.city}, {property.postcode}
+                    </p>
+                  </div>
+                  <StatusBadge status={property.status} />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Bed className="h-4 w-4" />
+                    <span>{property.bedrooms}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Bath className="h-4 w-4" />
+                    <span>{property.bathrooms}</span>
+                  </div>
+                  {property.rent && (
+                    <div className="ml-auto flex items-center gap-1 font-semibold text-primary">
+                      <PoundSterling className="h-4 w-4" />
+                      <span>{property.rent.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardContent className="pt-0">
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link to={`/properties/${property.id}`}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
