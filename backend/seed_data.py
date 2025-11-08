@@ -201,6 +201,16 @@ def main():
         landlords = create_landlords(db, count=10)
         applicants = create_applicants(db, count=15)
 
+        # Assign properties to landlords
+        print("\n[*] Assigning properties to landlords...")
+        for i, property in enumerate(properties):
+            # Assign each property to a random landlord
+            landlord = random.choice(landlords)
+            property.landlord_id = landlord.id
+        
+        db.commit()
+        print("[OK] Properties assigned to landlords")
+
         # Summary
         print("\n" + "="*60)
         print("[OK] SEEDING COMPLETE!")

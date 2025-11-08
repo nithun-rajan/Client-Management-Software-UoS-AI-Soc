@@ -39,6 +39,49 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 
+// Helper function to extract flat/unit number from address
+const getFlatOrUnitNumber = (addressLine1: string | undefined, address: string | undefined, city?: string): string => {
+  const addressStr = addressLine1 || address || "";
+  
+  if (!addressStr) return "";
+  
+  // Look for flat/unit patterns anywhere in the string (Studio, Flat, Unit, etc.)
+  const flatMatch = addressStr.match(/\b(Studio|Flat|Unit|Apartment|Apt|Suite|Room)\s+[\w\d]+/i);
+  if (flatMatch) {
+    return flatMatch[0];
+  }
+  
+  // If no flat/unit pattern found, check if there are commas
+  const parts = addressStr.split(',').map(p => p.trim()).filter(p => p.length > 0);
+  
+  if (parts.length > 1) {
+    // Remove city from parts if it matches
+    const filteredParts = city 
+      ? parts.filter(p => p.toLowerCase() !== city.toLowerCase())
+      : parts;
+    
+    // Return the last part (likely the flat/unit, or street if no flat/unit found)
+    if (filteredParts.length > 0) {
+      return filteredParts[filteredParts.length - 1];
+    }
+  }
+  
+  // If no comma, return the whole string (but remove city if present)
+  if (city && addressStr.toLowerCase().endsWith(city.toLowerCase())) {
+    return addressStr.replace(new RegExp(`[, ]*${city}`, 'gi'), '').trim();
+  }
+  
+  return addressStr;
+};
+
+// Helper function to capitalize first letter of each word
+const capitalizeWords = (str: string): string => {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
@@ -236,7 +279,9 @@ export default function Applicants() {
                             {index === 0 && <Badge variant="outline">Best Match</Badge>}
                           </div>
                           <CardTitle className="text-lg">
-                            {match.property.address}
+                            {capitalizeWords(
+                              getFlatOrUnitNumber(match.property.address_line1, match.property.address, match.property.city) || match.property.city
+                            )}
                           </CardTitle>
                           <CardDescription className="mt-1 flex items-center gap-2">
                             <MapPin className="h-3 w-3" />
@@ -318,8 +363,10 @@ export default function Applicants() {
                       <Button size="sm" variant="outline">
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline">
-                        View Property
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/properties/${match.property_id}`}>
+                          View Property
+                        </Link>
                       </Button>
                     </CardFooter>
                   </Card>

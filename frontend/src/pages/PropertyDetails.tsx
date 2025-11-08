@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Building2,
   Bed,
@@ -148,8 +148,8 @@ export default function PropertyDetails() {
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">{property.address_line1}</CardTitle>
+              <div className="flex-1">
+                <CardTitle className="text-2xl">{property.address || property.address_line1 || property.city}</CardTitle>
                 {property.address_line2 && (
                   <p className="text-muted-foreground">{property.address_line2}</p>
                 )}
@@ -159,6 +159,20 @@ export default function PropertyDetails() {
                     {property.city}, {property.postcode}
                   </span>
                 </div>
+                {property.landlord && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Owner:{" "}
+                      <Link 
+                        to={`/landlords/${property.landlord.id}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {property.landlord.full_name}
+                      </Link>
+                    </span>
+                  </div>
+                )}
               </div>
               {property.rent && (
                 <div className="text-right">
@@ -193,7 +207,7 @@ export default function PropertyDetails() {
                   <div className="aspect-video overflow-hidden rounded-lg bg-muted">
                     <img
                       src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                      alt={property.address_line1}
+                      alt={property.address || property.address_line1 || property.city}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -237,6 +251,18 @@ export default function PropertyDetails() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
+                    {property.landlord && (
+                      <div className="flex justify-between items-center pb-3 border-b">
+                        <span className="text-muted-foreground">Landlord</span>
+                        <Link 
+                          to={`/landlords/${property.landlord.id}`}
+                          className="font-medium text-primary hover:underline flex items-center gap-1"
+                        >
+                          {property.landlord.full_name}
+                          <Eye className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Property Type</span>
                       <span className="font-medium capitalize">

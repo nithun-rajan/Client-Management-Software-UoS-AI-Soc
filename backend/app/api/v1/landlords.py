@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import verify_token
 from app.models.landlord import Landlord
+from app.models.property import Property
 from app.models.user import User
 from app.schemas.landlord import LandlordCreate, LandlordResponse, LandlordUpdate
 from app.services.notification_service import notify
@@ -67,21 +68,36 @@ def create_landlord(
         except Exception:
             pass
     
-    return db_landlord
+    # Calculate properties count
+    properties_count = db.query(Property).filter(Property.landlord_id == db_landlord.id).count()
+    response = LandlordResponse.model_validate(db_landlord)
+    response.properties_count = properties_count
+    return response
 
 @router.get("/", response_model=list[LandlordResponse])
 def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """List all landlords"""
+    """List all landlords with property counts"""
     landlords = db.query(Landlord).offset(skip).limit(limit).all()
-    return landlords
+    result = []
+    for landlord in landlords:
+        properties_count = db.query(Property).filter(Property.landlord_id == landlord.id).count()
+        response = LandlordResponse.model_validate(landlord)
+        response.properties_count = properties_count
+        result.append(response)
+    return result
 
 @router.get("/{landlord_id}", response_model=LandlordResponse)
 def get_landlord(landlord_id: str, db: Session = Depends(get_db)):
-    """Get a specific landlord"""
+    """Get a specific landlord with property count"""
     landlord = db.query(Landlord).filter(Landlord.id == landlord_id).first()
     if not landlord:
         raise HTTPException(status_code=404, detail="Landlord not found")
-    return landlord
+    
+    # Calculate properties count
+    properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
+    response = LandlordResponse.model_validate(landlord)
+    response.properties_count = properties_count
+    return response
 
 @router.put("/{landlord_id}", response_model=LandlordResponse)
 def update_landlord(
@@ -99,7 +115,12 @@ def update_landlord(
 
     db.commit()
     db.refresh(landlord)
-    return landlord
+    
+    # Calculate properties count
+    properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
+    response = LandlordResponse.model_validate(landlord)
+    response.properties_count = properties_count
+    return response
 
 @router.delete("/{landlord_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_landlord(landlord_id: str, db: Session = Depends(get_db)):
