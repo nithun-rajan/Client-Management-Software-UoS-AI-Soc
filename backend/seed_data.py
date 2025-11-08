@@ -22,14 +22,14 @@ fake = Faker('en_GB')
 
 def clear_database():
     """Clear all existing data"""
-    print("🗑️  Clearing existing data...")
+    print("[*] Clearing existing data...")
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    print("✅ Database cleared and recreated")
+    print("[OK] Database cleared and recreated")
 
 def create_properties(db: Session, count: int = 20):
     """Create realistic properties"""
-    print(f"\n🏠 Creating {count} properties...")
+    print(f"\n[*] Creating {count} properties...")
 
     property_types = ["flat", "house", "maisonette"]
     statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
@@ -95,12 +95,12 @@ def create_properties(db: Session, count: int = 20):
             print(f"   Created {i + 1}/{count} properties...")
 
     db.commit()
-    print(f"✅ Created {count} properties")
+    print(f"[OK] Created {count} properties")
     return properties
 
 def create_landlords(db: Session, count: int = 10):
     """Create realistic landlords"""
-    print(f"\n👔 Creating {count} landlords...")
+    print(f"\n[*] Creating {count} landlords...")
 
     landlords = []
     for i in range(count):
@@ -125,12 +125,12 @@ def create_landlords(db: Session, count: int = 10):
             print(f"   Created {i + 1}/{count} landlords...")
 
     db.commit()
-    print(f"✅ Created {count} landlords")
+    print(f"[OK] Created {count} landlords")
     return landlords
 
 def create_applicants(db: Session, count: int = 15):
     """Create realistic applicants"""
-    print(f"\n👥 Creating {count} applicants...")
+    print(f"\n[*] Creating {count} applicants...")
 
     # Get status values from ApplicantStatus class
     statuses = [
@@ -180,13 +180,13 @@ def create_applicants(db: Session, count: int = 15):
             print(f"   Created {i + 1}/{count} applicants...")
 
     db.commit()
-    print(f"✅ Created {count} applicants")
+    print(f"[OK] Created {count} applicants")
     return applicants
 
 def main():
     """Main seed function"""
     print("\n" + "="*60)
-    print("🌱 TEAM 67 CRM - DATABASE SEEDING SCRIPT")
+    print("TEAM 67 CRM - DATABASE SEEDING SCRIPT")
     print("="*60)
 
     # Create database session
@@ -203,18 +203,20 @@ def main():
 
         # Summary
         print("\n" + "="*60)
-        print("✅ SEEDING COMPLETE!")
+        print("[OK] SEEDING COMPLETE!")
         print("="*60)
-        print("📊 Summary:")
-        print(f"   • {len(properties)} Properties")
-        print(f"   • {len(landlords)} Landlords")
-        print(f"   • {len(applicants)} Applicants")
-        print("\n🚀 Your API is now ready for demo!")
+        print("Summary:")
+        print(f"   - {len(properties)} Properties")
+        print(f"   - {len(landlords)} Landlords")
+        print(f"   - {len(applicants)} Applicants")
+        print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
 
     except Exception as e:
-        print(f"\n❌ Error during seeding: {e}")
+        print(f"\n[ERROR] Error during seeding: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()
