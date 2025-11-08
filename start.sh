@@ -12,6 +12,7 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+cp .env.example .env
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   Client Management Software - Starting Servers...      ║${NC}"

@@ -13,6 +13,7 @@ from .offer import Offer
 from .viewing import Viewing
 from .match_history import MatchHistory
 from .document import Document
+from .maintenance import MaintenanceIssue
 
 __all__ = [
     "Applicant",
@@ -29,5 +30,6 @@ __all__ = [
     "Viewing",
     "MatchHistory",
     "Document",
+    "MaintenanceIssue",
 ]
 
