@@ -12,6 +12,8 @@ import LandlordDetails from "./pages/LandlordDetails";
 import Applicants from "./pages/Applicants";
 import ApplicantDetails from "./pages/ApplicantDetails";
 import PropertyDetails from "./pages/PropertyDetails";
+import Vendors from "./pages/Vendors";
+import VendorDetails from "./pages/VendorDetails";
 import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
@@ -46,6 +48,8 @@ const App = () => (
                 <Route path="/landlords/:id" element={<LandlordDetails />} />
                 <Route path="/applicants" element={<Applicants />} />
                 <Route path="/applicants/:id" element={<ApplicantDetails />} />
+                <Route path="/vendors" element={<Vendors />} />
+                <Route path="/vendors/:id" element={<VendorDetails />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/kpis" element={<KPIsDashboard />} />

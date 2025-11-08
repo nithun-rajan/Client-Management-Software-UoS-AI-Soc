@@ -7,6 +7,7 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
+  // Property statuses
   available: { label: "Available", className: "bg-status-available text-white" },
   let_agreed: { label: "Let Agreed", className: "bg-status-active text-white" },
   let_by: { label: "Let By", className: "bg-status-active text-white" },
@@ -14,6 +15,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   under_offer: { label: "Under Offer", className: "bg-status-pending text-white" },
   blocked: { label: "Blocked", className: "bg-status-inactive text-white" },
   maintenance: { label: "Maintenance", className: "bg-status-urgent text-white" },
+  // Applicant statuses
   new: { label: "New", className: "bg-status-available text-white" },
   qualified: { label: "Qualified", className: "bg-status-active text-white" },
   viewing_booked: {
@@ -31,6 +33,12 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   references: { label: "References", className: "bg-status-pending text-white" },
   tenancy_started: { label: "Tenancy Started", className: "bg-secondary text-white" },
   archived: { label: "Archived", className: "bg-status-inactive text-white" },
+  // Vendor statuses
+  instructed: { label: "Instructed", className: "bg-status-active text-white" },
+  active: { label: "Active", className: "bg-status-available text-white" },
+  sold: { label: "Sold", className: "bg-secondary text-white" },
+  withdrawn: { label: "Withdrawn", className: "bg-status-inactive text-white" },
+  lost: { label: "Lost", className: "bg-status-urgent text-white" },
 };
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {

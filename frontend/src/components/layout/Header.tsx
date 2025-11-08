@@ -49,6 +49,7 @@ export default function Header({ title }: HeaderProps) {
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [landlordOpen, setLandlordOpen] = useState(false);
   const [applicantOpen, setApplicantOpen] = useState(false);
+  const [vendorOpen, setVendorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -165,6 +166,31 @@ export default function Header({ title }: HeaderProps) {
     }
   };
 
+  const handleVendorSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.post("/api/v1/vendors/", {
+        title: formData.get("title") as string || undefined,
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        email: formData.get("email"),
+        primary_phone: formData.get("primary_phone"),
+        secondary_phone: formData.get("secondary_phone") as string || undefined,
+        current_address: formData.get("current_address") as string || undefined,
+      });
+      toast({ title: "Success", description: "Vendor added successfully" });
+      setVendorOpen(false);
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add vendor",
+        variant: "destructive",
+      });
+    }
+  };
+
  return (
     <>
       <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -187,6 +213,9 @@ export default function Header({ title }: HeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setApplicantOpen(true)}>
                 + New Applicant
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setVendorOpen(true)}>
+                + New Vendor
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -256,6 +285,8 @@ export default function Header({ title }: HeaderProps) {
                       navigate(`/applicants/${entityId}`);
                     } else if (n.type === "landlord") {
                       navigate(`/landlords/${entityId}`);
+                    } else if (n.type === "vendor") {
+                      navigate(`/vendors/${entityId}`);
                     } else if (n.type === "property") {
                       navigate(`/properties/${entityId}`);
                     }
@@ -464,6 +495,66 @@ export default function Header({ title }: HeaderProps) {
             </div>
             <DialogFooter>
               <Button type="submit">Add Applicant</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Vendor Dialog */}
+      <Dialog open={vendorOpen} onOpenChange={setVendorOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Vendor</DialogTitle>
+            <DialogDescription>Enter the vendor (seller) details below</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVendorSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title</Label>
+                <Select name="title">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mr">Mr</SelectItem>
+                    <SelectItem value="Mrs">Mrs</SelectItem>
+                    <SelectItem value="Ms">Ms</SelectItem>
+                    <SelectItem value="Miss">Miss</SelectItem>
+                    <SelectItem value="Dr">Dr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input id="first_name" name="first_name" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input id="last_name" name="last_name" required />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="primary_phone">Primary Phone</Label>
+                  <Input id="primary_phone" name="primary_phone" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="secondary_phone">Secondary Phone</Label>
+                  <Input id="secondary_phone" name="secondary_phone" />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="current_address">Current Address</Label>
+                <Input id="current_address" name="current_address" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Add Vendor</Button>
             </DialogFooter>
           </form>
         </DialogContent>

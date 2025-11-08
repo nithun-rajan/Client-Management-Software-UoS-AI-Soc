@@ -39,6 +39,26 @@ export interface Landlord {
   updated_at?: string;
 }
 
+export interface Vendor {
+  id: string;
+  title?: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  primary_phone: string;
+  secondary_phone?: string;
+  current_address?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  aml_status: string; // "pending" | "verified" | "rejected"
+  status: string; // "new" | "instructed" | "active" | "sold" | "withdrawn" | "lost"
+  instruction_type?: string; // "sole_agency" | "multi_agency"
+  agreed_commission?: string; // e.g., "1.5% + VAT"
+  minimum_fee?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface Applicant {
   id: string;
   first_name: string;
