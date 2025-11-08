@@ -45,7 +45,95 @@ OPENAI_API_KEY=sk-proj-your-actual-openai-key-here
 DATA_STREET_API_KEY=your-actual-datastreet-key-here
 ```
 
-### **Step 3: Run the Setup Script**
+### **Step 3: Set Up Python Virtual Environment**
+
+**Option A: Using the Setup Script (Recommended)**
+
+The setup script will automatically create and configure the virtual environment:
+
+```bash
+./setup.sh
+```
+
+**Option B: Manual Setup**
+
+If you prefer to set up the virtual environment manually:
+
+#### **For Windows:**
+
+**PowerShell (Recommended):**
+```powershell
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+# Try 'python' first, if that doesn't work, use 'python3'
+python -m venv venv
+
+# Activate virtual environment
+.\venv\Scripts\Activate.ps1
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Return to project root
+cd ..
+```
+
+**Windows CMD (Alternative):**
+```cmd
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+venv\Scripts\activate.bat
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Return to project root
+cd ..
+```
+
+#### **For Mac/Unix (Bash):**
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Return to project root
+cd ..
+```
+
+**Note:** The virtual environment will be created in `backend/venv/`. You'll need to activate it each time you work on the backend.
+
+**To activate venv later:**
+- **Windows PowerShell:** `.\venv\Scripts\Activate.ps1` (from `backend/` directory)
+- **Windows CMD:** `venv\Scripts\activate.bat` (from `backend/` directory)
+- **Mac/Unix:** `source venv/bin/activate` (from `backend/` directory)
+
+**Note on Python command:**
+- On **Mac/Unix**, use `python3` (most systems require this)
+- On **Windows**, try `python` first. If that doesn't work, try `python3` or `py`
+
+**To deactivate venv:**
+```bash
+deactivate
+```
+
+### **Step 4: Run the Setup Script (If Not Done Manually)**
 
 This installs **all dependencies** (backend + frontend):
 
@@ -54,7 +142,7 @@ This installs **all dependencies** (backend + frontend):
 ```
 
 **What this does:**
-- ✅ Creates Python virtual environment
+- ✅ Creates Python virtual environment (if not already created)
 - ✅ Installs backend dependencies (FastAPI, SQLAlchemy, etc.)
 - ✅ Installs frontend dependencies (React, Vite, Tailwind, etc.)
 - ✅ Validates your Python and Node.js installations
@@ -110,6 +198,22 @@ This installs **all dependencies** (backend + frontend):
 ### **Option 2: Start Manually (For Development)**
 
 #### **Start Backend:**
+
+**Windows PowerShell:**
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 8000
+```
+
+**Windows CMD:**
+```cmd
+cd backend
+venv\Scripts\activate.bat
+uvicorn app.main:app --reload --port 8000
+```
+
+**Mac/Unix (Bash):**
 ```bash
 cd backend
 source venv/bin/activate
@@ -236,7 +340,16 @@ This will:
 ### **Backend Commands:**
 ```bash
 cd backend
-source venv/bin/activate      # Activate Python environment
+
+# Activate Python environment
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# Windows CMD:
+venv\Scripts\activate.bat
+# Mac/Unix:
+source venv/bin/activate
+
+# Then run commands:
 uvicorn app.main:app --reload # Start backend manually
 python seed_data.py           # Seed test data
 pytest                        # Run tests
@@ -269,7 +382,16 @@ lsof -ti:8000 | xargs kill -9
 ```bash
 # Reinstall dependencies
 cd backend
+
+# Activate virtual environment first
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+# Windows CMD:
+venv\Scripts\activate.bat
+# Mac/Unix:
 source venv/bin/activate
+
+# Then reinstall
 pip install -r requirements.txt
 ```
 
