@@ -4,11 +4,41 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.vendor import Vendor
 from app.schemas.vendor import VendorCreate, VendorResponse, VendorUpdate
+from app.services.notification_service import notify
+from fastapi.security import OAuth2PasswordBearer
+from app.core.security import verify_token
+from app.models.user import User
+from typing import Optional
 
 router = APIRouter(prefix="/vendors", tags=["vendors"])
 
+# OAuth2 scheme for optional authentication
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Get current user if authenticated, otherwise return None"""
+    if not token:
+        return None
+    try:
+        payload = verify_token(token, "access")
+        email = payload.get("sub")
+        if email:
+            user = db.query(User).filter(User.email == email).first()
+            if user and user.is_active:
+                return user
+    except Exception:
+        pass
+    return None
+
 @router.post("/", response_model=VendorResponse, status_code=status.HTTP_201_CREATED)
-def create_vendor(vendor_data: VendorCreate, db: Session = Depends(get_db)):
+def create_vendor(
+    vendor_data: VendorCreate, 
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user)
+):
     """Create a new vendor"""
     # Check if email already exists
     existing = db.query(Vendor).filter(Vendor.email == vendor_data.email).first()
@@ -27,6 +57,25 @@ def create_vendor(vendor_data: VendorCreate, db: Session = Depends(get_db)):
     db.add(db_vendor)
     db.commit()
     db.refresh(db_vendor)
+    
+    # Create notification for new vendor
+    if db_vendor.id:
+        try:
+            user_id = current_user.id if current_user else None
+            vendor_name = f"{vendor_data.first_name} {vendor_data.last_name}"
+            if vendor_data.title:
+                vendor_name = f"{vendor_data.title} {vendor_name}"
+            notify(
+                db=db,
+                user_id=user_id,
+                title=f"New Vendor: {vendor_name}",
+                body=str(db_vendor.id),
+                type="vendor",
+                priority="low"
+            )
+        except Exception:
+            pass
+    
     return db_vendor
 
 @router.get("/", response_model=list[VendorResponse])

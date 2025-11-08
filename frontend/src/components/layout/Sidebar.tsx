@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Home, Building2, Users, UserCheck, Search,
-  BarChart3, Settings, MessageSquare
+  BarChart3, Settings, MessageSquare, Store
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Properties", href: "/properties", icon: Building2 },
   { name: "Landlords", href: "/landlords", icon: UserCheck },
   { name: "Applicants", href: "/applicants", icon: Users },
+  { name: "Vendors", href: "/vendors", icon: Store },
   { name: "Messages", href: "/messages", icon: MessageSquare },
   { name: "Search", href: "/search", icon: Search },
   { name: "KPIs", href: "/kpis", icon: BarChart3 },
