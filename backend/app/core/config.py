@@ -13,7 +13,10 @@ class Settings(BaseSettings):
     
     # Security
     BCRYPT_ROUNDS: int = 12
-
+    
+    # API Keys
+    OPENAI_API_KEY: Optional[str] = None
+    DATA_STREET_API_KEY: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")  # NEW WAY
 
