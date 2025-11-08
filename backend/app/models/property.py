@@ -37,10 +37,14 @@ class Property(BaseModel):
     
     # Compliance documents 
     epc_rating = Column(String)
-    epc_expiry = Column(Date)
-    gas_cert_expiry = Column(Date)
-    eicr_expiry = Column(Date)
-    hmolicence_expiry = Column(Date)
+    epc_date = Column(Date, nullable=True)  # Date EPC was issued
+    epc_expiry = Column(Date, nullable=True)  # Date EPC expires
+    gas_safety_date = Column(Date, nullable=True)  # Date gas safety certificate was issued
+    gas_cert_expiry = Column(Date, nullable=True)  # Date gas safety certificate expires
+    eicr_date = Column(Date, nullable=True)  # Date EICR was issued
+    eicr_expiry = Column(Date, nullable=True)  # Date EICR expires
+    hmolicence_date = Column(Date, nullable=True)  # Date HMO licence was issued
+    hmolicence_expiry = Column(Date, nullable=True)  # Date HMO licence expires
     
     # Additional details
     description = Column(Text)
@@ -55,8 +59,19 @@ class Property(BaseModel):
     landlord_id = Column(String, ForeignKey('landlords.id'))
     landlord = relationship("Landlord", back_populates="properties")
     
+    # Property management
+    managed_by = Column(String, ForeignKey('users.id'), nullable=True)  # Property manager user_id
+    management_type = Column(String, nullable=True)  # fully_managed, let_only, rent_collection
+    
+    # Complaints tracking
+    complaints_count = Column(Integer, default=0)  # Total number of complaints
+    active_complaints_count = Column(Integer, default=0)  # Currently open complaints
+    last_complaint_date = Column(DateTime, nullable=True)  # Date of last complaint
+    
+    # Relationships
     tenancies = relationship("Tenancy", back_populates="property")
     communications = relationship("Communication", back_populates="property")
+    maintenance_issues = relationship("MaintenanceIssue", back_populates="property", cascade="all, delete-orphan")
     
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)
@@ -75,13 +90,27 @@ class Property(BaseModel):
     
     @property
     def is_compliant(self):
+        """Check if property has all required valid certificates"""
         today = datetime.now(timezone.utc).date()
-        checks = [
-            self.epc_expiry and self.epc_expiry > today,
-            self.gas_cert_expiry and self.gas_cert_expiry > today,
-            self.eicr_expiry and self.eicr_expiry > today,
-        ]
-        return all(checks)
+        checks = []
+        
+        # EPC must be valid (expires in more than 0 days)
+        if self.epc_expiry:
+            checks.append(self.epc_expiry > today)
+        
+        # Gas safety certificate must be valid
+        if self.gas_cert_expiry:
+            checks.append(self.gas_cert_expiry > today)
+        
+        # EICR must be valid (if applicable)
+        if self.eicr_expiry:
+            checks.append(self.eicr_expiry > today)
+        
+        # HMO Licence must be valid (if applicable)
+        if self.hmolicence_expiry:
+            checks.append(self.hmolicence_expiry > today)
+        
+        return all(checks) if checks else False
     
     @property
     def expiring_documents(self):
@@ -100,3 +129,19 @@ class Property(BaseModel):
             expiring.append({"type": "HMO Licence", "expiry": self.hmolicence_expiry})
             
         return expiring
+    
+    @property
+    def active_tenancy(self):
+        """Get the current active tenancy"""
+        from datetime import date
+        today = date.today()
+        for tenancy in self.tenancies:
+            if tenancy.status == "active" and tenancy.start_date <= today <= tenancy.end_date:
+                return tenancy
+        return None
+    
+    @property
+    def current_tenant_id(self):
+        """Get the current tenant ID from active tenancy"""
+        active = self.active_tenancy
+        return active.applicant_id if active else None
