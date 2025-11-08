@@ -37,6 +37,9 @@ def migrate_database():
             
             # Notifications table new columns
             ("notifications", "priority", "VARCHAR(20) DEFAULT 'medium'"),
+            
+            # Workflow transitions table new columns
+            ("workflow_transitions", "metadata", "TEXT"),
         ]
         
         for table, column, column_type in migrations:

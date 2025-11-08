@@ -59,7 +59,7 @@ async def change_status(
             )
         
         # ✅ KEEP THIS - Get entity based on domain (from your original function)
-        entity = await get_entity_by_domain(domain_enum, entity_id, db)
+        entity = get_entity_by_domain(domain_enum, entity_id, db)
         if not entity:
             raise HTTPException(
                 status_code=404,
@@ -104,7 +104,7 @@ async def change_status(
                 to_status=transition.new_status,
                 user_id="user123",  # TODO: Get from auth context
                 notes=transition.notes,
-                metadata_json=transition.metadata,
+                metadata_json=transition.metadata if transition.metadata else None,
                 side_effects_executed=side_effects_executed
             )
             db.add(transition_record)
@@ -142,7 +142,7 @@ async def change_status(
         )
 
 
-async def get_entity_by_domain(domain: Domain, entity_id: str, db: Session):
+def get_entity_by_domain(domain: Domain, entity_id: str, db: Session):
     """Get entity by domain and ID"""
     model_map = {
         Domain.PROPERTY: (Property, "properties"),

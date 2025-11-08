@@ -158,6 +158,29 @@ class WorkflowManager:
     async def execute_start_referencing_process(self, domain: Domain, entity_id: str, db):
         """Start referencing process - Page 30: 2.1"""
         print(f"Starting referencing process for tenancy {entity_id}")
+    
+    async def execute_assign_property_manager(self, domain: Domain, entity_id: str, db):
+        """Assign property manager when property moves to tenanted - Page 34: 5.3"""
+        if domain == Domain.PROPERTY:
+            from app.models.property import Property
+            property_obj = db.query(Property).filter(Property.id == entity_id).first()
+            if property_obj:
+                # TODO: Assign property manager from user context or default manager
+                # For now, just log the action
+                print(f"Assigning property manager for property {entity_id}")
+                # property_obj.managed_by = user_id  # Set when auth is implemented
+            else:
+                print(f"Property {entity_id} not found for manager assignment")
+        else:
+            print(f"assign_property_manager only applies to properties, not {domain}")
+    
+    async def execute_collect_holding_deposit_property(self, domain: Domain, entity_id: str, db):
+        """Collect holding deposit for property - Page 29: 1.4"""
+        print(f"Collecting holding deposit for property {entity_id}")
+    
+    async def execute_send_offer_confirmation_property(self, domain: Domain, entity_id: str, db):
+        """Send offer confirmation for property - Page 29: 1.5"""
+        print(f"Sending offer confirmation for property {entity_id}")
 
 # Global workflow manager instance
 workflow_manager = WorkflowManager()

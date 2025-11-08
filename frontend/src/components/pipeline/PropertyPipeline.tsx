@@ -200,7 +200,7 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Property Pipeline</h2>
           <p className="text-muted-foreground">
@@ -209,13 +209,14 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
         </div>
         {availableTransitions &&
           availableTransitions.available_transitions.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {availableTransitions.available_transitions.map((transition) => (
                 <Button
                   key={transition}
                   size="sm"
                   variant="outline"
                   onClick={() => handleTransition(transition)}
+                  className="text-xs sm:text-sm"
                 >
                   <Workflow className="mr-2 h-4 w-4" />
                   Move to {getStatusLabel(transition)}
@@ -225,49 +226,72 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
           )}
       </div>
 
-      <div className="relative overflow-x-auto pb-8 pt-8">
-        <div className="relative flex gap-8 min-w-max px-8">
-          {stages.map((stage, index) => {
-            const prevStage = index > 0 ? stages[index - 1] : null;
-            const shouldShowCompletedLine = prevStage && (prevStage.status === "completed" || prevStage.status === "current");
-            
-            return (
-              <div key={stage.id} className="relative flex-shrink-0 w-[280px]">
-                {/* Connecting line - spans the gap between icons
-                    Icon centers are at 140px from left of each 280px container
-                    Gap is 32px (gap-8)
-                    Line spans: 140px (to prev icon center) + 32px (gap) + 140px (from current icon center) = 312px */}
-                {index > 0 && (
-                  <>
-                    {/* Base connecting line */}
-                    <div
-                      className="absolute top-6 h-0.5 bg-border z-0"
-                      style={{
-                        left: '-172px', // Positioned to connect icon centers: -140px (to prev center) - 32px (gap)
-                        width: '312px' // Spans from previous icon center to current icon center
-                      }}
-                    />
-                    {/* Completed/current line overlay (green) */}
-                    {shouldShowCompletedLine && (
+      <div className="relative w-full max-w-full">
+        <div className="overflow-x-auto pb-4 pt-4 scroll-smooth" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.2) transparent' }}>
+          <style>{`
+            .pipeline-scroll::-webkit-scrollbar {
+              height: 6px;
+            }
+            .pipeline-scroll::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .pipeline-scroll::-webkit-scrollbar-thumb {
+              background: rgba(0,0,0,0.2);
+              border-radius: 3px;
+            }
+            .pipeline-scroll::-webkit-scrollbar-thumb:hover {
+              background: rgba(0,0,0,0.3);
+            }
+            .dark .pipeline-scroll::-webkit-scrollbar-thumb {
+              background: rgba(255,255,255,0.2);
+            }
+            .dark .pipeline-scroll::-webkit-scrollbar-thumb:hover {
+              background: rgba(255,255,255,0.3);
+            }
+          `}</style>
+          <div className="pipeline-scroll relative flex gap-1.5 min-w-max px-1 sm:gap-2 sm:px-2">
+            {stages.map((stage, index) => {
+              const prevStage = index > 0 ? stages[index - 1] : null;
+              const shouldShowCompletedLine = prevStage && (prevStage.status === "completed" || prevStage.status === "current");
+              
+              // Ultra compact widths - reduced significantly to fit on screen
+              const stageWidth = "w-[140px] sm:w-[150px] md:w-[155px]";
+              
+              return (
+                <div key={stage.id} className={`relative flex-shrink-0 ${stageWidth}`}>
+                  {/* Connecting line - only show on larger screens */}
+                  {index > 0 && (
+                    <>
+                      {/* Base connecting line - icon is now h-8 w-8 (32px), so center is at 16px from top */}
                       <div
-                        className="absolute top-6 h-0.5 bg-green-500 z-[1]"
+                        className="absolute top-4 h-0.5 bg-border z-0 hidden sm:block"
                         style={{
-                          left: '-172px',
-                          width: '312px'
+                          left: '-77.5px', // Adjusted for 155px width: -77.5px (half of prev) - 8px (gap-2)
+                          width: '155px' // Spans from prev center to current center
                         }}
                       />
-                    )}
-                  </>
-                )}
-                <PipelineStage
-                  stage={stage}
-                  isFirst={index === 0}
-                  isLast={index === stages.length - 1}
-                  index={index}
-                />
-              </div>
-            );
-          })}
+                      {/* Completed/current line overlay (green) */}
+                      {shouldShowCompletedLine && (
+                        <div
+                          className="absolute top-4 h-0.5 bg-green-500 z-[1] hidden sm:block"
+                          style={{
+                            left: '-77.5px',
+                            width: '155px'
+                          }}
+                        />
+                      )}
+                    </>
+                  )}
+                  <PipelineStage
+                    stage={stage}
+                    isFirst={index === 0}
+                    isLast={index === stages.length - 1}
+                    index={index}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
