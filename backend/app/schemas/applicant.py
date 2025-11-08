@@ -2,8 +2,12 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, computed_field
 
+from app.schemas.model_config import AppBaseModel
 
-class ApplicantBase(BaseModel):
+from app.models.applicant import ApplicantStatus
+
+
+class ApplicantBase(AppBaseModel):
     first_name: str
     last_name: str
     email: EmailStr
@@ -19,10 +23,12 @@ class ApplicantBase(BaseModel):
     pet_details: str | None = None
     special_requirements: str | None = None
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 class ApplicantCreate(ApplicantBase):
     pass
 
-class ApplicantUpdate(BaseModel):
+class ApplicantUpdate(AppBaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
@@ -39,6 +45,7 @@ class ApplicantUpdate(BaseModel):
     pet_details: str | None = None
     special_requirements: str | None = None
 
+
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
@@ -48,6 +55,4 @@ class ApplicantResponse(ApplicantBase):
     def full_name(self) -> str:
         """Computed field combining first_name and last_name"""
         return f"{self.first_name} {self.last_name}"
-
-    model_config = ConfigDict(from_attributes=True)
    
