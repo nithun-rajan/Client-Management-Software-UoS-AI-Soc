@@ -27,12 +27,12 @@ try {
 
 # Kill backend processes (port 8000)
 if ($backendProcesses.Count -gt 0) {
-    foreach ($pid in $backendProcesses) {
+    foreach ($processId in $backendProcesses) {
         try {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Host "[OK] Stopped backend process (PID: $pid)" -ForegroundColor Green
+            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+            Write-Host "[OK] Stopped backend process (PID: $processId)" -ForegroundColor Green
         } catch {
-            Write-Host "[WARN] Could not stop backend process (PID: $pid)" -ForegroundColor Yellow
+            Write-Host "[WARN] Could not stop backend process (PID: $processId)" -ForegroundColor Yellow
         }
     }
 } else {
@@ -41,12 +41,12 @@ if ($backendProcesses.Count -gt 0) {
 
 # Kill frontend processes (port 5173)
 if ($frontendProcesses.Count -gt 0) {
-    foreach ($pid in $frontendProcesses) {
+    foreach ($processId in $frontendProcesses) {
         try {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-            Write-Host "[OK] Stopped frontend process (PID: $pid)" -ForegroundColor Green
+            Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+            Write-Host "[OK] Stopped frontend process (PID: $processId)" -ForegroundColor Green
         } catch {
-            Write-Host "[WARN] Could not stop frontend process (PID: $pid)" -ForegroundColor Yellow
+            Write-Host "[WARN] Could not stop frontend process (PID: $processId)" -ForegroundColor Yellow
         }
     }
 } else {

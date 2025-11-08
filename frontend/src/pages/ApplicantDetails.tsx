@@ -22,17 +22,19 @@ export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  console.log("ApplicantDetails rendering, id:", id);
 
-  const { data: applicant, isLoading } = useQuery({
+  const { data: applicant, isLoading, error } = useQuery({
     queryKey: ["applicant", id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/applicants/${id}/`);
+      if (!id) {
+        throw new Error("Applicant ID is required");
+      }
+      const response = await api.get(`/api/v1/applicants/${id}`);
       return response.data;
     },
+    enabled: !!id, // Only run query if id exists
   });
   const handleSendEmail = () => {
-    console.log("📧 Sending email for property:", applicant.id);
     toast({
       title: "Email Sent",
       description: `Property details sent to interested parties`,
