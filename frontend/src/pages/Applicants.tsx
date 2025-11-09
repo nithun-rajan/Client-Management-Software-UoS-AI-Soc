@@ -13,6 +13,7 @@ import {
   MapPin,
   Home,
   Calendar,
+  UserCircle,
 } from "lucide-react";
 import {
   Card,
@@ -31,13 +32,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { useApplicants } from "@/hooks/useApplicants";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApplicants, useMyApplicants } from "@/hooks/useApplicants";
 import { usePropertyMatching, PropertyMatch } from "@/hooks/useMatching";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
 // Helper function to extract flat/unit number from address
 const getFlatOrUnitNumber = (addressLine1: string | undefined, address: string | undefined, city?: string): string => {
@@ -83,11 +86,17 @@ const capitalizeWords = (str: string): string => {
 };
 
 export default function Applicants() {
-  const { data: applicants, isLoading } = useApplicants();
+  const [viewMode, setViewMode] = useState<"all" | "my">("all");
+  const { data: allApplicants, isLoading: isLoadingAll } = useApplicants();
+  const { data: myApplicants, isLoading: isLoadingMy } = useMyApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
 
   const matchingMutation = usePropertyMatching(5, 50);
+  
+  // Use the appropriate data based on view mode
+  const applicants = viewMode === "my" ? myApplicants : allApplicants;
+  const isLoading = viewMode === "my" ? isLoadingMy : isLoadingAll;
 
   const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
@@ -126,13 +135,29 @@ export default function Applicants() {
     <div>
       <Header title="Applicants" />
       <div className="p-6">
+        {/* View Mode Toggle */}
+        <div className="mb-6">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "all" | "my")}>
+            <TabsList>
+              <TabsTrigger value="all">
+                <Users className="mr-2 h-4 w-4" />
+                All Applicants
+              </TabsTrigger>
+              <TabsTrigger value="my">
+                <UserCircle className="mr-2 h-4 w-4" />
+                My Applicants
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {applicants?.map((applicant) => (
             <Card
               key={applicant.id}
-              className="shadow-card transition-shadow hover:shadow-elevated"
+              className="flex h-full flex-col shadow-card transition-shadow hover:shadow-elevated"
             >
-              <CardHeader>
+              <CardHeader className="flex-shrink-0">
                 <div className="flex items-start gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
                     {getInitials(applicant.first_name, applicant.last_name)}
@@ -145,7 +170,7 @@ export default function Applicants() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="flex-grow space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4 shrink-0" />
                   <span className="truncate">{applicant.email}</span>
@@ -175,8 +200,22 @@ export default function Applicants() {
                     <span>Pet friendly</span>
                   </div>
                 )}
+                {applicant.last_contacted_at && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    <span>
+                      Last contacted: {formatDistanceToNow(new Date(applicant.last_contacted_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                )}
+                {!applicant.last_contacted_at && viewMode === "my" && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3 shrink-0" />
+                    <span>Never contacted</span>
+                  </div>
+                )}
               </CardContent>
-              <CardFooter className="flex gap-2">
+              <CardFooter className="mt-auto flex-shrink-0 flex gap-2">
                 <Button
                   variant="default"
                   size="sm"

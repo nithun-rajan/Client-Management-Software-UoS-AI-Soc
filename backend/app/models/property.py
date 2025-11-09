@@ -62,6 +62,7 @@ class Property(BaseModel):
     # Property management
     managed_by = Column(String, ForeignKey('users.id'), nullable=True)  # Property manager user_id
     management_type = Column(String, nullable=True)  # fully_managed, let_only, rent_collection
+    management_notes = Column(Text, nullable=True)  # Notes like "Managed by John Doe", key numbers, etc.
     
     # Complaints tracking
     complaints_count = Column(Integer, default=0)  # Total number of complaints
