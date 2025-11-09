@@ -2,6 +2,8 @@ from sqlalchemy import Column, String, Boolean, Date, Text
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
+
+
 class Landlord(BaseModel):
     __tablename__ = "landlords"
     
