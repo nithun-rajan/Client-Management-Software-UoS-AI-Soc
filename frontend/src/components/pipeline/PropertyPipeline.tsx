@@ -3,9 +3,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PipelineStage, { PipelineStageData } from "./PipelineStage";
 import api from "@/lib/api";
 import { useAvailableTransitions, useTransitionStatus } from "@/hooks/useWorkflows";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Workflow } from "lucide-react";
+import { ArrowRight, Workflow, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +16,16 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface PropertyPipelineProps {
   propertyId: string;
 }
 
 export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", propertyId],
     queryFn: async () => {
@@ -49,6 +53,43 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
   const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
   const [selectedTransition, setSelectedTransition] = useState<string | null>(null);
   const [transitionNotes, setTransitionNotes] = useState("");
+  // Default to compact for better laptop screen fit
+  const [viewMode, setViewMode] = useState<"horizontal" | "vertical" | "compact">("compact");
+  const [expandedStage, setExpandedStage] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-detect view mode based on screen size
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Auto-select best view mode based on screen size on initial load only
+  useEffect(() => {
+    if (!hasInitialized && typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      // Default to compact for most screen sizes (better fit)
+      // Only use horizontal on very wide screens (1920px+)
+      if (width >= 1920) {
+        setViewMode("horizontal");
+      }
+      // compact is already the default, no need to set it
+      setHasInitialized(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  const handleViewModeChange = (mode: "horizontal" | "vertical" | "compact") => {
+    setViewMode(mode);
+    setHasInitialized(true);
+  };
 
   const handleTransition = (newStatus: string) => {
     setSelectedTransition(newStatus);
@@ -83,6 +124,7 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
     return labels[status] || status;
   };
 
+  // NOW we can have conditional returns AFTER all hooks
   if (isLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
@@ -91,8 +133,22 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
     return <div>Property not found</div>;
   }
 
+  // Screen size breakpoints - calculated after property is loaded
+  const isMobile = screenWidth < 768;
+  const isTablet = screenWidth >= 768 && screenWidth < 1024;
+  const isLaptop = screenWidth >= 1024 && screenWidth < 1440;
+  const isDesktop = screenWidth >= 1440;
+  
+  // On mobile, always use vertical. On desktop, use user's preference
+  const currentView = isMobile ? "vertical" : viewMode;
+  const isHorizontal = currentView === "horizontal";
+  const isVertical = currentView === "vertical";
+  const isCompact = currentView === "compact";
+
   // Map property status to pipeline stages
   const currentStatus = property.status;
+  
+  // Ensure all stages are always included - no filtering based on property type
   const stages: PipelineStageData[] = [
     {
       id: "available",
@@ -198,6 +254,18 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
     },
   ];
 
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -207,93 +275,233 @@ export default function PropertyPipeline({ propertyId }: PropertyPipelineProps) 
             Track property through the complete lifecycle
           </p>
         </div>
-        {availableTransitions &&
-          availableTransitions.available_transitions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {availableTransitions.available_transitions.map((transition) => (
-                <Button
-                  key={transition}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleTransition(transition)}
-                  className="text-xs sm:text-sm"
-                >
-                  <Workflow className="mr-2 h-4 w-4" />
-                  Move to {getStatusLabel(transition)}
-                </Button>
-              ))}
-            </div>
-          )}
-      </div>
-
-      <div className="relative w-full max-w-full">
-        <div className="overflow-x-auto pb-4 pt-4 scroll-smooth" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,0,0,0.2) transparent' }}>
-          <style>{`
-            .pipeline-scroll::-webkit-scrollbar {
-              height: 6px;
-            }
-            .pipeline-scroll::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            .pipeline-scroll::-webkit-scrollbar-thumb {
-              background: rgba(0,0,0,0.2);
-              border-radius: 3px;
-            }
-            .pipeline-scroll::-webkit-scrollbar-thumb:hover {
-              background: rgba(0,0,0,0.3);
-            }
-            .dark .pipeline-scroll::-webkit-scrollbar-thumb {
-              background: rgba(255,255,255,0.2);
-            }
-            .dark .pipeline-scroll::-webkit-scrollbar-thumb:hover {
-              background: rgba(255,255,255,0.3);
-            }
-          `}</style>
-          <div className="pipeline-scroll relative flex gap-1.5 min-w-max px-1 sm:gap-2 sm:px-2">
-            {stages.map((stage, index) => {
-              const prevStage = index > 0 ? stages[index - 1] : null;
-              const shouldShowCompletedLine = prevStage && (prevStage.status === "completed" || prevStage.status === "current");
-              
-              // Ultra compact widths - reduced significantly to fit on screen
-              const stageWidth = "w-[140px] sm:w-[150px] md:w-[155px]";
-              
-              return (
-                <div key={stage.id} className={`relative flex-shrink-0 ${stageWidth}`}>
-                  {/* Connecting line - only show on larger screens */}
-                  {index > 0 && (
-                    <>
-                      {/* Base connecting line - icon is now h-8 w-8 (32px), so center is at 16px from top */}
-                      <div
-                        className="absolute top-4 h-0.5 bg-border z-0 hidden sm:block"
-                        style={{
-                          left: '-77.5px', // Adjusted for 155px width: -77.5px (half of prev) - 8px (gap-2)
-                          width: '155px' // Spans from prev center to current center
-                        }}
-                      />
-                      {/* Completed/current line overlay (green) */}
-                      {shouldShowCompletedLine && (
-                        <div
-                          className="absolute top-4 h-0.5 bg-green-500 z-[1] hidden sm:block"
-                          style={{
-                            left: '-77.5px',
-                            width: '155px'
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
-                  <PipelineStage
-                    stage={stage}
-                    isFirst={index === 0}
-                    isLast={index === stages.length - 1}
-                    index={index}
-                  />
-                </div>
-              );
-            })}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* View Mode Toggle - hidden on mobile, auto vertical */}
+          <div className="hidden md:flex items-center gap-2 border rounded-lg p-1 bg-muted/50">
+            <Button
+              variant={viewMode === "horizontal" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleViewModeChange("horizontal")}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              <span className="text-xs">Horizontal</span>
+            </Button>
+            <Button
+              variant={viewMode === "compact" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleViewModeChange("compact")}
+              className="h-8 px-3"
+            >
+              <List className="h-4 w-4 mr-1" />
+              <span className="text-xs">Compact</span>
+            </Button>
           </div>
+          {availableTransitions &&
+            availableTransitions.available_transitions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {availableTransitions.available_transitions.map((transition) => (
+                  <Button
+                    key={transition}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTransition(transition)}
+                    className="text-xs sm:text-sm"
+                  >
+                    <Workflow className="mr-2 h-4 w-4" />
+                    Move to {getStatusLabel(transition)}
+                  </Button>
+                ))}
+              </div>
+            )}
         </div>
       </div>
+
+      {/* Vertical View (Mobile/Tablet) */}
+      {isVertical && (
+        <div className="space-y-4">
+          {stages.map((stage, index) => {
+            const isExpanded = expandedStage === stage.id;
+            return (
+              <div
+                key={stage.id}
+                className="relative"
+              >
+                {/* Vertical connector line */}
+                {index > 0 && (
+                  <div className="absolute left-4 top-0 bottom-full w-0.5 bg-border -mb-4" />
+                )}
+                {/* Completed line */}
+                {index > 0 && (stages[index - 1].status === "completed" || stages[index - 1].status === "current") && (
+                  <div className="absolute left-4 top-0 bottom-full w-0.5 bg-green-500 -mb-4 z-10" />
+                )}
+                
+                <Card
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    isExpanded ? "ring-2 ring-primary" : ""
+                  } ${stage.status === "current" ? "ring-1 ring-blue-500" : ""}`}
+                  onClick={() => setExpandedStage(isExpanded ? null : stage.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      {/* Status icon */}
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center ${
+                          stage.status === "completed" ? "bg-green-500 border-green-600" :
+                          stage.status === "current" ? "bg-blue-500 border-blue-600" :
+                          stage.status === "blocked" ? "bg-red-500 border-red-600" :
+                          "bg-muted border-border"
+                        }`}>
+                          {stage.status === "completed" ? (
+                            <span className="text-white text-sm">✓</span>
+                          ) : stage.status === "current" ? (
+                            <span className="text-white text-sm">→</span>
+                          ) : stage.status === "blocked" ? (
+                            <span className="text-white text-sm">!</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">{index + 1}</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="font-semibold text-sm">{stage.name}</h3>
+                          <Badge
+                            variant={
+                              stage.status === "completed" ? "default" :
+                              stage.status === "current" ? "secondary" :
+                              "outline"
+                            }
+                            className="text-xs"
+                          >
+                            {stage.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {stage.description}
+                        </p>
+                        
+                        {/* Expanded content */}
+                        {isExpanded && stage.items && stage.items.length > 0 && (
+                          <div className="mt-3 pt-3 border-t space-y-2">
+                            {stage.items.map((item) => (
+                              <div key={item.id} className="flex items-center gap-2 text-sm">
+                                {item.status === "completed" ? (
+                                  <span className="text-green-600">✓</span>
+                                ) : (
+                                  <span className="text-muted-foreground">○</span>
+                                )}
+                                <span className={item.status === "completed" ? "line-through text-muted-foreground" : ""}>
+                                  {item.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Collapsed preview */}
+                        {!isExpanded && stage.items && stage.items.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {stage.items.filter(i => i.status === "completed").length} / {stage.items.length} tasks completed
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Horizontal View (Desktop) - Responsive and adaptive */}
+      {isHorizontal && (
+        <div className="relative w-full max-w-full">
+          <div
+            ref={scrollContainerRef}
+            className="overflow-x-auto pb-4 pt-4 scroll-smooth scrollbar-thin"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(0,0,0,0.2) transparent',
+            }}
+          >
+            {/* Responsive grid that fits within viewport */}
+            <div 
+              className="grid gap-2 md:gap-3 lg:gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))`,
+                width: '100%',
+                maxWidth: '100%'
+              }}
+            >
+              {stages.map((stage, index) => {
+                const nextStage = index < stages.length - 1 ? stages[index + 1] : null;
+                const shouldShowNextCompletedLine =
+                  stage.status === "completed" || stage.status === "current";
+
+                return (
+                  <div key={stage.id} className="relative flex flex-col items-center min-w-0">
+                    {/* Stage container */}
+                    <div className="w-full flex flex-col items-center">
+                      <PipelineStage
+                        stage={stage}
+                        isFirst={index === 0}
+                        isLast={index === stages.length - 1}
+                        index={index}
+                        isCompact={false}
+                        isHorizontal={true}
+                      />
+                    </div>
+                    
+                    {/* Connecting line between stages - positioned between columns */}
+                    {nextStage && (
+                      <div 
+                        className="absolute -right-2 md:-right-3 lg:-right-4 top-5 h-0.5 w-4 md:w-6 lg:w-8 z-0 pointer-events-none"
+                      >
+                        <div className="w-full h-full bg-border/50 dark:bg-border/30" />
+                        {shouldShowNextCompletedLine && (
+                          <div className="absolute inset-0 h-full bg-green-500 dark:bg-green-600 rounded-full" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compact View (Desktop Grid) - Adaptive columns */}
+      {isCompact && (
+        <div className="w-full">
+          <div className={cn(
+            "grid gap-4",
+            // Responsive grid: 2 columns on tablet, 3 on laptop, up to 6 on very wide screens
+            "grid-cols-1",
+            "sm:grid-cols-2",
+            "lg:grid-cols-3",
+            "xl:grid-cols-3",
+            isDesktop && stages.length <= 6 && "2xl:grid-cols-6" // All 6 stages in one row on very wide screens
+          )}>
+            {stages.map((stage, index) => (
+              <div key={stage.id} className="flex flex-col items-stretch min-h-0">
+                <PipelineStage
+                  stage={stage}
+                  isFirst={index === 0}
+                  isLast={index === stages.length - 1}
+                  index={index}
+                  isCompact={true}
+                  isHorizontal={false}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Transition Dialog */}
       <Dialog open={transitionDialogOpen} onOpenChange={setTransitionDialogOpen}>

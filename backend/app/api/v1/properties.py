@@ -169,6 +169,36 @@ def update_property(
             )
     return response
 
+@router.patch("/{property_id}", response_model=PropertyResponse)
+def patch_property(
+    property_id: str,
+    property_data: PropertyUpdate,
+    db: Session = Depends(get_db)
+):
+    """Partially update a property (PATCH)"""
+    property = db.query(Property).filter(Property.id == property_id).first()
+    if not property:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    for key, value in property_data.model_dump(exclude_unset=True).items():
+        setattr(property, key, value)
+
+    db.commit()
+    db.refresh(property)
+    
+    # Include landlord information in response
+    response = PropertyResponse.model_validate(property)
+    if property.landlord_id:
+        landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+        if landlord:
+            response.landlord = LandlordInfo(
+                id=landlord.id,
+                full_name=landlord.full_name,
+                email=landlord.email,
+                phone=landlord.phone
+            )
+    return response
+
 @router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_property(property_id: str, db: Session = Depends(get_db)):
     """Delete a property"""

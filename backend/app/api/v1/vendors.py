@@ -99,16 +99,7 @@ def list_vendors(
     vendors = query.offset(skip).limit(limit).all()
     return vendors
 
-@router.get("/{vendor_id}", response_model=VendorResponse)
-def get_vendor(vendor_id: str, db: Session = Depends(get_db)):
-    """Get a specific vendor by ID"""
-    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
-    if not vendor:
-        raise HTTPException(status_code=404, detail="Vendor not found")
-    return vendor
-
-# additional endpoints 
-
+# Specific GET routes must come before generic /{vendor_id} route
 @router.get("/status/{status}", response_model=list[VendorResponse])
 def get_vendors_by_status(status: str, db: Session = Depends(get_db)):
     """Get all vendors with a specific status"""
@@ -121,6 +112,88 @@ def get_vendors_by_aml_status(aml_status: str, db: Session = Depends(get_db)):
     vendors = db.query(Vendor).filter(Vendor.aml_status == aml_status).all()
     return vendors
 
+@router.get("/aml/expiring-soon", response_model=list[VendorResponse])
+def get_vendors_with_aml_expiring_soon(
+    days_threshold: int = Query(30, ge=1, le=365, description="Days threshold for expiry warning"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get vendors with AML verification expiring soon (Page 48)
+    Automated reminder system for compliance
+    """
+    threshold_date = datetime.now(timezone.utc) + timedelta(days=days_threshold)
+    
+    vendors = db.query(Vendor).filter(
+        Vendor.aml_verification_expiry <= threshold_date,
+        Vendor.aml_status == "verified"
+    ).all()
+    
+    return vendors
+
+@router.get("/search/instruction-type", response_model=list[VendorResponse])
+def get_vendors_by_instruction_type(
+    instruction_type: str = Query(..., description="sole_agency, joint_sole, multi_agency"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get vendors by instruction type (Page 49)
+    Useful for reporting and management
+    """
+    if instruction_type not in [InstructionType.SOLE_AGENCY, InstructionType.JOINT_SOLE, InstructionType.MULTI_AGENCY]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Instruction type must be one of: {', '.join([InstructionType.SOLE_AGENCY, InstructionType.JOINT_SOLE, InstructionType.MULTI_AGENCY])}"
+        )
+    
+    vendors = db.query(Vendor).filter(Vendor.instruction_type == instruction_type).all()
+    return vendors
+
+@router.get("/contracts/expiring-soon", response_model=list[VendorResponse])
+def get_vendors_with_contracts_expiring_soon(
+    weeks_threshold: int = Query(4, ge=1, le=52, description="Weeks threshold for contract expiry"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get vendors with sales contracts expiring soon (Page 49)
+    For proactive renewal and chasing
+    """
+    threshold_date = datetime.now(timezone.utc) + timedelta(weeks=weeks_threshold)
+    
+    vendors = db.query(Vendor).filter(
+        Vendor.contract_expiry_date <= threshold_date,
+        Vendor.contract_expiry_date >= datetime.now(timezone.utc),  # Not expired yet
+        Vendor.status == "instructed"  # Only active instructions
+    ).all()
+    
+    return vendors
+
+@router.get("/source/{lead_source}", response_model=list[VendorResponse])
+def get_vendors_by_lead_source(
+    lead_source: str = Path(..., description="Source of lead: portal, referral, board, past_client"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get vendors by lead source (Page 50)
+    For marketing ROI tracking and analysis
+    """
+    valid_sources = ["portal", "referral", "board", "past_client", "walk_in"]
+    if lead_source not in valid_sources:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Lead source must be one of: {', '.join(valid_sources)}"
+        )
+    
+    vendors = db.query(Vendor).filter(Vendor.source_of_lead == lead_source).all()
+    return vendors
+
+@router.get("/{vendor_id}", response_model=VendorResponse)
+def get_vendor(vendor_id: str, db: Session = Depends(get_db)):
+    """Get a specific vendor by ID (must be after all specific GET routes)"""
+    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+    return vendor
+
 @router.put("/{vendor_id}/verify-aml", response_model=VendorResponse)
 def verify_vendor_aml(vendor_id: str, db: Session = Depends(get_db)):
     """Mark a vendor as AML verified"""
@@ -129,33 +202,6 @@ def verify_vendor_aml(vendor_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Vendor not found")
     
     vendor.aml_status = "verified"
-    db.commit()
-    db.refresh(vendor)
-    return vendor
-
-
-
-@router.put("/{vendor_id}", response_model=VendorResponse)
-def update_vendor(
-    vendor_id: str,
-    vendor_data: VendorUpdate,
-    db: Session = Depends(get_db)
-):
-    """Update a vendor"""
-    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
-    if not vendor:
-        raise HTTPException(status_code=404, detail="Vendor not found")
-
-    # If email is being updated, check for duplicates
-    if vendor_data.email and vendor_data.email != vendor.email:
-        existing = db.query(Vendor).filter(Vendor.email == vendor_data.email).first()
-        if existing:
-            raise HTTPException(status_code=400, detail="Email already registered")
-
-    update_data = vendor_data.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(vendor, key, value)
-
     db.commit()
     db.refresh(vendor)
     return vendor
@@ -235,25 +281,6 @@ def update_vendor_aml_comprehensive(
     return vendor
 
 
-@router.get("/aml/expiring-soon", response_model=list[VendorResponse])
-def get_vendors_with_aml_expiring_soon(
-    days_threshold: int = Query(30, ge=1, le=365, description="Days threshold for expiry warning"),
-    db: Session = Depends(get_db)
-):
-    """
-    Get vendors with AML verification expiring soon (Page 48)
-    Automated reminder system for compliance
-    """
-    threshold_date = datetime.now(timezone.utc) + timedelta(days=days_threshold)
-    
-    vendors = db.query(Vendor).filter(
-        Vendor.aml_verification_expiry <= threshold_date,
-        Vendor.aml_status == "verified"
-    ).all()
-    
-    return vendors
-
-
 @router.put("/{vendor_id}/conveyancer", response_model=VendorResponse)
 def update_vendor_conveyancer(
     vendor_id: str,
@@ -279,45 +306,6 @@ def update_vendor_conveyancer(
     return vendor
 
 
-@router.get("/search/instruction-type", response_model=list[VendorResponse])
-def get_vendors_by_instruction_type(
-    instruction_type: str = Query(..., description="sole_agency, joint_sole, multi_agency"),
-    db: Session = Depends(get_db)
-):
-    """
-    Get vendors by instruction type (Page 49)
-    Useful for reporting and management
-    """
-    if instruction_type not in [InstructionType.SOLE_AGENCY, InstructionType.JOINT_SOLE, InstructionType.MULTI_AGENCY]:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Instruction type must be one of: {', '.join([InstructionType.SOLE_AGENCY, InstructionType.JOINT_SOLE, InstructionType.MULTI_AGENCY])}"
-        )
-    
-    vendors = db.query(Vendor).filter(Vendor.instruction_type == instruction_type).all()
-    return vendors
-
-
-@router.get("/contracts/expiring-soon", response_model=list[VendorResponse])
-def get_vendors_with_contracts_expiring_soon(
-    weeks_threshold: int = Query(4, ge=1, le=52, description="Weeks threshold for contract expiry"),
-    db: Session = Depends(get_db)
-):
-    """
-    Get vendors with sales contracts expiring soon (Page 49)
-    For proactive renewal and chasing
-    """
-    threshold_date = datetime.now(timezone.utc) + timedelta(weeks=weeks_threshold)
-    
-    vendors = db.query(Vendor).filter(
-        Vendor.contract_expiry_date <= threshold_date,
-        Vendor.contract_expiry_date >= datetime.now(timezone.utc),  # Not expired yet
-        Vendor.status == "instructed"  # Only active instructions
-    ).all()
-    
-    return vendors
-
-
 @router.put("/{vendor_id}/marketing-consent", response_model=VendorResponse)
 def update_vendor_marketing_consent(
     vendor_id: str,
@@ -338,24 +326,55 @@ def update_vendor_marketing_consent(
     return vendor
 
 
-@router.get("/source/{lead_source}", response_model=list[VendorResponse])
-def get_vendors_by_lead_source(
-    lead_source: str = Path(..., description="Source of lead: portal, referral, board, past_client"),
+@router.put("/{vendor_id}", response_model=VendorResponse)
+def update_vendor(
+    vendor_id: str,
+    vendor_data: VendorUpdate,
     db: Session = Depends(get_db)
 ):
-    """
-    Get vendors by lead source (Page 50)
-    For marketing ROI tracking and analysis
-    """
-    valid_sources = ["portal", "referral", "board", "past_client", "walk_in"]
-    if lead_source not in valid_sources:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Lead source must be one of: {', '.join(valid_sources)}"
-        )
-    
-    vendors = db.query(Vendor).filter(Vendor.source_of_lead == lead_source).all()
-    return vendors
+    """Update a vendor (generic update endpoint - must be after all specific PUT routes)"""
+    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    # If email is being updated, check for duplicates
+    if vendor_data.email and vendor_data.email != vendor.email:
+        existing = db.query(Vendor).filter(Vendor.email == vendor_data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+    update_data = vendor_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(vendor, key, value)
+
+    db.commit()
+    db.refresh(vendor)
+    return vendor
+
+@router.patch("/{vendor_id}", response_model=VendorResponse)
+def patch_vendor(
+    vendor_id: str,
+    vendor_data: VendorUpdate,
+    db: Session = Depends(get_db)
+):
+    """Partially update a vendor (PATCH)"""
+    vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
+    if not vendor:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    # If email is being updated, check for duplicates
+    if vendor_data.email and vendor_data.email != vendor.email:
+        existing = db.query(Vendor).filter(Vendor.email == vendor_data.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
+    update_data = vendor_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(vendor, key, value)
+
+    db.commit()
+    db.refresh(vendor)
+    return vendor
 
 
 @router.delete("/{vendor_id}", status_code=status.HTTP_204_NO_CONTENT)
