@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   Users,
   Mail,
@@ -7,6 +8,11 @@ import {
   Calendar,
   ArrowLeft,
   Home,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  Building,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,28 +28,51 @@ export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  console.log("ApplicantDetails rendering, id:", id);
 
-  const { data: applicant, isLoading } = useQuery({
+  const { data: applicant, isLoading, error } = useQuery({
     queryKey: ["applicant", id],
     queryFn: async () => {
-      const response = await api.get(`/api/v1/applicants/${id}/`);
+      if (!id) {
+        throw new Error("Applicant ID is required");
+      }
+      const response = await api.get(`/api/v1/applicants/${id}`);
       return response.data;
     },
+    enabled: !!id, // Only run query if id exists
   });
+  const [expandedQuestions, setExpandedQuestions] = useState(false);
+
   const handleSendEmail = () => {
-    console.log("📧 Sending email for property:", applicant.id);
     toast({
       title: "Email Sent",
       description: `Property details sent to interested parties`,
     });
   };
+
   if (isLoading) {
     return (
       <div>
         <Header title="Applicant Details" />
         <div className="p-6">
           <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <Header title="Applicant Details" />
+        <div className="p-6">
+          <div className="py-12 text-center">
+            <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">Error loading applicant</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "An error occurred"}
+            </p>
+            <Button onClick={() => navigate(-1)}>Go Back</Button>
+          </div>
         </div>
       </div>
     );
@@ -57,28 +86,45 @@ export default function ApplicantDetails() {
           <div className="py-12 text-center">
             <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-semibold">Applicant not found</h3>
-            <Button onClick={() => navigate("/applicants")}>Back to Applicants</Button>
+            <Button onClick={() => navigate("/applicants")}>Back to Tenants</Button>
           </div>
         </div>
       </div>
     );
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const first = firstName?.[0] || "";
+    const last = lastName?.[0] || "";
+    return `${first}${last}`.toUpperCase() || "?";
+  };
+
+  const isBuyer = applicant.willing_to_buy === true && applicant.willing_to_rent !== true;
+  const backPath = isBuyer ? "/buyers" : "/applicants";
+  const backLabel = isBuyer ? "Back to Buyers" : "Back to Tenants";
+
+  const handleSendQuestionsEmail = () => {
+    toast({
+      title: "Email Sent",
+      description: `Buyer registration questions have been sent to ${applicant?.email || "the buyer"}`,
+    });
+  };
+
+  const toggleQuestionsExpanded = () => {
+    setExpandedQuestions(!expandedQuestions);
   };
 
   return (
     <div>
-      <Header title="Applicant Details" />
+      <Header title={isBuyer ? "Buyer Details" : "Tenant Details"} />
       <div className="space-y-6 p-6">
         {/* Header Bar */}
         <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => navigate("/applicants")}>
+          <Button variant="outline" onClick={() => navigate(backPath)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Applicants
+            {backLabel}
           </Button>
-          <StatusBadge status={applicant.status} />
+          {applicant.status && <StatusBadge status={applicant.status} />}
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -90,10 +136,10 @@ export default function ApplicantDetails() {
                 </div>
                 <div className="flex-1">
                   <CardTitle className="text-2xl">
-                    {applicant.first_name} {applicant.last_name}
+                    {applicant.first_name || ""} {applicant.last_name || ""}
                   </CardTitle>
                   <div className="mt-2 flex items-center gap-2">
-                    <StatusBadge status={applicant.status} />
+                    {applicant.status && <StatusBadge status={applicant.status} />}
                   </div>
                 </div>
               </div>
@@ -108,13 +154,15 @@ export default function ApplicantDetails() {
                   </Button>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <div className="text-sm text-muted-foreground">Email</div>
-                      <div className="font-medium">{applicant.email}</div>
+                  {applicant.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Email</div>
+                        <div className="font-medium">{applicant.email}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {applicant.phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="h-5 w-5 text-muted-foreground" />
@@ -132,7 +180,13 @@ export default function ApplicantDetails() {
                           Date of Birth
                         </div>
                         <div className="font-medium">
-                          {new Date(applicant.date_of_birth).toLocaleDateString()}
+                          {(() => {
+                            try {
+                              return new Date(applicant.date_of_birth).toLocaleDateString();
+                            } catch {
+                              return applicant.date_of_birth;
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -161,7 +215,13 @@ export default function ApplicantDetails() {
                     <div className="rounded-lg bg-muted p-3">
                       <div className="text-sm text-muted-foreground">Move-in Date</div>
                       <div className="font-medium">
-                        {new Date(applicant.move_in_date).toLocaleDateString()}
+                        {(() => {
+                          try {
+                            return new Date(applicant.move_in_date).toLocaleDateString();
+                          } catch {
+                            return applicant.move_in_date;
+                          }
+                        })()}
                       </div>
                     </div>
                   )}
@@ -227,6 +287,135 @@ export default function ApplicantDetails() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Registration Questions for Buyers */}
+            {isBuyer && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Registration Questions</CardTitle>
+                    {!applicant.buyer_questions_answered && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendQuestionsEmail}
+                      >
+                        <Mail className="mr-2 h-3 w-3" />
+                        Send Questions
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!applicant.buyer_questions_answered ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Buyer has not yet answered registration questions
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-between"
+                        onClick={toggleQuestionsExpanded}
+                      >
+                        <span className="text-sm font-medium">View Registration Answers</span>
+                        {expandedQuestions ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      {expandedQuestions && (
+                        <div className="space-y-3 rounded-lg bg-muted/50 p-3 text-sm">
+                          <div className="grid gap-2">
+                            {applicant.move_in_date && (
+                              <div className="flex items-start gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <div className="font-medium">Ideal Timeframe</div>
+                                  <div className="text-muted-foreground">
+                                    {(() => {
+                                      try {
+                                        return new Date(applicant.move_in_date).toLocaleDateString();
+                                      } catch {
+                                        return applicant.move_in_date;
+                                      }
+                                    })()}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(applicant.rent_budget_min || applicant.rent_budget_max) && (
+                              <div className="flex items-start gap-2">
+                                <PoundSterling className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <div className="font-medium">Budget Range</div>
+                                  <div className="text-muted-foreground">
+                                    {applicant.rent_budget_min && applicant.rent_budget_max
+                                      ? `£${applicant.rent_budget_min.toLocaleString()} - £${applicant.rent_budget_max.toLocaleString()}`
+                                      : applicant.rent_budget_min
+                                      ? `From £${applicant.rent_budget_min.toLocaleString()}`
+                                      : applicant.rent_budget_max
+                                      ? `Up to £${applicant.rent_budget_max.toLocaleString()}`
+                                      : "Not specified"}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex items-start gap-2">
+                              <Home className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Property to Sell</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.has_property_to_sell ? "Yes" : "No"}
+                                  {applicant.has_property_to_sell && applicant.is_chain_free && " (Chain-free)"}
+                                </div>
+                              </div>
+                            </div>
+                            {applicant.mortgage_status && (
+                              <div className="flex items-start gap-2">
+                                <CreditCard className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <div className="font-medium">Mortgage Status</div>
+                                  <div className="text-muted-foreground capitalize">
+                                    {applicant.mortgage_status.replace(/_/g, " ")}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {applicant.buyer_type && (
+                              <div className="flex items-start gap-2">
+                                <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <div className="font-medium">Buyer Type</div>
+                                  <div className="text-muted-foreground capitalize">
+                                    {applicant.buyer_type.replace(/_/g, " ")}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {applicant.special_requirements && (
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                <div>
+                                  <div className="font-medium">Special Requirements</div>
+                                  <div className="text-muted-foreground">
+                                    {applicant.special_requirements}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

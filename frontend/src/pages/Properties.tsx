@@ -7,6 +7,9 @@ import {
   Trash2,
   PoundSterling,
   Download,
+  Upload,
+  Search,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -20,14 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +38,7 @@ export default function Properties() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -98,7 +94,7 @@ export default function Properties() {
   if (isLoading) {
     return (
       <div>
-        <Header title="Properties" />
+        <Header title="Properties for Letting" />
         <div className="p-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -109,6 +105,13 @@ export default function Properties() {
       </div>
     );
   }
+
+  const handleRequestPhoto = (property: any) => {
+    toast({
+      title: "Request Sent",
+      description: `Photo upload request sent to landlord for ${property.address_line1}`,
+    });
+  };
 
   const handleExportCSV = () => {
     if (!properties || properties.length === 0) return;
@@ -148,19 +151,63 @@ export default function Properties() {
     toast({ title: "Success", description: "Properties exported to CSV" });
   };
 
+  // Filter properties based on search query
+  const filteredProperties = properties?.filter((property) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      property.address_line1?.toLowerCase().includes(query) ||
+      property.city?.toLowerCase().includes(query) ||
+      property.postcode?.toLowerCase().includes(query) ||
+      property.property_type?.toLowerCase().includes(query) ||
+      property.bedrooms?.toString().includes(query) ||
+      property.bathrooms?.toString().includes(query) ||
+      property.rent?.toString().includes(query)
+    );
+  }) || [];
+
   return (
     <div>
-      <Header title="Properties" />
+      <Header title="Properties for Letting" />
       <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">All Properties</h2>
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by address, city, postcode, property type, bedrooms, bathrooms, or rent..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-6 flex justify-end">
           <Button onClick={handleExportCSV} variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
         </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {properties?.map((property) => (
+          {filteredProperties.map((property) => (
             <Card
               key={property.id}
               className="group shadow-card transition-shadow hover:shadow-elevated"
@@ -169,8 +216,27 @@ export default function Properties() {
                 <div className="absolute right-4 top-4 z-10">
                   <StatusBadge status={property.status} />
                 </div>
-                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted">
-                  <Building2 className="h-16 w-16 text-muted-foreground" />
+                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden relative">
+                  {property.main_photo_url ? (
+                    <img
+                      src={property.main_photo_url}
+                      alt={property.address_line1}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      <Building2 className="h-16 w-16 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute bottom-2 right-2"
+                        onClick={() => handleRequestPhoto(property)}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Request Photo
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -209,37 +275,23 @@ export default function Properties() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" asChild>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link to={`/properties/${property.id}`}>
-                    <Eye className="mr-1 h-4 w-4" />
+                    <Eye className="mr-2 h-4 w-4" />
                     View
                   </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(property)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(property)}
-                >
-                  <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
 
-        {properties?.length === 0 && (
+        {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="No properties yet"
-            description="Get started by adding your first property to begin managing your portfolio"
+            title="No properties for letting yet"
+            description="Get started by adding your first property for letting to begin managing your portfolio"
             actionLabel="+ Add Property"
             onAction={() => {}}
           />

@@ -14,22 +14,31 @@ from app.models.applicant import Applicant
 from app.models.enums import ApplicantStatus, PropertyStatus
 from app.models.landlord import Landlord
 from app.models.property import Property
+from app.models.vendor import Vendor
+from app.models.enums_sales import SalesStatus
 
+# Import all models to ensure they're registered with SQLAlchemy
+# This ensures all relationships are properly configured
+from app.models import (
+    Applicant, Landlord, Property, Task, Tenancy, Vendor,
+    Communication, Organization, Branch, User, Offer,
+    Viewing, MatchHistory, Document, MaintenanceIssue, SalesProgression, SalesOffer
+)
 
-# Ensure all mapped classes are loaded; avoid importing unused models directly
+# Ensure all mapped classes are loaded
 
 fake = Faker('en_GB')
 
 def clear_database():
     """Clear all existing data"""
-    print("🗑️  Clearing existing data...")
+    print("[*] Clearing existing data...")
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    print("✅ Database cleared and recreated")
+    print("[OK] Database cleared and recreated")
 
 def create_properties(db: Session, count: int = 20):
     """Create realistic properties"""
-    print(f"\n🏠 Creating {count} properties...")
+    print(f"\n[*] Creating {count} properties...")
 
     property_types = ["flat", "house", "maisonette"]
     statuses = [PropertyStatus.AVAILABLE, PropertyStatus.LET_BY, PropertyStatus.TENANTED]
@@ -95,12 +104,12 @@ def create_properties(db: Session, count: int = 20):
             print(f"   Created {i + 1}/{count} properties...")
 
     db.commit()
-    print(f"✅ Created {count} properties")
+    print(f"[OK] Created {count} properties")
     return properties
 
 def create_landlords(db: Session, count: int = 10):
     """Create realistic landlords"""
-    print(f"\n👔 Creating {count} landlords...")
+    print(f"\n[*] Creating {count} landlords...")
 
     landlords = []
     for i in range(count):
@@ -125,12 +134,12 @@ def create_landlords(db: Session, count: int = 10):
             print(f"   Created {i + 1}/{count} landlords...")
 
     db.commit()
-    print(f"✅ Created {count} landlords")
+    print(f"[OK] Created {count} landlords")
     return landlords
 
 def create_applicants(db: Session, count: int = 15):
     """Create realistic applicants"""
-    print(f"\n👥 Creating {count} applicants...")
+    print(f"\n[*] Creating {count} applicants...")
 
     # Get status values from ApplicantStatus class
     statuses = [
@@ -171,6 +180,8 @@ def create_applicants(db: Session, count: int = 15):
             has_pets=has_pets,
             pet_details=("Has a small dog" if has_pets else None),
             special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
+            willing_to_rent=True,  # All existing applicants are tenants
+            willing_to_buy=False,
         )
 
         db.add(applicant)
@@ -180,13 +191,163 @@ def create_applicants(db: Session, count: int = 15):
             print(f"   Created {i + 1}/{count} applicants...")
 
     db.commit()
-    print(f"✅ Created {count} applicants")
+    print(f"[OK] Created {count} applicants (tenants)")
     return applicants
+
+def create_buyers(db: Session, count: int = 10):
+    """Create realistic buyers (applicants willing to buy)"""
+    print(f"\n[*] Creating {count} buyers...")
+
+    uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
+
+    buyers = []
+    for i in range(count):
+        bedrooms_min = random.randint(2, 4)
+        bedrooms_max = bedrooms_min + random.randint(0, 1)
+        desired_bedrooms = f"{bedrooms_min}-{bedrooms_max}"
+        # Budget for buying (much higher than rent)
+        budget_min = random.randint(200000, 400000)
+        budget_max = budget_min + random.randint(50000, 150000)
+        
+        buyer = Applicant(
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
+            email=fake.unique.email(),
+            phone=fake.phone_number(),
+            date_of_birth=fake.date_between(start_date='-50y', end_date='-25y'),
+            status=ApplicantStatus.NEW,
+            desired_bedrooms=desired_bedrooms,
+            desired_property_type=random.choice(["flat", "house", "maisonette"]),
+            rent_budget_min=budget_min,  # Using rent_budget fields for purchase budget
+            rent_budget_max=budget_max,
+            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
+            willing_to_rent=False,
+            willing_to_buy=True,
+            buyer_questions_answered=random.choice([True, True, False]),  # 2/3 have answered
+            mortgage_status=random.choice(["not_applied", "applied", "offer_received", "approved"]),
+            has_property_to_sell=random.choice([True, False]),
+            is_chain_free=random.choice([True, False]),
+        )
+
+        db.add(buyer)
+        buyers.append(buyer)
+
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} buyers...")
+
+    db.commit()
+    print(f"[OK] Created {count} buyers")
+    return buyers
+
+def create_properties_for_sale(db: Session, count: int = 15):
+    """Create realistic properties for sale"""
+    print(f"\n[*] Creating {count} properties for sale...")
+
+    property_types = ["flat", "house", "maisonette"]
+    sales_statuses = [SalesStatus.AVAILABLE, SalesStatus.UNDER_OFFER, SalesStatus.SSTC]
+
+    uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
+
+    properties = []
+    for i in range(count):
+        city = random.choice(uk_cities)
+        property_type = random.choice(property_types)
+        bedrooms = random.randint(1, 5)
+
+        address_line1 = fake.street_address()
+        address_line2 = fake.secondary_address() if random.choice([True, False]) else None
+        
+        address_parts = [address_line1]
+        if address_line2:
+            address_parts.append(address_line2)
+        address_parts.append(city)
+        full_address = ", ".join(address_parts)
+        
+        # Calculate realistic asking price based on bedrooms, city, and property type
+        base_price = {
+            "Southampton": {1: 120000, 2: 180000, 3: 250000, 4: 320000, 5: 400000},
+            "London": {1: 350000, 2: 500000, 3: 750000, 4: 1000000, 5: 1500000},
+            "Manchester": {1: 100000, 2: 150000, 3: 200000, 4: 280000, 5: 350000},
+            "Birmingham": {1: 90000, 2: 140000, 3: 190000, 4: 260000, 5: 330000},
+            "Leeds": {1: 90000, 2: 140000, 3: 190000, 4: 260000, 5: 330000},
+            "Bristol": {1: 150000, 2: 220000, 3: 300000, 4: 400000, 5: 500000},
+        }
+        
+        city_prices = base_price.get(city, base_price["Southampton"])
+        base_price_value = city_prices.get(bedrooms, city_prices.get(5, 200000))
+        
+        # Add variation (±15%)
+        price_variation = random.uniform(0.85, 1.15)
+        asking_price = round(base_price_value * price_variation, 0)
+        
+        # House typically costs more than flat/maisonette
+        if property_type == "house":
+            asking_price = round(asking_price * 1.2, 0)
+        
+        property = Property(
+            address=full_address,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            postcode=fake.postcode(),
+            status=PropertyStatus.AVAILABLE,  # Base status
+            property_type=property_type,
+            bedrooms=bedrooms,
+            bathrooms=random.randint(1, min(bedrooms, 3)),
+            rent=None,  # No rent for sale properties
+            asking_price=asking_price,  # Sale price
+            sales_status=random.choice(sales_statuses),
+            has_valuation_pack=random.choice([True, False, False]),  # 1/3 have valuation packs
+            description=fake.text(max_nb_chars=200) if random.choice([True, False]) else None,
+            # Add some photo URLs for demo (some properties have photos, some don't)
+            main_photo_url=f"https://images.unsplash.com/photo-{random.randint(1500000000000, 1600000000000)}?w=800" if random.choice([True, True, False]) else None
+        )
+
+        db.add(property)
+        properties.append(property)
+
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} properties for sale...")
+
+    db.commit()
+    print(f"[OK] Created {count} properties for sale")
+    return properties
+
+def create_vendors(db: Session, count: int = 8):
+    """Create realistic vendors"""
+    print(f"\n[*] Creating {count} vendors...")
+
+    vendors = []
+    for i in range(count):
+        vendor = Vendor(
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
+            email=fake.unique.email(),
+            primary_phone=fake.phone_number(),
+            current_address=fake.address().replace('\n', ', '),
+            date_of_birth=fake.date_between(start_date='-70y', end_date='-25y'),
+            nationality="British",
+            aml_status=random.choice(["pending", "verified", "verified"]),  # More verified
+            status=random.choice(["new", "valuation_booked", "instructed", "active"]),
+            source_of_lead=random.choice(["portal", "referral", "board", "past_client", "walk_in"]),
+            marketing_consent=random.choice([True, False]),
+            vendor_complete_info=random.choice([True, True, False]),  # 2/3 have complete info
+        )
+
+        db.add(vendor)
+        vendors.append(vendor)
+
+        if (i + 1) % 3 == 0:
+            print(f"   Created {i + 1}/{count} vendors...")
+
+    db.commit()
+    print(f"[OK] Created {count} vendors")
+    return vendors
 
 def main():
     """Main seed function"""
     print("\n" + "="*60)
-    print("🌱 TEAM 67 CRM - DATABASE SEEDING SCRIPT")
+    print("TEAM 67 CRM - DATABASE SEEDING SCRIPT")
     print("="*60)
 
     # Create database session
@@ -197,24 +358,48 @@ def main():
         clear_database()
 
         # Create all data
-        properties = create_properties(db, count=20)
+        properties_rent = create_properties(db, count=20)
+        properties_sale = create_properties_for_sale(db, count=15)
         landlords = create_landlords(db, count=10)
-        applicants = create_applicants(db, count=15)
+        tenants = create_applicants(db, count=15)  # All are tenants
+        buyers = create_buyers(db, count=10)
+        vendors = create_vendors(db, count=8)
+
+        # Link landlords to properties-for-let
+        print("\n[*] Linking landlords to properties...")
+        for i, property in enumerate(properties_rent):
+            if landlords:
+                property.landlord_id = landlords[i % len(landlords)].id
+        db.commit()
+        print("[OK] Linked landlords to properties")
+
+        # Link vendors to properties-for-sale
+        print("\n[*] Linking vendors to properties-for-sale...")
+        for i, vendor in enumerate(vendors):
+            if properties_sale and i < len(properties_sale):
+                vendor.instructed_property_id = properties_sale[i].id
+        db.commit()
+        print("[OK] Linked vendors to properties-for-sale")
 
         # Summary
         print("\n" + "="*60)
-        print("✅ SEEDING COMPLETE!")
+        print("[OK] SEEDING COMPLETE!")
         print("="*60)
-        print("📊 Summary:")
-        print(f"   • {len(properties)} Properties")
-        print(f"   • {len(landlords)} Landlords")
-        print(f"   • {len(applicants)} Applicants")
-        print("\n🚀 Your API is now ready for demo!")
+        print("Summary:")
+        print(f"   - {len(properties_rent)} Properties for Letting")
+        print(f"   - {len(properties_sale)} Properties for Sale")
+        print(f"   - {len(landlords)} Landlords")
+        print(f"   - {len(tenants)} Tenants")
+        print(f"   - {len(buyers)} Buyers")
+        print(f"   - {len(vendors)} Vendors")
+        print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
 
     except Exception as e:
-        print(f"\n❌ Error during seeding: {e}")
+        print(f"\n[ERROR] Error during seeding: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()
