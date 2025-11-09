@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from app.models.enums import TaskStatus
 
+
+
 class Task(BaseModel):
     __tablename__ = "tasks"
     

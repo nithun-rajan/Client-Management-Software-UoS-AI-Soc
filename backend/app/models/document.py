@@ -1,6 +1,5 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime, Date, Boolean, Float
 from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
 from app.models.base import BaseModel
 
 class DocumentType:

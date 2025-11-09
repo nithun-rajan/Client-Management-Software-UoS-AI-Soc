@@ -2,6 +2,8 @@ from sqlalchemy import Column, String, Text, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
+
+
 from app.models.enums import TicketStatus, TicketUrgency
 
 class Ticket(BaseModel):
