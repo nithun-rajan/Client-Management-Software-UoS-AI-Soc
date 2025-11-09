@@ -173,23 +173,31 @@ class WorkflowManager:
                 raise HTTPException(status_code=400,
                     detail="Cannot start referencing. Holding deposit has not been received.")
 
-        # --- Guard for Stage 3: DOCUMENTATION ("referenced") ---
-        # Note: TenancyStatus.DOCUMENTATION.value is "referenced"
-        elif new_status == TenancyStatus.DOCUMENTATION.value:
+        # --- Guard for Stage 3: REFERENCED (after referencing is complete) ---
+        # Note: TenancyStatus.REFERENCED.value is "referenced"
+        elif new_status == TenancyStatus.REFERENCED.value:
             # GUARD: Must have passed referencing (Blueprint p. 30-31, 2.2 & 2.3)
             if tenancy.reference_status != "pass" or tenancy.right_to_rent_status != "pass":
                 raise HTTPException(status_code=400,
-                    detail="Cannot move to documentation. References and Right to Rent must be 'pass'.")
+                    detail="Cannot move to referenced. References and Right to Rent must be 'pass'.")
 
-        # --- Guard for Stage 4: MOVE_IN_PREP ("legal_docs") ---
-        # Note: TenancyStatus.MOVE_IN_PREP.value is "legal_docs"
-        elif new_status == TenancyStatus.MOVE_IN_PREP.value:
+        # --- Guard for Stage 4: DOCUMENTATION ("legal_docs") ---
+        # Note: TenancyStatus.DOCUMENTATION.value is "legal_docs"
+        elif new_status == TenancyStatus.DOCUMENTATION.value:
             # GUARD: Must have signed docs and paid monies (Blueprint p. 31, 3.3 & 3.5)
             if not tenancy.tenancy_agreement_signed or not tenancy.move_in_monies_received:
                 raise HTTPException(status_code=400,
-                    detail="Cannot move to prep. Tenancy agreement must be signed and move-in monies received.")
+                    detail="Cannot move to documentation. Tenancy agreement must be signed and move-in monies received.")
 
-        # --- Guard for Stage 5: ACTIVE ("ready_to_move_in") ---
+        # --- Guard for Stage 5: MOVE_IN_PREP ("ready_to_move_in") ---
+        # Note: TenancyStatus.MOVE_IN_PREP.value is "ready_to_move_in"
+        elif new_status == TenancyStatus.MOVE_IN_PREP.value:
+            # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)
+            if not tenancy.inventory_check_in_complete or not tenancy.gas_safety_certificate_provided:
+                 raise HTTPException(status_code=400,
+                    detail="Cannot move to ready_to_move_in. Inventory check-in and compliance docs (Gas Safety) are required.")
+
+        # --- Guard for Stage 6: ACTIVE ("active") ---
         # Note: TenancyStatus.ACTIVE.value is "active"
         elif new_status == TenancyStatus.ACTIVE.value:
             # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)

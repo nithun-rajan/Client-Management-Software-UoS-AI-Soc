@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy import func, and_
+from sqlalchemy.orm import Session, aliased
 from datetime import datetime # --- ADDED ---
 
 from app.core.database import get_db
@@ -70,12 +70,14 @@ def get_kpis(db: Session = Depends(get_db)):
 
     # --- SECTION ADDED ---
     # Compliance KPIs (Blueprint p. 34)
+    # Filter for incomplete tasks (not completed or cancelled)
+    incomplete_task_statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS]
     overdue_tasks = db.query(Task).filter(
-        Task.status == TaskStatus.PENDING,
+        Task.status.in_(incomplete_task_statuses),
         Task.due_date < datetime.utcnow()
     ).count()
     upcoming_tasks = db.query(Task).filter(
-        Task.status == TaskStatus.PENDING,
+        Task.status.in_(incomplete_task_statuses),
         Task.due_date >= datetime.utcnow()
     ).count()
     # --- END OF SECTION ---
@@ -124,11 +126,13 @@ def get_lettings_funnel(db: Session = Depends(get_db)):
     (Blueprint pages 29-33)
     """
     # Define the order of the funnel
+    # Workflow progression: offer_accepted -> referencing -> referenced -> legal_docs -> ready_to_move_in -> active
     funnel_stages = [
         TenancyStatus.OFFER_ACCEPTED,
         TenancyStatus.REFERENCING,
-        TenancyStatus.DOCUMENTATION,
-        TenancyStatus.MOVE_IN_PREP,
+        TenancyStatus.REFERENCED,  # After referencing is complete
+        TenancyStatus.DOCUMENTATION,  # Legal documents stage (legal_docs)
+        TenancyStatus.MOVE_IN_PREP,  # Ready to move in (ready_to_move_in)
         TenancyStatus.ACTIVE
     ]
 
@@ -197,7 +201,7 @@ def get_lettings_performance(db: Session = Depends(get_db)):
         )
     ).filter(
         t1.to_status == TenancyStatus.REFERENCING.value,
-        t2.to_status == TenancyStatus.DOCUMENTATION.value # "referenced"
+        t2.to_status == TenancyStatus.REFERENCED.value # "referenced" - status after referencing is complete
     )
 
     avg_referencing_seconds = avg_referencing_seconds_query.scalar() or 0

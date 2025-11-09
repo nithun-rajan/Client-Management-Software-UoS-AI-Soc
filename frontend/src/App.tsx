@@ -24,6 +24,8 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Maintenance from "./pages/Maintenance";
+import MaintenanceDetails from "./pages/MaintenanceDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +72,8 @@ const App = () => (
                         <Route path="/messages" element={<Messages />} />
                         <Route path="/search" element={<Search />} />
                         <Route path="/kpis" element={<KPIsDashboard />} />
+                        <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/maintenance/:id" element={<MaintenanceDetails />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>

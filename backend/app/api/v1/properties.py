@@ -9,6 +9,7 @@ from app.core.security import verify_token
 from app.models.property import Property
 from app.models.landlord import Landlord
 from app.models.user import User
+from app.models.enums import PropertyStatus
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo
 from app.services.notification_service import notify
 
@@ -103,8 +104,23 @@ def list_properties(
         query = query.filter(Property.landlord_id == landlord_id)
     
     properties = query.offset(skip).limit(limit).all()
+    
+    # Fix any properties with None status
+    properties_to_fix = [p for p in properties if p.status is None]
+    if properties_to_fix:
+        for property in properties_to_fix:
+            property.status = PropertyStatus.AVAILABLE
+        db.commit()
+        # Refresh properties to get updated status
+        for property in properties_to_fix:
+            db.refresh(property)
+    
     result = []
     for property in properties:
+        # Ensure status is never None (should be fixed above, but double-check)
+        if property.status is None:
+            property.status = PropertyStatus.AVAILABLE
+        
         response = PropertyResponse.model_validate(property)
         # Include landlord information if property has a landlord
         if property.landlord_id:
@@ -125,6 +141,12 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
+    
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
+        db.commit()
+        db.refresh(property)
     
     response = PropertyResponse.model_validate(property)
     # Include landlord information if property has a landlord
@@ -152,6 +174,10 @@ def update_property(
 
     for key, value in property_data.model_dump(exclude_unset=True).items():
         setattr(property, key, value)
+
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
 
     db.commit()
     db.refresh(property)
@@ -182,6 +208,10 @@ def patch_property(
 
     for key, value in property_data.model_dump(exclude_unset=True).items():
         setattr(property, key, value)
+
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
 
     db.commit()
     db.refresh(property)

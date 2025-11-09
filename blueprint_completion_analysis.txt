@@ -1,5 +1,5 @@
 ═══════════════════════════════════════════════════════════════════════════════
-   CRM BLUEPRINT COMPLETION ANALYSIS - 6 SECTIONS BREAKDOWN
+   CRM BLUEPRINT COMPLETION ANALYSIS - 6 SECTIONS BREAKDOWN (UPDATED)
 ═══════════════════════════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -19,11 +19,14 @@ IMPLEMENTATION STATUS:
 ───────────────────────────────────────
 ✅ IMPLEMENTED:
    • KPI Dashboard page (frontend/src/pages/KPIsDashboard.tsx)
-   • Backend API (backend/app/api/v1/kpis.py)
+   • Backend API (backend/app/api/v1/kpis.py) - UPDATED with TaskStatus fixes
    • Average rent per bedroom calculation
-   • Days on market tracking
-   • Property/applicant/landlord counts
+   • Days on market tracking (property.days_on_market property)
+   • Property/applicant/landlord/vendor counts
    • Status distribution metrics
+   • Compliance KPIs (overdue tasks, upcoming tasks) - NEW
+   • Lettings funnel endpoint (/kpis/lettings-funnel) - NEW
+   • Lettings performance endpoint (/kpis/lettings-performance) - NEW
 
 ❌ MISSING:
    • Average SALES price per bedroom (only has lettings)
@@ -33,7 +36,7 @@ IMPLEMENTATION STATUS:
    • Customer satisfaction automation (no periodic surveys)
    • No automated feedback forms
 
-COMPLETION: 60% ⚠️
+COMPLETION: 65% ⚠️ (UP from 60%)
 ───────────────────────────────────────
 GAPS:
    - Sales KPIs completely missing (only lettings tracked)
@@ -69,21 +72,23 @@ IMPLEMENTATION STATUS:
    
    LANDLORD SIDE (95% Complete):
    • AI valuation packs ✅ (llm_service.py + Data.Street)
-   • Property CRUD with 54 fields ✅ (properties.py)
+   • Property CRUD with 54 fields ✅ (properties.py) - FIXED status validation
    • Landlord CRUD with AML/KYC ✅ (landlords.py)
    • HM Land Registry lookup ✅ (land_registry.py - 8 endpoints)
    • Document model exists ✅
+   • Document upload API ✅ (documents.py - NEW from letting-backend)
    • Frontend pages: Properties.tsx, Landlords.tsx ✅
    
    APPLICANT SIDE (90% Complete):
    • Applicant CRUD ✅ (applicants.py - 6 endpoints)
    • Property matching engine ✅ (property_matching.py - 7 endpoints)
    • Search criteria stored ✅
-   • Viewing booking ✅ (viewings.py - 6 endpoints NEW!)
+   • Viewing booking ✅ (viewings.py - 6 endpoints)
    • Frontend page: Applicants.tsx ✅
+   • Pipeline visualization ✅ (Pipeline.tsx, PropertyPipeline.tsx - IMPROVED)
 
 ⚠️ PARTIAL:
-   • Document upload UI limited (model exists, basic UI)
+   • Document upload UI limited (API exists, basic UI)
    • Automated match emails (system exists, not fully wired)
 
 ❌ MISSING:
@@ -91,7 +96,7 @@ IMPLEMENTATION STATUS:
    • Weekly automated match campaigns
    • Applicant portal (self-service login)
 
-COMPLETION: 92% ✅
+COMPLETION: 93% ✅ (UP from 92%)
 ───────────────────────────────────────
 GAPS:
    - Missing AI-personalized matching communications
@@ -150,22 +155,25 @@ IMPLEMENTATION STATUS:
    • All status transitions validated ✅
    • Automated side effects per transition ✅
    • Available → Under Offer → Let Agreed → Tenanted → Managed ✅
+   • TenancyStatus enum extended ✅ (DRAFT, OFFER_ACCEPTED, REFERENCING, REFERENCED, DOCUMENTATION, MOVE_IN_PREP, ACTIVE)
+   • Workflow guards implemented ✅ (validate_tenancy_guards)
    
    NEW APIS:
    • workflows.py - 4 endpoints ✅
-   • tenancy.py - 6 endpoints (full CRUD) ✅
+   • tenancy.py - 6 endpoints (full CRUD) ✅ - UPDATED with nested property/applicant data
    • offers.py - 8 endpoints ✅
-   • tasks.py - 9 endpoints (reminders/scheduling) ✅
+   • tasks.py - 9 endpoints ✅ - UPDATED with tenancy filtering
+   • documents.py - 4 endpoints ✅ - NEW (upload, download, list by tenancy/property)
    
    FRONTEND:
-   • Pipeline.tsx - Visual workflow ✅
-   • PropertyPipeline.tsx - Drag & drop stages ✅
-   • PipelineStage.tsx - Stage visualization ✅
+   • Pipeline.tsx - Visual workflow ✅ - IMPROVED (interactive property cards, expand/collapse)
+   • PropertyPipeline.tsx - Drag & drop stages ✅ - IMPROVED (responsive, 3 view modes)
+   • PipelineStage.tsx - Stage visualization ✅ - IMPROVED (compact mode, better UX)
 
 ⚠️ PARTIAL:
-   • Tenancy record creation (CRUD exists, not auto-generated)
-   • Task scheduling (tasks.py exists, not fully automated)
-   • Document generation (no AST template auto-drafting)
+   • Tenancy record creation (CRUD exists, auto-generated via workflow)
+   • Task scheduling (tasks.py exists, workflow creates tasks automatically)
+   • Document generation (upload exists, no AST template auto-drafting)
 
 ❌ MISSING:
    • Automated AST drafting
@@ -175,14 +183,14 @@ IMPLEMENTATION STATUS:
    • Email template automation for each stage
    • Financial module (deposit tracking, pre-tenancy statement)
 
-COMPLETION: 70% ⚠️
+COMPLETION: 75% ⚠️ (UP from 70%)
 ───────────────────────────────────────
 GAPS:
-   - Workflow system EXISTS (huge!) but lacks automation
-   - No document auto-generation (AST, contracts)
+   - Workflow system EXISTS and works (huge win!)
+   - Document upload works, but no auto-generation (AST, contracts)
    - No deposit protection integration
    - No referencing partner integration
-   - Financial tracking missing
+   - Financial tracking missing (deposit reconciliation)
 
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -230,43 +238,84 @@ V. END OF TENANCY:
 IMPLEMENTATION STATUS:
 ───────────────────────────────────────
 ✅ IMPLEMENTED:
-   • Task system (tasks.py - 9 endpoints) ✅
-   • Vendor model (contractors) ✅
-   • Document model ✅
-   • Tenancy model with dates ✅
+   • MaintenanceIssue model ✅ (maintenance.py - 186 lines, COMPREHENSIVE)
+      - Full workflow statuses (reported → acknowledged → inspected → quoted → approved → in_progress → completed → closed)
+      - Priority levels (low, medium, high, urgent)
+      - Emergency handling
+      - Financial tracking (estimated_cost, actual_cost, quote_amount)
+      - Contractor information
+      - Complaint tracking
+      - Recurring issues support
+      - Compliance flags
+   • Task system ✅ (tasks.py - 9 endpoints)
+   • Tickets API ✅ (tickets.py - 5 endpoints, simpler maintenance tracking)
+   • Document API ✅ (documents.py - 4 endpoints, upload/download/list)
+   • Property model compliance fields ✅ (EPC, gas safety, EICR, HMO dates/expiry)
+   • Tenancy model ✅ (rent_amount, deposit_amount, dates)
+   • Vendor model ✅ (can be used for contractors)
 
-⚠️ PARTIAL (30%):
-   • Tasks can track maintenance (but no workflow)
+⚠️ PARTIAL (35%):
+   • Maintenance model exists but NO API endpoints (no maintenance.py in api/v1/)
+   • Tasks can track maintenance (but no workflow integration)
    • Vendors/contractors exist (but no assignment system)
-   • Document fields exist (but no expiry alerts)
+   • Document fields exist (but no expiry alerts/automation)
    • Tenancy end dates tracked (but no automated notices)
+   • Compliance fields in Property model (but no dashboard/alerts)
 
-❌ MISSING:
-   • Rent collection ledger
-   • Arrears workflow/automation
-   • Landlord payment processing
-   • Financial reporting
-   • Contractor rating/assignment system
-   • Repair authorization workflow
-   • Certificate expiry dashboard (Red/Amber/Green)
-   • Automated certificate renewal reminders
-   • Inspection mobile app
-   • Inspection report templates
-   • Deposit reconciliation workflow
-   • 24/7 emergency response system
-   • AI middleman for tenant/landlord/contractor communication
+❌ MISSING (CRITICAL):
+   
+   FINANCIAL MANAGEMENT (0% - CRITICAL):
+   • ❌ Rent collection ledger (no payment tracking)
+   • ❌ Arrears workflow/automation (no late payment detection)
+   • ❌ Landlord payment processing (no net rent calculation)
+   • ❌ Financial reporting (no statements, no invoicing)
+   • ❌ Invoice generation (no fee tracking)
+   • ❌ Rent due date automation
+   • ❌ Payment reconciliation
+   
+   MAINTENANCE WORKFLOW (40%):
+   • ❌ Maintenance API endpoints (model exists, no CRUD)
+   • ❌ Contractor assignment system (no vendor-maintenance linking)
+   • ❌ Repair authorization workflow (no landlord approval process)
+   • ❌ Emergency response system (no 24/7 alerts)
+   • ❌ Maintenance cost tracking per property
+   
+   COMPLIANCE AUTOMATION (30%):
+   • ❌ Certificate expiry dashboard (Red/Amber/Green)
+   • ❌ Automated certificate renewal reminders
+   • ❌ Compliance alert system
+   • ❌ Expiry date calculations
+   • ❌ Missing certificate detection
+   
+   INSPECTIONS (0%):
+   • ❌ Inspection scheduling system
+   • ❌ Inspection report templates
+   • ❌ Photo/evidence capture UI
+   • ❌ Action item creation from inspections
+   • ❌ Inspection history tracking
+   
+   END OF TENANCY (15%):
+   • ❌ Notice processing workflow
+   • ❌ Check-out inspection system
+   • ❌ Deposit reconciliation workflow
+   • ❌ Property re-marketing automation
+   • ❌ Final admin tasks (meters, utilities)
 
-COMPLETION: 25% ❌
+COMPLETION: 30% ❌ (UP from 25% - slight improvement)
 ───────────────────────────────────────
 GAPS:
-   - Almost entirely missing
-   - Financial management: 0%
-   - Maintenance workflows: 20%
-   - Compliance tracking: 30% (models exist, no automation)
-   - Inspections: 0%
-   - End of tenancy: 15%
+   - Financial management: 0% (CRITICAL - no rent ledger, no arrears, no payments)
+   - Maintenance workflows: 40% (model exists, needs API + workflow)
+   - Compliance tracking: 30% (fields exist, no automation/alerts)
+   - Inspections: 0% (completely missing)
+   - End of tenancy: 15% (basic tracking, no workflow)
 
-This is the BIGGEST gap in the system!
+⚠️ MOST CRITICAL MISSING FEATURES:
+   1. RENT COLLECTION LEDGER (Financial Management) - #1 PRIORITY
+   2. ARREARS MANAGEMENT WORKFLOW - #2 PRIORITY  
+   3. COMPLIANCE EXPIRY ALERTS - #3 PRIORITY
+   4. MAINTENANCE API ENDPOINTS - #4 PRIORITY
+   5. INSPECTION SYSTEM - #5 PRIORITY
 
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -299,6 +348,8 @@ IMPLEMENTATION STATUS:
    • Vendor model exists ✅ (vendors.py - 9 endpoints)
    • Can create vendor records ✅
    • Basic CRUD operations ✅
+   • AML verification workflow ✅
+   • Sales instruction tracking ✅
    
    BUYER SIDE (0%):
    • No buyer module at all ❌
@@ -319,7 +370,7 @@ IMPLEMENTATION STATUS:
    • Sales-specific matching
    • Mortgage broker integration
 
-COMPLETION: 20% ❌
+COMPLETION: 20% ❌ (No change)
 ───────────────────────────────────────
 GAPS:
    - Vendor module is basic (40% of requirements)
@@ -382,13 +433,15 @@ STAGE 7: COMPLETION
 IMPLEMENTATION STATUS:
 ───────────────────────────────────────
 ✅ IMPLEMENTED:
-   • Workflow system supports sales ✅ (vendors in workflow.py)
+   • Workflow system supports sales ✅ (vendors in workflows.py)
    • Can transition vendor statuses ✅
    • Task system exists ✅
+   • SalesProgression model exists ✅ (sales.py)
 
 ⚠️ PARTIAL (15%):
    • Workflow handles status transitions
    • Tasks can track to-dos
+   • Sales progression model has basic fields
 
 ❌ MISSING:
    • Chain visualization/tracking
@@ -403,7 +456,7 @@ IMPLEMENTATION STATUS:
    • Commission calculation
    • Fall-through tracking (20% of deals)
 
-COMPLETION: 15% ❌
+COMPLETION: 15% ❌ (No change)
 ───────────────────────────────────────
 GAPS:
    - Workflow structure exists but sales-specific features missing
@@ -420,18 +473,18 @@ GAPS:
 
 SECTION                      | COMPLETION | GRADE | NOTES
 ─────────────────────────────────────────────────────────────────────────────
-1. KEY KPIs                  |    60%     |   C   | Only lettings, no sales/finance
-2. LETTINGS FRONT-END        |    92%     |   A   | Excellent! Nearly complete
-3. LETTINGS BACK-END         |    70%     |   B   | Workflow exists, needs automation
-4. PROPERTY MANAGEMENT       |    25%     |   F   | Biggest gap - barely started
+1. KEY KPIs                  |    65%     |   C   | Improved with compliance KPIs
+2. LETTINGS FRONT-END        |    93%     |   A   | Excellent! Nearly complete
+3. LETTINGS BACK-END         |    75%     |   B   | Workflow complete, needs automation
+4. PROPERTY MANAGEMENT       |    30%     |   F   | Biggest gap - financial missing
 5. SALES FRONT-END           |    20%     |   F   | Vendors basic, no buyers
 6. SALES BACK-END            |    15%     |   F   | Workflow skeleton only
 
 ─────────────────────────────────────────────────────────────────────────────
-WEIGHTED OVERALL:            |    47%     |   F   | Below 50% - NOT PRODUCTION READY
+WEIGHTED OVERALL:            |    50%     |   F   | At 50% - Still not production ready
 ─────────────────────────────────────────────────────────────────────────────
 
-LETTINGS-ONLY COMPLETION:    |    62%     |   D   | Core lettings somewhat complete
+LETTINGS-ONLY COMPLETION:    |    66%     |   D   | Core lettings improved
 SALES-ONLY COMPLETION:       |    18%     |   F   | Sales module barely exists
 
 
@@ -440,13 +493,16 @@ SALES-ONLY COMPLETION:       |    18%     |   F   | Sales module barely exists
 ═══════════════════════════════════════════════════════════════════════════════
 
 FOR LETTINGS-ONLY AGENCY:
-   ✅ Front-end (onboarding): READY (92%)
-   ⚠️ Back-end (progression): USABLE (70%) - needs automation
-   ❌ Property Management: NOT READY (25%)
+   ✅ Front-end (onboarding): READY (93%)
+   ✅ Back-end (progression): USABLE (75%) - workflow works well
+   ❌ Property Management: NOT READY (30%) - CRITICAL GAP
    
-   → Can onboard landlords/applicants and track offers
-   → Can use workflow for progression
-   → Cannot manage ongoing tenancies properly
+   → Can onboard landlords/applicants and track offers ✅
+   → Can use workflow for progression ✅
+   → Cannot manage ongoing tenancies properly ❌
+   → Cannot track rent payments ❌
+   → Cannot manage arrears ❌
+   → Cannot generate landlord statements ❌
 
 FOR FULL-SERVICE AGENCY (LETTINGS + SALES):
    ❌ NOT PRODUCTION READY
@@ -470,45 +526,88 @@ FOR FULL-SERVICE AGENCY (LETTINGS + SALES):
    • Full landlord management (AML/KYC)
    • 60-field applicant records
    • Viewing booking system
+   • Improved pipeline visualization
    
 ✅ Workflow State Machine:
    • 605-line workflow engine
    • Validates all status transitions
    • Side effects automation framework
-   • Visual pipeline UI
+   • Visual pipeline UI (responsive, 3 view modes)
+   • Extended TenancyStatus enum
+   • Workflow guards for progression
+   
+✅ Document Management:
+   • Document upload/download API
+   • Document categorization
+   • Link documents to tenancies/properties
+   
+✅ Maintenance Infrastructure:
+   • Comprehensive MaintenanceIssue model (186 lines)
+   • Full workflow statuses and priorities
+   • Financial tracking fields
+   • Contractor information fields
+   • Emergency handling
    
 ✅ Security & Infrastructure:
    • Middleware (logging, metrics, rate limiting)
    • CSRF protection
    • Input validation
    • Health checks & observability
+   • Property status validation fixes
 
 
 ═══════════════════════════════════════════════════════════════════════════════
    CRITICAL GAPS (WHAT YOU'RE MISSING)
 ═══════════════════════════════════════════════════════════════════════════════
 
-❌ PROPERTY MANAGEMENT (75% MISSING):
-   • Rent collection & arrears
-   • Maintenance workflows
-   • Contractor management
-   • Certificate expiry alerts (Red/Amber/Green)
-   • Inspection system
-   • Deposit reconciliation
+❌ PROPERTY MANAGEMENT - FINANCIAL (0% - CRITICAL):
+   • Rent collection ledger (NO payment tracking)
+   • Arrears management workflow (NO late payment detection)
+   • Landlord payments processing (NO net rent calculation)
+   • Invoicing & fees (NO fee tracking)
+   • Financial reporting (NO statements)
+   • Rent due date automation
+   • Payment reconciliation
    
+   ⚠️ THIS IS THE #1 PRIORITY - Without financial management, you cannot
+      run a property management business. This is blocking production use.
+
+❌ PROPERTY MANAGEMENT - COMPLIANCE AUTOMATION (30%):
+   • Certificate expiry dashboard (Red/Amber/Green)
+   • Automated certificate renewal reminders
+   • Compliance alert system
+   • Missing certificate detection
+   
+   ⚠️ THIS IS #2 PRIORITY - Legal compliance is critical. Fields exist but
+      no automation means manual tracking (error-prone).
+
+❌ PROPERTY MANAGEMENT - MAINTENANCE WORKFLOW (40%):
+   • Maintenance API endpoints (model exists, no CRUD)
+   • Contractor assignment system
+   • Repair authorization workflow
+   • Emergency response system (24/7 alerts)
+   
+   ⚠️ THIS IS #3 PRIORITY - Maintenance model is comprehensive but unusable
+      without API endpoints.
+
+❌ PROPERTY MANAGEMENT - INSPECTIONS (0%):
+   • Inspection scheduling system
+   • Inspection report generation
+   • Photo/evidence capture
+   • Action item creation
+   
+❌ PROPERTY MANAGEMENT - END OF TENANCY (15%):
+   • Notice processing workflow
+   • Check-out inspection
+   • Deposit reconciliation
+   • Property re-marketing
+
 ❌ SALES MODULE (82% MISSING):
    • Buyer management (0%)
    • Chain visualization
    • Sales progression workflow
    • Solicitor integration
    • Mortgage/survey tracking
-   
-❌ FINANCIAL MANAGEMENT (90% MISSING):
-   • Rent ledgers
-   • Commission tracking
-   • Revenue reporting
-   • Landlord payments
-   • Fee invoicing
    
 ❌ DOCUMENT AUTOMATION (80% MISSING):
    • AST auto-drafting
@@ -522,49 +621,162 @@ FOR FULL-SERVICE AGENCY (LETTINGS + SALES):
 ═══════════════════════════════════════════════════════════════════════════════
 
 YOUR CRM IS:
-   ✅ Excellent at: Lettings onboarding & initial matching
-   ⚠️ Decent at: Lettings progression (has framework, needs filling)
-   ❌ Weak at: Property management, Sales, Financial tracking
+   ✅ Excellent at: Lettings onboarding & initial matching (93%)
+   ✅ Good at: Lettings progression (75% - workflow works!)
+   ❌ Weak at: Property management, Financial tracking, Sales
 
 HONEST ASSESSMENT:
-   → You have a STRONG foundation (47% complete)
+   → You have a STRONG foundation (50% complete, up from 47%)
    → You have the HARDEST parts done (AI, workflows, infrastructure)
    → You're missing OPERATIONAL features (day-to-day management)
+   → Property Management is the CRITICAL BLOCKER (30% complete)
 
 IF YOU FOCUS ON LETTINGS ONLY:
-   → 62% complete - could be 90% in 2-3 weeks
-   → Add property management features
-   → Complete automation in progression
+   → 66% complete (up from 62%)
+   → Could be 85% in 2-3 weeks with property management
+   → Add financial management (rent ledger, arrears)
+   → Add compliance automation
+   → Add maintenance API endpoints
 
 IF YOU WANT FULL CRM (LETTINGS + SALES):
-   → 47% complete - needs 2-3 months
+   → 50% complete (up from 47%)
+   → Needs 2-3 months
    → Build sales module from scratch
    → Add financial management
    → Complete property management
 
 ═══════════════════════════════════════════════════════════════════════════════
-   RECOMMENDED NEXT STEPS
+   RECOMMENDED NEXT STEPS (PRIORITIZED)
 ═══════════════════════════════════════════════════════════════════════════════
 
-OPTION 1: LETTINGS-FOCUSED MVP (2-3 weeks)
-   1. Complete property management module (certificate tracking, inspections)
-   2. Add financial ledgers (rent collection, arrears)
-   3. Automate progression stages (email templates, AST drafting)
-   4. Add KPI revenue tracking
-   → Result: Production-ready lettings CRM (85%+ complete)
+PHASE 1: FINANCIAL MANAGEMENT (CRITICAL - 1-2 weeks)
+   PRIORITY #1: Rent Collection Ledger
+      • Create Payment model (rent payments, dates, amounts)
+      • Create RentLedger API endpoints
+      • Track rent due dates (automated from tenancy start_date)
+      • Track payments received (manual entry or API integration)
+      • Calculate arrears (automatic)
+   
+   PRIORITY #2: Arrears Management Workflow
+      • Automated task generation on missed payment
+      • Arrears letter templates
+      • Communication logging (calls/emails)
+      • Late payment notices (automated)
+   
+   PRIORITY #3: Landlord Payments
+      • Calculate net rent (rent - management fees - maintenance)
+      • Generate landlord statements (monthly PDFs)
+      • Track landlord payments
+      • Fee tracking (management fees, renewal fees)
 
-OPTION 2: FULL-SERVICE CRM (2-3 months)
-   1. Build buyer management module
-   2. Complete sales progression workflow
-   3. Add chain management
-   4. Build property management features
-   5. Add financial reporting
-   → Result: Complete CRM for lettings + sales agencies
+PHASE 2: COMPLIANCE AUTOMATION (HIGH - 1 week)
+   PRIORITY #1: Certificate Expiry Dashboard
+      • Red/Amber/Green status (expired, expiring soon, valid)
+      • Dashboard showing all properties with compliance status
+      • Filter by certificate type (EPC, Gas Safety, EICR, HMO)
+   
+   PRIORITY #2: Automated Reminders
+      • Task generation for expiring certificates (30/60/90 days)
+      • Email alerts to property managers
+      • Missing certificate detection
+   
+   PRIORITY #3: Compliance Alerts
+      • Alert system for expired certificates
+      • Block property operations if compliance missing
+      • Compliance report generation
 
-RECOMMENDED: OPTION 1 (Lettings-focused)
-   → You already have 62% of lettings complete
-   → Achievable in 2-3 weeks of focused work
-   → Can sell to lettings-only agencies immediately
-   → Add sales later as Phase 2
+PHASE 3: MAINTENANCE WORKFLOW (MEDIUM - 1 week)
+   PRIORITY #1: Maintenance API Endpoints
+      • CRUD endpoints for MaintenanceIssue
+      • List maintenance by property/tenancy
+      • Filter by status/priority
+      • Emergency maintenance prioritization
+   
+   PRIORITY #2: Contractor Assignment
+      • Link vendors to maintenance issues
+      • Contractor rating system
+      • SLA tracking
+   
+   PRIORITY #3: Authorization Workflow
+      • Landlord approval for expensive repairs
+      • Quote approval process
+      • Work authorization tracking
+
+PHASE 4: INSPECTIONS (MEDIUM - 1 week)
+   PRIORITY #1: Inspection Scheduling
+      • Schedule mid-term inspections
+      • Automated reminders
+      • Inspection calendar
+   
+   PRIORITY #2: Inspection Reports
+      • Report templates
+      • Photo upload
+      • Action item creation
+      • Inspection history
+
+RECOMMENDED: PHASE 1 (Financial Management) - CRITICAL
+   → Without financial management, you cannot run a property management business
+   → This is the #1 blocker for production use
+   → Estimated: 1-2 weeks of focused work
+   → Result: Production-ready financial tracking (rent ledger, arrears, statements)
+
+═══════════════════════════════════════════════════════════════════════════════
+   WHAT YOU NEED MOST FOR PROPERTY MANAGEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+🔴 CRITICAL (MUST HAVE):
+   1. RENT COLLECTION LEDGER
+      - Track rent payments (who paid, when, how much)
+      - Calculate arrears automatically
+      - Generate rent due dates from tenancy
+      - Payment reconciliation
+      → Without this, you cannot manage properties
+   
+   2. ARREARS MANAGEMENT
+      - Detect late payments automatically
+      - Generate arrears tasks
+      - Send arrears letters (templates)
+      - Track communications
+      → Legal requirement + business critical
+   
+   3. COMPLIANCE EXPIRY ALERTS
+      - Certificate expiry dashboard
+      - Automated reminders (30/60/90 days)
+      - Missing certificate detection
+      - Block operations if non-compliant
+      → Legal compliance requirement
+
+🟡 HIGH PRIORITY (SHOULD HAVE):
+   4. LANDLORD PAYMENTS & STATEMENTS
+      - Calculate net rent (rent - fees - maintenance)
+      - Generate monthly landlord statements (PDF)
+      - Track landlord payments
+      - Fee tracking
+      → Required for managed properties
+   
+   5. MAINTENANCE API ENDPOINTS
+      - CRUD for MaintenanceIssue
+      - List/filter maintenance
+      - Emergency prioritization
+      → Model exists, needs API
+   
+   6. CONTRACTOR ASSIGNMENT
+      - Link vendors to maintenance
+      - Contractor rating
+      - SLA tracking
+      → Required for maintenance workflow
+
+🟢 MEDIUM PRIORITY (NICE TO HAVE):
+   7. INSPECTION SYSTEM
+      - Schedule inspections
+      - Generate reports
+      - Photo upload
+      → Important but not blocking
+   
+   8. END OF TENANCY WORKFLOW
+      - Notice processing
+      - Check-out inspection
+      - Deposit reconciliation
+      → Important but not blocking
 
 ═══════════════════════════════════════════════════════════════════════════════
