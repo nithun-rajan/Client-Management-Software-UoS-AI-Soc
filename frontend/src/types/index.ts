@@ -1,6 +1,14 @@
+export interface LandlordInfo {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+}
+
 export interface Property {
   id: string;
-  address_line1: string;
+  address_line1?: string;
+  address?: string;
   address_line2?: string;
   city: string;
   postcode: string;
@@ -11,12 +19,15 @@ export interface Property {
     | "tenanted"
     | "under_offer"
     | "blocked"
-    | "maintenance";
+    | "maintenance"
+    | "managed"
+    | "withdrawn";
   property_type: string;
   bedrooms: number;
   bathrooms: number;
   rent?: number;
-  landlord_id?: number;
+  landlord_id?: string;
+  landlord?: LandlordInfo;
   virtual_tour_url?: string;
   main_photo_url?: string;
   // Sales fields
@@ -24,6 +35,10 @@ export interface Property {
   asking_price?: number;
   price_qualifier?: string;
   has_valuation_pack?: boolean;
+  // Property management fields
+  managed_by?: string;
+  management_type?: string;
+  management_notes?: string;
   created_at: string;
   updated_at?: string;
 }

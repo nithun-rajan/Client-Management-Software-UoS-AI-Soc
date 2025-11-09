@@ -2,9 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Sidebar from "./components/layout/Sidebar";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import Landlords from "./pages/Landlords";
@@ -20,6 +21,8 @@ import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -39,29 +42,43 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex min-h-screen w-full bg-background">
-            <Sidebar />
-            <main className="ml-64 flex-1">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/properties" element={<Properties />} />
-                <Route path="/properties/:id" element={<PropertyDetails />} />
-                <Route path="/landlords" element={<Landlords />} />
-                <Route path="/landlords/:id" element={<LandlordDetails />} />
-                <Route path="/applicants" element={<Applicants />} />
-                <Route path="/applicants/:id" element={<ApplicantDetails />} />
-                <Route path="/vendors" element={<Vendors />} />
-                <Route path="/vendors/:id" element={<VendorDetails />} />
-                <Route path="/buyers" element={<Buyers />} />
-                <Route path="/properties-for-sale" element={<PropertiesForSale />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/kpis" element={<KPIsDashboard />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-          </div>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <div className="flex min-h-screen w-full bg-background">
+                    <Sidebar />
+                    <main className="ml-64 flex-1">
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/properties" element={<Properties />} />
+                        <Route path="/properties/:id" element={<PropertyDetails />} />
+                        <Route path="/landlords" element={<Landlords />} />
+                        <Route path="/landlords/:id" element={<LandlordDetails />} />
+                        <Route path="/applicants" element={<Applicants />} />
+                        <Route path="/applicants/:id" element={<ApplicantDetails />} />
+                        <Route path="/vendors" element={<Vendors />} />
+                        <Route path="/vendors/:id" element={<VendorDetails />} />
+                        <Route path="/buyers" element={<Buyers />} />
+                        <Route path="/properties-for-sale" element={<PropertiesForSale />} />
+                        <Route path="/messages" element={<Messages />} />
+                        <Route path="/search" element={<Search />} />
+                        <Route path="/kpis" element={<KPIsDashboard />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </main>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

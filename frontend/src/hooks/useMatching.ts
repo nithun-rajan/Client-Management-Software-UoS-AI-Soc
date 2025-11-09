@@ -8,6 +8,8 @@ export interface PropertyMatch {
   property: {
     id: string;
     address: string;
+    address_line1?: string;
+    address_line2?: string;
     city: string;
     postcode: string;
     bedrooms: number;

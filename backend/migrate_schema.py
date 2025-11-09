@@ -37,9 +37,26 @@ def migrate_database():
             
             # Notifications table new columns
             ("notifications", "priority", "VARCHAR(20) DEFAULT 'medium'"),
+            
+            # Workflow transitions table new columns
+            ("workflow_transitions", "metadata", "TEXT"),
         ]
         
-        for table, column, column_type in migrations:
+        # Add new migrations for CRM features
+        new_migrations = [
+            # Applicant table - CRM fields
+            ("applicants", "assigned_agent_id", "VARCHAR"),
+            ("applicants", "last_contacted_at", "DATETIME"),
+            ("applicants", "notes", "TEXT"),
+            
+            # Property table - Management notes
+            ("properties", "management_notes", "TEXT"),
+        ]
+        
+        # Combine old and new migrations
+        all_migrations = migrations + new_migrations
+        
+        for table, column, column_type in all_migrations:
             try:
                 # Check if column exists (SQLite doesn't have a direct way, so we'll try to add it)
                 # SQLite will raise an error if column already exists, which we'll catch
