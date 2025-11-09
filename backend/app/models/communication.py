@@ -9,10 +9,10 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Foreign
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from app.models.base import Base
+from app.models.base import BaseModel
 
 
-class Communication(Base):
+class Communication(BaseModel):
     """
     Communication/Activity Log Model
     
@@ -22,8 +22,7 @@ class Communication(Base):
     __tablename__ = "communications"
     
 
-    # Primary Key
-    id = Column(Integer, primary_key=True, index=True)
+    
     
     # Communication Type & Details
     type = Column(String(50), nullable=False, index=True)  # email, call, sms, note, task, meeting, viewing
@@ -33,8 +32,7 @@ class Communication(Base):
     # Metadata
     direction = Column(String(20), nullable=True)  # inbound, outbound (null for notes/tasks)
     created_by = Column(String(255), nullable=True)  # User who created this entry
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     
     # Flags
     is_important = Column(Boolean, default=False)  # Flag for priority communications

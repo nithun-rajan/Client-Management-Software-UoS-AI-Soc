@@ -13,6 +13,8 @@ import {
   Mail,
   ArrowRight,
   Workflow,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +30,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/Header";
@@ -39,6 +43,16 @@ import {
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -49,14 +63,59 @@ export default function PropertyDetails() {
     null
   );
   const [transitionNotes, setTransitionNotes] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const { data: property, isLoading } = useQuery({
+  const { data: property, isLoading, refetch } = useQuery({
     queryKey: ["property", id],
     queryFn: async () => {
       const response = await api.get(`/api/v1/properties/${id}/`);
       return response.data;
     },
   });
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await api.delete(`/api/v1/properties/${id}/`);
+      toast({ title: "Success", description: "Property deleted successfully" });
+      navigate("/properties");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete property",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id) return;
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.put(`/api/v1/properties/${id}/`, {
+        address_line1: formData.get("address_line1"),
+        city: formData.get("city"),
+        postcode: formData.get("postcode"),
+        property_type: formData.get("property_type"),
+        bedrooms: parseInt(formData.get("bedrooms") as string),
+        bathrooms: parseInt(formData.get("bathrooms") as string),
+        rent: formData.get("rent") ? parseFloat(formData.get("rent") as string) : null,
+        asking_price: formData.get("asking_price") ? parseFloat(formData.get("asking_price") as string) : null,
+        status: formData.get("status"),
+      });
+      toast({ title: "Success", description: "Property updated successfully" });
+      setEditDialogOpen(false);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update property",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: availableTransitions } = useAvailableTransitions(
     "property",
@@ -141,7 +200,17 @@ export default function PropertyDetails() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Properties
           </Button>
-          <StatusBadge status={property.status} />
+          <div className="flex items-center gap-2">
+            <StatusBadge status={property.status} />
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </div>
 
         {/* Property Header Card */}
@@ -443,6 +512,91 @@ export default function PropertyDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Property</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="address_line1">Address</Label>
+                <Input id="address_line1" name="address_line1" defaultValue={property?.address_line1} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" defaultValue={property?.city} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="postcode">Postcode</Label>
+                <Input id="postcode" name="postcode" defaultValue={property?.postcode} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="property_type">Property Type</Label>
+                <Select name="property_type" defaultValue={property?.property_type}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="flat">Flat</SelectItem>
+                    <SelectItem value="house">House</SelectItem>
+                    <SelectItem value="maisonette">Maisonette</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input id="bedrooms" name="bedrooms" type="number" defaultValue={property?.bedrooms} required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input id="bathrooms" name="bathrooms" type="number" defaultValue={property?.bathrooms} required />
+                </div>
+              </div>
+              {property?.rent !== undefined && (
+                <div className="grid gap-2">
+                  <Label htmlFor="rent">Monthly Rent (£)</Label>
+                  <Input id="rent" name="rent" type="number" step="0.01" defaultValue={property?.rent} />
+                </div>
+              )}
+              {property?.asking_price !== undefined && (
+                <div className="grid gap-2">
+                  <Label htmlFor="asking_price">Asking Price (£)</Label>
+                  <Input id="asking_price" name="asking_price" type="number" step="0.01" defaultValue={property?.asking_price} />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the property
+              "{property?.address_line1}" and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

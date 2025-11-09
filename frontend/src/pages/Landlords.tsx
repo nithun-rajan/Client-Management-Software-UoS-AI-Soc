@@ -9,6 +9,8 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLandlords, useDeleteLandlord, useUpdateLandlord } from "@/hooks/useLandlords";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
@@ -37,6 +38,7 @@ export default function Landlords() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleEdit = (landlord: Landlord) => {
     setSelectedLandlord(landlord);
@@ -103,12 +105,54 @@ export default function Landlords() {
       .slice(0, 2);
   };
 
+  // Apply search
+  const filteredLandlords = landlords?.filter((landlord: Landlord) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      landlord.full_name?.toLowerCase().includes(query) ||
+      landlord.email?.toLowerCase().includes(query) ||
+      landlord.phone?.includes(query) ||
+      landlord.address?.toLowerCase().includes(query) ||
+      landlord.status?.toLowerCase().includes(query)
+    );
+  }) || [];
+
   return (
     <div>
       <Header title="Landlords" />
       <div className="p-6">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone, address, or status..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2">
-          {landlords?.map((landlord) => (
+          {filteredLandlords.map((landlord) => (
             <Card
               key={landlord.id}
               className="shadow-card transition-shadow hover:shadow-elevated"
@@ -154,33 +198,19 @@ export default function Landlords() {
                   <span>Properties owned: 0</span>
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" asChild>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link to={`/landlords/${landlord.id}`}>
-                    <Eye className="mr-1 h-4 w-4" />
-                    View Details
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
                   </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(landlord)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(landlord)}
-                >
-                  <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
 
-        {landlords?.length === 0 && (
+        {filteredLandlords.length === 0 && (
           <EmptyState
             icon={UserCheck}
             title="No landlords yet"
