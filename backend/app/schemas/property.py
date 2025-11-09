@@ -50,7 +50,11 @@ class PropertyResponse(PropertyBase):
     address_line1: str | None = None
     address_line2: str | None = None
     landlord_id: str | None = None
+    landlord: LandlordInfo | None = None
     sales_status: str | None = None
     asking_price: float | None = None
     price_qualifier: str | None = None
     has_valuation_pack: bool | None = None
+    managed_by: str | None = None
+    management_type: str | None = None
+    management_notes: str | None = None
