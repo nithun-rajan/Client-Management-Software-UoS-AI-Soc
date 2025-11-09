@@ -26,3 +26,4 @@ class Landlord(BaseModel):
     # Relationships
     properties = relationship("Property", back_populates="landlord")
     communications = relationship("Communication", back_populates="landlord")
+    maintenance_issues = relationship("MaintenanceIssue", back_populates="landlord", cascade="all, delete-orphan")

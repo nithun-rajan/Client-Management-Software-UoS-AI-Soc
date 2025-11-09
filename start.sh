@@ -12,6 +12,7 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+cp .env.example .env
 
 echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   Client Management Software - Starting Servers...      ║${NC}"
@@ -108,7 +109,7 @@ sleep 3
 # Check if frontend is running
 if ps -p $FRONTEND_PID > /dev/null; then
     echo -e "${GREEN}✓ Frontend started (PID: $FRONTEND_PID)${NC}"
-    echo -e "  ${BLUE}→ App: http://localhost:5173${NC}"
+    echo -e "  ${BLUE}→ App: http://localhost:8080${NC}"
 else
     echo -e "${RED}❌ Frontend failed to start. Check frontend/frontend.log${NC}"
     kill $BACKEND_PID 2>/dev/null

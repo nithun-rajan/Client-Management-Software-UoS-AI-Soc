@@ -2,6 +2,8 @@ from sqlalchemy import Column, String, Date, Text, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from app.models.enums import ApplicantStatus
+from app.models.enums_sales import MortgageStatus, BuyerType
+
 
 class Applicant(BaseModel):
     __tablename__ = "applicants"
@@ -32,3 +34,21 @@ class Applicant(BaseModel):
     # Relationships
     tenancies = relationship("Tenancy", back_populates="applicant")
     communications = relationship("Communication", back_populates="applicant")
+    letting_offers = relationship("Offer", back_populates="applicant")  # Lettings offers
+    sales_progression = relationship("SalesProgression", back_populates="buyer")
+    sales_offers = relationship("SalesOffer", back_populates="buyer")  # Sales offers
+
+    # Sales buyer specific fields
+    buyer_type = Column(String)
+    mortgage_status = Column(String, default=MortgageStatus.NOT_APPLIED)
+    has_property_to_sell = Column(Boolean, default=False)
+    is_chain_free = Column(Boolean, default=False)
+    
+    # Willingness flags
+    willing_to_rent = Column(Boolean, default=True)
+    willing_to_buy = Column(Boolean, default=False)
+    
+    # Buyer registration questions
+    buyer_questions_answered = Column(Boolean, default=False)  # Flag indicating if buyer answered registration questions
+
+    

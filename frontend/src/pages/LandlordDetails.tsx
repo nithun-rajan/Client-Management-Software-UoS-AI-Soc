@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   UserCheck,
   Mail,
@@ -10,6 +11,8 @@ import {
   AlertCircle,
   Activity,
   FileText,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,19 +23,79 @@ import Header from "@/components/layout/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LandlordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  const { data: landlord, isLoading } = useQuery({
+  const { data: landlord, isLoading, refetch } = useQuery({
     queryKey: ["landlord", id],
     queryFn: async () => {
       const response = await api.get(`/api/v1/landlords/${id}/`);
       return response.data;
     },
   });
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await api.delete(`/api/v1/landlords/${id}/`);
+      toast({ title: "Success", description: "Landlord deleted successfully" });
+      navigate("/landlords");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete landlord",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id) return;
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.put(`/api/v1/landlords/${id}/`, {
+        full_name: formData.get("full_name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        address: formData.get("address"),
+      });
+      toast({ title: "Success", description: "Landlord updated successfully" });
+      setEditDialogOpen(false);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update landlord",
+        variant: "destructive",
+      });
+    }
+  };
   const handleSendEmail = () => {
     console.log("📧 Sending email for property:", landlord.id);
     toast({
@@ -85,17 +148,27 @@ export default function LandlordDetails() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Landlords
           </Button>
-          {landlord.aml_verified ? (
-            <Badge className="gap-1 bg-accent text-white">
-              <CheckCircle className="h-3 w-3" />
-              AML Verified
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1">
-              <AlertCircle className="h-3 w-3" />
-              Pending Verification
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {landlord.aml_verified ? (
+              <Badge className="gap-1 bg-accent text-white">
+                <CheckCircle className="h-3 w-3" />
+                AML Verified
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1">
+                <AlertCircle className="h-3 w-3" />
+                Pending Verification
+              </Badge>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </div>
 
         {/* Landlord Header Card */}
@@ -331,6 +404,60 @@ export default function LandlordDetails() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Landlord</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input id="full_name" name="full_name" defaultValue={landlord?.full_name} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" defaultValue={landlord?.email} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" name="phone" defaultValue={landlord?.phone} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" name="address" defaultValue={landlord?.address} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the landlord
+              "{landlord?.full_name}" and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

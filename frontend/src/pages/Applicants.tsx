@@ -13,6 +13,8 @@ import {
   MapPin,
   Home,
   Calendar,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -31,6 +33,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useApplicants } from "@/hooks/useApplicants";
 import { usePropertyMatching, PropertyMatch } from "@/hooks/useMatching";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,6 +46,7 @@ export default function Applicants() {
   const { data: applicants, isLoading } = useApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -61,7 +65,7 @@ export default function Applicants() {
   if (isLoading) {
     return (
       <div>
-        <Header title="Applicants" />
+        <Header title="Tenants" />
         <div className="p-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -79,12 +83,61 @@ export default function Applicants() {
 
   const matchData = matchingMutation.data;
 
+  // Filter applicants that are tenants (willing_to_rent = true)
+  const tenants = applicants?.filter((a: any) => a.willing_to_rent !== false) || [];
+
+  // Apply search
+  const filteredTenants = tenants.filter((tenant: any) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      tenant.first_name?.toLowerCase().includes(query) ||
+      tenant.last_name?.toLowerCase().includes(query) ||
+      tenant.email?.toLowerCase().includes(query) ||
+      tenant.phone?.includes(query) ||
+      tenant.preferred_locations?.toLowerCase().includes(query) ||
+      tenant.status?.toLowerCase().includes(query) ||
+      tenant.desired_bedrooms?.toString().includes(query) ||
+      tenant.rent_budget_min?.toString().includes(query) ||
+      tenant.rent_budget_max?.toString().includes(query)
+    );
+  });
+
   return (
     <div>
-      <Header title="Applicants" />
+      <Header title="Tenants" />
       <div className="p-6">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone, location, status, bedrooms, or budget..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {applicants?.map((applicant) => (
+          {filteredTenants.map((applicant) => (
             <Card
               key={applicant.id}
               className="shadow-card transition-shadow hover:shadow-elevated"
@@ -137,18 +190,19 @@ export default function Applicants() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                   onClick={() => handleFindMatches(applicant.id)}
                   disabled={matchingMutation.isPending}
                 >
-                  <Sparkles className="mr-1 h-4 w-4" />
+                  <Sparkles className="mr-2 h-4 w-4" />
                   {matchingMutation.isPending && selectedApplicantId === applicant.id
                     ? "Finding..."
                     : "Find Matches"}
                 </Button>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link to={`/applicants/${applicant.id}`}>
-                    <Eye className="h-4 w-4" />
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
                   </Link>
                 </Button>
               </CardFooter>
@@ -156,12 +210,12 @@ export default function Applicants() {
           ))}
         </div>
 
-          {applicants?.length === 0 && (
+          {filteredTenants.length === 0 && (
             <EmptyState
               icon={Users}
-              title="No applicants yet"
-              description="Start building your applicant database by adding your first applicant"
-              actionLabel="+ Add Applicant"
+              title="No tenants yet"
+              description="Start building your tenant database by adding your first tenant"
+              actionLabel="+ Add Tenant"
               onAction={() => {}}
             />
           )}
