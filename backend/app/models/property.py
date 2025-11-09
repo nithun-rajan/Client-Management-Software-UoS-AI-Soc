@@ -1,8 +1,9 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean, Numeric
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.models.base import BaseModel
 from app.models.enums import PropertyStatus
+from app.models.enums_sales import SalesStatus
 
 class Property(BaseModel): 
     __tablename__ = "properties"
@@ -51,15 +52,24 @@ class Property(BaseModel):
     main_photo_url = Column(String)
     photo_urls = Column(Text)  # JSON array of URLs
     virtual_tour_url = Column(String)  # Matterport/360 virtual tour
-    
-    landlord_id = Column(String, ForeignKey('landlords.id'))
-    landlord = relationship("Landlord", back_populates="properties")
-    
-    tenancies = relationship("Tenancy", back_populates="property")
-    communications = relationship("Communication", back_populates="property")
-    
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)
+    landlord_id = Column(String, ForeignKey('landlords.id'))
+
+    #relationships
+    landlord = relationship("Landlord", back_populates="properties")
+    tenancies = relationship("Tenancy", back_populates="property")
+    communications = relationship("Communication", back_populates="property")
+    sales_progression = relationship("SalesProgression", back_populates="property", uselist=False)
+    offers = relationship("Offer", back_populates="property")    
+
+
+    # Sales specific fields
+    sales_status = Column(String, default=SalesStatus.AVAILABLE, index=True)
+    asking_price = Column(Numeric(12, 2))
+    price_qualifier = Column(String)
+
+
     
     @property
     def days_on_market(self):
