@@ -16,7 +16,8 @@ from app.api.v1 import (
     vendors,
     viewings,
     offers,
-    workflows
+    workflows,
+    sales
 )
 
 api_router = APIRouter()
@@ -37,3 +38,4 @@ api_router.include_router(vendors.router)
 api_router.include_router(viewings.router)
 api_router.include_router(offers.router)
 api_router.include_router(workflows.router)
+api_router.include_router(sales.router, tags=["sales"])

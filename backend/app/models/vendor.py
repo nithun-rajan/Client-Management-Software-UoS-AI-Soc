@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Date, String, Text
+from sqlalchemy import Column, Date, String, Text, DateTime, Numeric
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
 from app.models.enums import VendorStatus
-
+from app.models.enums_sales import InstructionType
 
 class Vendor(BaseModel):
     __tablename__ = "vendors"
@@ -31,3 +31,11 @@ class Vendor(BaseModel):
 
     # Relationships
     tasks = relationship("Task", back_populates="vendor")
+    sales_progression = relationship("SalesProgression", back_populates="vendor")
+
+    # Sales instruction details
+    instruction_type = Column(String, default=InstructionType.SOLE_AGENCY)
+    instruction_date = Column(DateTime(timezone=True))
+    agreed_commission = Column(Numeric(5, 2))
+    minimum_fee = Column(Numeric(10, 2))
+    contract_expiry_date = Column(DateTime(timezone=True))
