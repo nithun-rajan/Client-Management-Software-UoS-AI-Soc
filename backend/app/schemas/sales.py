@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
-from app.schemas.model_config import CustomModelConfig
-
 
 class SalesProgressionBase(BaseModel):
     property_id: str = Field(..., description="Linked property ID")

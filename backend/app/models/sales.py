@@ -1,11 +1,11 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Boolean, Numeric, JSON
 from sqlalchemy.orm import relationship
 
-from app.models.base import Base
+from app.models.base import BaseModel
 from app.models.enums_sales import *
 
 
-class SalesProgression(Base):
+class SalesProgression(BaseModel):
     __tablename__ = "sales_progression"
 
     # Foreign Keys
@@ -97,7 +97,7 @@ class SalesProgression(Base):
         return f"<SalesProgression(property_id={self.property_id}, stage={self.current_stage}, status={self.sales_status})>"
 
 
-class Offer(Base):
+class Offer(BaseModel):
     __tablename__ = "offers"
 
     # Foreign Keys
