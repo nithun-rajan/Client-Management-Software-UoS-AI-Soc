@@ -22,6 +22,9 @@ class ApplicantBase(AppBaseModel):
     has_pets: bool = False
     pet_details: str | None = None
     special_requirements: str | None = None
+    willing_to_rent: bool = True
+    willing_to_buy: bool = False
+    buyer_questions_answered: bool = False
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -44,6 +47,9 @@ class ApplicantUpdate(AppBaseModel):
     has_pets: bool | None = None
     pet_details: str | None = None
     special_requirements: str | None = None
+    willing_to_rent: bool | None = None
+    willing_to_buy: bool | None = None
+    buyer_questions_answered: bool | None = None
 
 
 class ApplicantResponse(ApplicantBase):

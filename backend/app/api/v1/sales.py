@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
 from app.core.database import get_db
-from app.models.sales import SalesProgression, Offer
+from app.models.sales import SalesProgression, SalesOffer
 from app.schemas.sales import (
     SalesProgressionCreate, 
     SalesProgressionUpdate, 
@@ -14,12 +14,12 @@ from app.schemas.sales import (
     OfferResponse
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/sales", tags=["sales"])
 
 
 # Sales Progression CRUD Endpoints
 
-@router.post("/sales-progression", response_model=SalesProgressionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/progression", response_model=SalesProgressionResponse, status_code=status.HTTP_201_CREATED)
 def create_sales_progression(
     sales_progression: SalesProgressionCreate,
     db: Session = Depends(get_db)
@@ -46,7 +46,7 @@ def create_sales_progression(
     return db_sales_progression
 
 
-@router.get("/sales-progression", response_model=List[SalesProgressionResponse])
+@router.get("/progression", response_model=List[SalesProgressionResponse])
 def get_sales_progression_list(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -78,7 +78,7 @@ def get_sales_progression_list(
     return sales_progression
 
 
-@router.get("/sales-progression/{progression_id}", response_model=SalesProgressionResponse)
+@router.get("/progression/{progression_id}", response_model=SalesProgressionResponse)
 def get_sales_progression(
     progression_id: str,
     db: Session = Depends(get_db)
@@ -97,7 +97,7 @@ def get_sales_progression(
     return sales_progression
 
 
-@router.get("/sales-progression/property/{property_id}", response_model=Optional[SalesProgressionResponse])
+@router.get("/progression/property/{property_id}", response_model=Optional[SalesProgressionResponse])
 def get_sales_progression_by_property(
     property_id: str,
     db: Session = Depends(get_db)
@@ -112,7 +112,7 @@ def get_sales_progression_by_property(
     return sales_progression
 
 
-@router.put("/sales-progression/{progression_id}", response_model=SalesProgressionResponse)
+@router.put("/progression/{progression_id}", response_model=SalesProgressionResponse)
 def update_sales_progression(
     progression_id: str,
     sales_progression_update: SalesProgressionUpdate,
@@ -140,7 +140,7 @@ def update_sales_progression(
     return db_sales_progression
 
 
-@router.delete("/sales-progression/{progression_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/progression/{progression_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_sales_progression(
     progression_id: str,
     db: Session = Depends(get_db)
@@ -162,7 +162,7 @@ def delete_sales_progression(
     return None
 
 
-@router.put("/sales-progression/{progression_id}/stage", response_model=SalesProgressionResponse)
+@router.put("/progression/{progression_id}/stage", response_model=SalesProgressionResponse)
 def update_sales_stage(
     progression_id: str,
     stage: str = Query(..., description="New sales stage"),
@@ -196,7 +196,7 @@ def update_sales_stage(
     return db_sales_progression
 
 
-@router.get("/sales-progression/chain/{chain_id}", response_model=List[SalesProgressionResponse])
+@router.get("/progression/chain/{chain_id}", response_model=List[SalesProgressionResponse])
 def get_sales_progression_by_chain(
     chain_id: str,
     db: Session = Depends(get_db)
@@ -221,7 +221,7 @@ def create_offer(
     """
     Create new offer
     """
-    db_offer = Offer(**offer.model_dump())
+    db_offer = SalesOffer(**offer.model_dump())
     db.add(db_offer)
     db.commit()
     db.refresh(db_offer)
@@ -241,15 +241,15 @@ def get_offers_list(
     """
     Get list of offers with filtering
     """
-    query = db.query(Offer)
+    query = db.query(SalesOffer)
     
     # Apply filters
     if property_id:
-        query = query.filter(Offer.property_id == property_id)
+        query = query.filter(SalesOffer.property_id == property_id)
     if buyer_id:
-        query = query.filter(Offer.buyer_id == buyer_id)
+        query = query.filter(SalesOffer.buyer_id == buyer_id)
     if status:
-        query = query.filter(Offer.status == status)
+        query = query.filter(SalesOffer.status == status)
     
     offers = query.offset(skip).limit(limit).all()
     return offers
@@ -263,7 +263,7 @@ def get_offer(
     """
     Get specific offer by ID
     """
-    offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    offer = db.query(SalesOffer).filter(SalesOffer.id == offer_id).first()
     
     if not offer:
         raise HTTPException(
@@ -282,7 +282,7 @@ def get_offers_by_property(
     """
     Get all offers for a property
     """
-    offers = db.query(Offer).filter(Offer.property_id == property_id).all()
+    offers = db.query(SalesOffer).filter(SalesOffer.property_id == property_id).all()
     return offers
 
 
@@ -295,7 +295,7 @@ def update_offer(
     """
     Update offer
     """
-    db_offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    db_offer = db.query(SalesOffer).filter(SalesOffer.id == offer_id).first()
     
     if not db_offer:
         raise HTTPException(
@@ -323,7 +323,7 @@ def update_offer_status(
     """
     Update offer status
     """
-    db_offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    db_offer = db.query(SalesOffer).filter(SalesOffer.id == offer_id).first()
     
     if not db_offer:
         raise HTTPException(
@@ -348,7 +348,7 @@ def delete_offer(
     """
     Delete offer
     """
-    db_offer = db.query(Offer).filter(Offer.id == offer_id).first()
+    db_offer = db.query(SalesOffer).filter(SalesOffer.id == offer_id).first()
     
     if not db_offer:
         raise HTTPException(

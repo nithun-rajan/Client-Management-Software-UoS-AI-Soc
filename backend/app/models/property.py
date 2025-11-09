@@ -76,13 +76,15 @@ class Property(BaseModel):
     communications = relationship("Communication", back_populates="property")
     maintenance_issues = relationship("MaintenanceIssue", back_populates="property", cascade="all, delete-orphan")
     sales_progression = relationship("SalesProgression", back_populates="property", uselist=False)
-    offers = relationship("Offer", back_populates="property")    
+    offers = relationship("Offer", back_populates="property")  # Lettings offers
+    sales_offers = relationship("SalesOffer", back_populates="property")  # Sales offers    
 
 
     # Sales specific fields
     sales_status = Column(String, default=SalesStatus.AVAILABLE, index=True)
     asking_price = Column(Numeric(12, 2))
     price_qualifier = Column(String)
+    has_valuation_pack = Column(Boolean, default=False)  # Flag for valuation pack generation
 
 
     

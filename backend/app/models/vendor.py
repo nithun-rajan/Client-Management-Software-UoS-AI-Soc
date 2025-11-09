@@ -10,12 +10,10 @@ class Vendor(BaseModel):
    
 
     # Core identity
-    title = Column(String)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     primary_phone = Column(String, nullable=False)
-    secondary_phone = Column(String)
 
     # Compliance (AML/KYC)
     current_address = Column(Text)
@@ -30,7 +28,6 @@ class Vendor(BaseModel):
 
     # Sales instruction
     status = Column(String, default=VendorStatus.NEW)
-    agreed_commission = Column(String)  # e.g., "1.5% + VAT"
     minimum_fee = Column(String)
     instruction_type = Column(String, default=InstructionType.SOLE_AGENCY)
     instruction_date = Column(DateTime(timezone=True))
@@ -47,6 +44,9 @@ class Vendor(BaseModel):
     conveyancer_contact = Column(String)  # Phone/email
     # Linked property for sales progression
     instructed_property_id = Column(String, ForeignKey("properties.id"), index=True)
+    
+    # Complete info flag (similar to buyer_questions_answered)
+    vendor_complete_info = Column(Boolean, default=False)
 
     # Relationships
     tasks = relationship("Task", back_populates="vendor")

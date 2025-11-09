@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
 
@@ -66,8 +66,6 @@ def create_vendor(
         try:
             user_id = current_user.id if current_user else None
             vendor_name = f"{vendor_data.first_name} {vendor_data.last_name}"
-            if vendor_data.title:
-                vendor_name = f"{vendor_data.title} {vendor_name}"
             notify(
                 db=db,
                 user_id=user_id,
@@ -342,7 +340,7 @@ def update_vendor_marketing_consent(
 
 @router.get("/source/{lead_source}", response_model=list[VendorResponse])
 def get_vendors_by_lead_source(
-    lead_source: str = Query(..., description="Source of lead: portal, referral, board, past_client"),
+    lead_source: str = Path(..., description="Source of lead: portal, referral, board, past_client"),
     db: Session = Depends(get_db)
 ):
     """

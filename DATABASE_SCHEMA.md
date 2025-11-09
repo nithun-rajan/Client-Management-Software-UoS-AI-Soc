@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document describes the finalized database schema for the Client Management Software CRM system, including Properties, Landlords, Tenants, Tenancies, and Maintenance Issues.
+This document describes the finalized database schema for the Client Management Software CRM system, including Properties (for both lettings and sales), Landlords, Tenants, Buyers, Vendors, Tenancies, Sales Progression, and Maintenance Issues.
+
+The system supports both **Lettings** (rental properties) and **Sales** (property sales) workflows, with Applicants serving as a general blueprint that can be classified as Tenants (willing to rent) or Buyers (willing to buy).
 
 ---
 
@@ -10,10 +12,14 @@ This document describes the finalized database schema for the Client Management 
 
 1. [Property Model](#property-model)
 2. [Landlord Model](#landlord-model)
-3. [Tenancy Model](#tenancy-model)
-4. [MaintenanceIssue Model](#maintenanceissue-model)
-5. [Relationships](#relationships)
-6. [Key Fields Summary](#key-fields-summary)
+3. [Applicant Model](#applicant-model)
+4. [Vendor Model](#vendor-model)
+5. [Tenancy Model](#tenancy-model)
+6. [SalesProgression Model](#salesprogression-model)
+7. [SalesOffer Model](#salesoffer-model)
+8. [MaintenanceIssue Model](#maintenanceissue-model)
+9. [Relationships](#relationships)
+10. [Key Fields Summary](#key-fields-summary)
 
 ---
 
@@ -36,13 +42,21 @@ This document describes the finalized database schema for the Client Management 
 | `floor_area_sqft` | Float | Floor area in square feet |
 | `furnished` | Boolean | Is property furnished |
 
-### Financial Fields
+### Financial Fields (Lettings)
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `asking_rent` | Float | Listed rent amount |
 | `rent` | Float | Actual achieved rent |
 | `deposit` | Float | Security deposit amount |
+
+### Financial Fields (Sales)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `asking_price` | Numeric(12,2) | Asking price for sale |
+| `price_qualifier` | String | Price qualifier (e.g., "POA", "Guide Price") |
+| `sales_status` | String | available, under_offer, sstc, exchanged (indexed) |
 
 ### Status & Dates
 
@@ -109,6 +123,9 @@ This document describes the finalized database schema for the Client Management 
 - `tenancies` → Tenancy (one-to-many)
 - `maintenance_issues` → MaintenanceIssue (one-to-many)
 - `communications` → Communication (one-to-many)
+- `sales_progression` → SalesProgression (one-to-one)
+- `offers` → Offer (one-to-many, lettings offers)
+- `sales_offers` → SalesOffer (one-to-many, sales offers)
 
 ### Computed Properties
 
@@ -118,6 +135,150 @@ This document describes the finalized database schema for the Client Management 
 - `expiring_documents` - List of documents expiring within 30 days
 - `active_tenancy` - Current active tenancy
 - `current_tenant_id` - ID of current tenant
+
+---
+
+## Applicant Model
+
+**Table:** `applicants`
+
+The Applicant model serves as a general blueprint for people who interact with the system. Applicants can be classified as **Tenants** (willing to rent) or **Buyers** (willing to buy), or both.
+
+### Core Identity Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String (UUID) | Primary key |
+| `first_name` | String | First name (required) |
+| `last_name` | String | Last name (required) |
+| `email` | String | Email address (required) |
+| `phone` | String | Phone number (required) |
+| `date_of_birth` | Date | Date of birth |
+
+### Status & Classification
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | String | new, qualified, viewing_booked, offer_submitted, offer_accepted, references, let_agreed, tenancy_started, archived |
+| `willing_to_rent` | Boolean | **Is this person willing to rent?** (default: True) |
+| `willing_to_buy` | Boolean | **Is this person willing to buy?** (default: False) |
+
+### Property Requirements
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `desired_bedrooms` | String | Desired number of bedrooms (e.g., "2-3") |
+| `desired_property_type` | String | flat, house, maisonette |
+| `rent_budget_min` | Float | Minimum budget (rent or purchase) |
+| `rent_budget_max` | Float | Maximum budget (rent or purchase) |
+| `preferred_locations` | Text | Preferred locations |
+| `move_in_date` | Date | Desired move-in date |
+
+### Additional Criteria
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `has_pets` | Boolean | Has pets (default: False) |
+| `pet_details` | Text | Pet details |
+| `special_requirements` | Text | Special requirements |
+
+### Sales Buyer Specific Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `buyer_type` | String | Type of buyer |
+| `mortgage_status` | String | Mortgage application status (default: not_applied) |
+| `has_property_to_sell` | Boolean | Has property to sell (default: False) |
+| `is_chain_free` | Boolean | Is chain-free (default: False) |
+
+### Relationships
+
+- `tenancies` → Tenancy (one-to-many)
+- `communications` → Communication (one-to-many)
+- `letting_offers` → Offer (one-to-many, lettings offers)
+- `sales_progression` → SalesProgression (one-to-many)
+- `sales_offers` → SalesOffer (one-to-many, sales offers)
+
+### Notes
+
+- **Tenants**: Applicants with `willing_to_rent = True` (default)
+- **Buyers**: Applicants with `willing_to_buy = True`
+- An applicant can be both a tenant and a buyer if both flags are True
+- The `rent_budget_min` and `rent_budget_max` fields are used for both rental and purchase budgets
+
+---
+
+## Vendor Model
+
+**Table:** `vendors`
+
+Vendors are property sellers who instruct the agency to sell their properties.
+
+### Core Identity Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String (UUID) | Primary key |
+| `first_name` | String | First name (required) |
+| `last_name` | String | Last name (required) |
+| `email` | String | Email address (required) |
+| `primary_phone` | String | Primary phone number (required) |
+| `current_address` | Text | Current address |
+
+### Compliance (AML/KYC)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date_of_birth` | Date | Date of birth |
+| `nationality` | String | Nationality |
+| `aml_status` | String | AML status (default: "pending") |
+| `aml_verification_date` | DateTime | When AML was completed |
+| `aml_verification_expiry` | DateTime | AML verification expiry date |
+| `proof_of_ownership_uploaded` | Boolean | Land Registry title uploaded (default: False) |
+
+### Sales Instruction
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | String | new, valuation_booked, instructed, active, sold, withdrawn, lost |
+| `instruction_type` | String | sole_agency, multi_agency (default: sole_agency) |
+| `instruction_date` | DateTime | Date instruction was signed |
+| `agreed_commission` | Numeric(5,2) | Agreed commission percentage |
+| `minimum_fee` | String | Minimum fee |
+| `contract_expiry_date` | DateTime | Contract expiry date |
+
+### Relationship Tracking
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_of_lead` | String | Portal, Referral, Board, Past Client, Walk In |
+| `marketing_consent` | Boolean | GDPR marketing opt-in (default: False) |
+
+### Conveyancer Information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `conveyancer_name` | String | Solicitor/conveyancer name |
+| `conveyancer_firm` | String | Law firm name |
+| `conveyancer_contact` | String | Phone/email |
+
+### Property Link
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `instructed_property_id` | String (FK) | Link to property being sold (indexed) |
+
+### Relationships
+
+- `instructed_property` → Property (many-to-one)
+- `tasks` → Task (one-to-many)
+- `communications` → Communication (one-to-many)
+
+### Notes
+
+- **Removed Fields**: `title` and `secondary_phone` have been removed from the model
+- Vendors are linked to properties via `instructed_property_id`
+- AML verification is tracked with expiry dates for automated reminders
 
 ---
 
@@ -161,6 +322,145 @@ This document describes the finalized database schema for the Client Management 
 - `properties` → Property (one-to-many)
 - `maintenance_issues` → MaintenanceIssue (one-to-many)
 - `communications` → Communication (one-to-many)
+
+---
+
+## SalesProgression Model
+
+**Table:** `sales_progression`
+
+Tracks the progression of a property sale from offer acceptance through to completion.
+
+### Core Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String (UUID) | Primary key |
+| `property_id` | String (FK) | Link to property (required, indexed) |
+| `buyer_id` | String (FK) | Link to buyer (Applicant) |
+| `current_stage` | String | Current sales stage |
+| `sales_status` | String | available, under_offer, sstc, exchanged, completed |
+
+### Stage Tracking
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `offer_accepted_date` | Date | Date offer was accepted |
+| `sstc_date` | Date | Sold Subject To Contract date |
+| `solicitor_instructed_date` | Date | When solicitor was instructed |
+| `mortgage_applied_date` | Date | When mortgage was applied |
+| `survey_ordered_date` | Date | When survey was ordered |
+| `searches_ordered_date` | Date | When searches were ordered |
+| `searches_received_date` | Date | When searches were received |
+| `management_pack_received_date` | Date | When management pack was received |
+| `ready_for_exchange_date` | Date | When ready for exchange |
+| `exchanged_date` | Date | Exchange date |
+| `completion_date` | Date | Completion date |
+
+### Chain Information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_chain_free` | Boolean | Is chain-free |
+| `chain_length` | Integer | Length of chain |
+| `chain_position` | Integer | Position in chain |
+
+### Solicitor Details
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `buyer_solicitor_name` | String | Buyer's solicitor name |
+| `buyer_solicitor_firm` | String | Buyer's solicitor firm |
+| `buyer_solicitor_contact` | String | Buyer's solicitor contact |
+| `vendor_solicitor_name` | String | Vendor's solicitor name |
+| `vendor_solicitor_firm` | String | Vendor's solicitor firm |
+| `vendor_solicitor_contact` | String | Vendor's solicitor contact |
+
+### Mortgage Information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mortgage_lender` | String | Mortgage lender |
+| `mortgage_application_ref` | String | Mortgage application reference |
+| `mortgage_offer_received` | Boolean | Mortgage offer received |
+| `mortgage_offer_date` | Date | Mortgage offer date |
+
+### Survey Information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `survey_type` | String | Type of survey |
+| `survey_company` | String | Survey company |
+| `survey_date` | Date | Survey date |
+| `survey_results` | Text | Survey results |
+
+### Documents Tracking
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `contract_sent` | Boolean | Contract sent |
+| `contract_received` | Boolean | Contract received |
+| `enquiries_raised` | Boolean | Enquiries raised |
+| `enquiries_answered` | Boolean | Enquiries answered |
+
+### Leasehold Information
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `is_leasehold` | Boolean | Is leasehold property |
+| `lease_length_years` | Integer | Lease length in years |
+| `ground_rent` | Numeric | Ground rent amount |
+| `service_charge` | Numeric | Service charge amount |
+
+### Checklist & KPIs
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `checklist_items` | Text | JSON array of checklist items |
+| `days_to_exchange` | Integer | Days to exchange |
+| `days_to_completion` | Integer | Days to completion |
+| `target_exchange_date` | Date | Target exchange date |
+| `target_completion_date` | Date | Target completion date |
+
+### Relationships
+
+- `property` → Property (many-to-one)
+- `buyer` → Applicant (many-to-one)
+- `offers` → SalesOffer (one-to-many)
+
+---
+
+## SalesOffer Model
+
+**Table:** `sales_offers`
+
+Tracks offers made on properties for sale.
+
+### Core Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | String (UUID) | Primary key |
+| `property_id` | String (FK) | Link to property (required, indexed) |
+| `buyer_id` | String (FK) | Link to buyer (Applicant) |
+| `offer_amount` | Numeric(12,2) | Offer amount |
+| `status` | String | pending, accepted, rejected, withdrawn, expired |
+| `offer_date` | Date | Date offer was made |
+| `expiry_date` | Date | Offer expiry date |
+
+### Offer Details
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `conditions` | Text | Offer conditions |
+| `timeline` | Text | Proposed timeline |
+| `financing_type` | String | cash, mortgage, part_cash |
+| `chain_status` | String | chain_free, in_chain |
+
+### Relationships
+
+- `property` → Property (many-to-one)
+- `buyer` → Applicant (many-to-one)
 
 ---
 
@@ -357,6 +657,29 @@ Property
 ├── managed_by → User (many-to-one)
 ├── tenancies → Tenancy[] (one-to-many)
 ├── maintenance_issues → MaintenanceIssue[] (one-to-many)
+├── communications → Communication[] (one-to-many)
+├── sales_progression → SalesProgression (one-to-one)
+├── offers → Offer[] (one-to-many, lettings)
+└── sales_offers → SalesOffer[] (one-to-many, sales)
+```
+
+### Applicant Relationships
+
+```
+Applicant
+├── tenancies → Tenancy[] (one-to-many)
+├── communications → Communication[] (one-to-many)
+├── letting_offers → Offer[] (one-to-many)
+├── sales_progression → SalesProgression[] (one-to-many)
+└── sales_offers → SalesOffer[] (one-to-many)
+```
+
+### Vendor Relationships
+
+```
+Vendor
+├── instructed_property_id → Property (many-to-one)
+├── tasks → Task[] (one-to-many)
 └── communications → Communication[] (one-to-many)
 ```
 
@@ -471,7 +794,15 @@ managed_properties = db.query(Property).filter(
 
 ## Schema Version
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Last Updated:** 2024  
 **Status:** Finalized
+
+### Version 2.0 Changes
+
+- **Applicant Model**: Added `willing_to_rent` and `willing_to_buy` flags to distinguish between tenants and buyers
+- **Vendor Model**: Removed `title` and `secondary_phone` fields
+- **Property Model**: Added sales-specific fields (`asking_price`, `sales_status`, `price_qualifier`)
+- **Sales Models**: Added `SalesProgression` and `SalesOffer` models for sales workflow tracking
+- **Relationships**: Updated to include sales-related relationships
 
