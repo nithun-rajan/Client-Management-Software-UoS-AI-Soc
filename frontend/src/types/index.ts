@@ -1,27 +1,36 @@
 export interface Property {
-  id: number;
+  id: string;
   address_line1: string;
   address_line2?: string;
   city: string;
   postcode: string;
-  status: 'available' | 'let_agreed' | 'let_by' | 'tenanted' | 'under_offer' | 'blocked' | 'maintenance';
+  status:
+    | "available"
+    | "let_agreed"
+    | "let_by"
+    | "tenanted"
+    | "under_offer"
+    | "blocked"
+    | "maintenance";
   property_type: string;
   bedrooms: number;
   bathrooms: number;
   rent?: number;
   landlord_id?: number;
+  virtual_tour_url?: string;
   created_at: string;
   updated_at?: string;
 }
 
 export interface Landlord {
-  id: number;
+  id: string;
   full_name: string;
   email: string;
   phone?: string;
   address?: string;
   aml_verified: boolean;
   aml_verification_date?: string;
+  aml_check_expiry?: string;
   bank_account_name?: string;
   sort_code?: string;
   account_number?: string;
@@ -31,13 +40,22 @@ export interface Landlord {
 }
 
 export interface Applicant {
-  id: number;
+  id: string;
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
   date_of_birth?: string;
-  status: 'new' | 'qualified' | 'viewing_booked' | 'offer_submitted' | 'offer_accepted' | 'references' | 'let_agreed' | 'tenancy_started' | 'archived';
+  status:
+    | "new"
+    | "qualified"
+    | "viewing_booked"
+    | "offer_submitted"
+    | "offer_accepted"
+    | "references"
+    | "let_agreed"
+    | "tenancy_started"
+    | "archived";
   desired_bedrooms?: string;
   desired_property_type?: string;
   rent_budget_min?: number;

@@ -1,14 +1,16 @@
 
 
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db
 from app.models.property import Property
 from app.models.applicant import Applicant
+from app.models.match_history import MatchHistory
 from app.models.enums import PropertyStatus, ApplicantStatus
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -33,10 +35,34 @@ class PropertyMatcher:
         
         max_score += 30
         if applicant.desired_bedrooms:
-            if str(property.bedrooms) == applicant.desired_bedrooms:
-                score += 30
-            elif abs(int(property.bedrooms) - int(applicant.desired_bedrooms)) == 1:
-                score += 15  # 1 bedroom off is half credit
+            # Handle range format like "2-4" or single number like "3"
+            desired_bedrooms_str = str(applicant.desired_bedrooms).strip()
+            property_bedrooms = int(property.bedrooms)
+            
+            if '-' in desired_bedrooms_str:
+                # Range format: "2-4"
+                try:
+                    min_bedrooms, max_bedrooms = map(int, desired_bedrooms_str.split('-'))
+                    if min_bedrooms <= property_bedrooms <= max_bedrooms:
+                        score += 30  # Exact match within range
+                    elif property_bedrooms == min_bedrooms - 1 or property_bedrooms == max_bedrooms + 1:
+                        score += 15  # 1 bedroom off is half credit
+                except (ValueError, IndexError):
+                    # Invalid range format, try exact match
+                    if str(property_bedrooms) == desired_bedrooms_str:
+                        score += 30
+            else:
+                # Single number format: "3"
+                try:
+                    desired_bedrooms = int(desired_bedrooms_str)
+                    if property_bedrooms == desired_bedrooms:
+                        score += 30
+                    elif abs(property_bedrooms - desired_bedrooms) == 1:
+                        score += 15  # 1 bedroom off is half credit
+                except ValueError:
+                    # Not a number, try exact string match
+                    if str(property_bedrooms) == desired_bedrooms_str:
+                        score += 30
         
         max_score += 25
         if property.rent:
@@ -52,7 +78,7 @@ class PropertyMatcher:
                     score += 15
         
         max_score += 20
-        if applicant.preferred_locations and property.postcode:
+        if applicant.preferred_locations and property.postcode and property.city:
             preferred = applicant.preferred_locations.lower()
             property_location = f"{property.city} {property.postcode}".lower()
             
@@ -62,7 +88,7 @@ class PropertyMatcher:
                 score += 10  # Partial postcode match
         
         max_score += 15
-        if applicant.desired_property_type:
+        if applicant.desired_property_type and property.property_type:
             if applicant.desired_property_type.lower() in property.property_type.lower():
                 score += 15
         
@@ -95,9 +121,13 @@ class PropertyMatcher:
             message_parts.append("Here's a property you might be interested in. ")
         
         # Property description
+        if property.rent:
+            rent_text = f" for £{property.rent:,.0f}/month"
+        else:
+            rent_text = ""
         message_parts.append(
-            f"This {property.bedrooms}-bedroom {property.property_type} in {property.city} "
-            f"is available for £{property.rent:,.0f}/month. "
+            f"This {property.bedrooms}-bedroom {property.property_type} in {property.city}"
+            f"{rent_text}. "
         )
         
         if applicant.has_pets and applicant.pet_details:
@@ -187,11 +217,30 @@ async def ai_match_properties(
             
             # Generate match reasoning
             reasons = []
-            if applicant.desired_bedrooms and str(property.bedrooms) == applicant.desired_bedrooms:
-                reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+            if applicant.desired_bedrooms:
+                desired_bedrooms_str = str(applicant.desired_bedrooms).strip()
+                property_bedrooms = int(property.bedrooms)
+                
+                # Check if property bedrooms match the desired range or number
+                if '-' in desired_bedrooms_str:
+                    try:
+                        min_bedrooms, max_bedrooms = map(int, desired_bedrooms_str.split('-'))
+                        if min_bedrooms <= property_bedrooms <= max_bedrooms:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds within {desired_bedrooms_str} range)")
+                    except (ValueError, IndexError):
+                        if str(property_bedrooms) == desired_bedrooms_str:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+                else:
+                    try:
+                        desired_bedrooms = int(desired_bedrooms_str)
+                        if property_bedrooms == desired_bedrooms:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
+                    except ValueError:
+                        if str(property_bedrooms) == desired_bedrooms_str:
+                            reasons.append(f"Exact bedroom match ({property.bedrooms} beds)")
             if property.rent and applicant.rent_budget_max and property.rent <= applicant.rent_budget_max:
                 reasons.append(f"Within budget (£{property.rent:,.0f})")
-            if applicant.preferred_locations:
+            if applicant.preferred_locations and property.city and property.postcode:
                 locs = [l.strip() for l in applicant.preferred_locations.split(',')]
                 if any(loc.lower() in f"{property.city} {property.postcode}".lower() for loc in locs):
                     reasons.append(f"Preferred location ({property.city})")
@@ -366,4 +415,200 @@ async def get_applicant_analytics(applicant_id: str, db: Session = Depends(get_d
             "Keep in regular contact",
             "Monitor new listings"
         ]
+    }
+
+
+# ============================================================================
+# MATCH SENDING (Blueprint page 779-780)
+# ============================================================================
+
+class SendMatchesRequest(BaseModel):
+    """Request body for sending matches to applicant"""
+    applicant_id: str
+    property_ids: List[str]
+    send_method: str = "email"  # email, sms, whatsapp
+    custom_message: Optional[str] = None
+    schedule_for: Optional[datetime] = None  # If set, schedule for future
+
+
+@router.post("/match-send")
+async def send_matches_to_applicant(
+    request: SendMatchesRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Send personalized property matches to applicant
+    Blueprint page 779: "the CRM should be capable of sending matches automatically 
+    using AI. Either through phone calls emails or whatsapp. The matches should 
+    be personalised"
+    """
+    
+    # Get applicant
+    applicant = db.query(Applicant).filter(Applicant.id == request.applicant_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+    
+    # Get properties
+    properties = db.query(Property).filter(Property.id.in_(request.property_ids)).all()
+    if not properties:
+        raise HTTPException(status_code=404, detail="No properties found")
+    
+    matcher = PropertyMatcher()
+    sent_matches = []
+    
+    for property in properties:
+        # Calculate match score
+        score = matcher.calculate_match_score(property, applicant)
+        
+        # Generate personalized message
+        personalized_msg = matcher.generate_personalized_message(property, applicant, score)
+        
+        # Override with custom message if provided
+        if request.custom_message:
+            personalized_msg = f"{request.custom_message}\n\n{personalized_msg}"
+        
+        # Determine recipient based on send method
+        if request.send_method == "email":
+            recipient = applicant.email
+        elif request.send_method in ["sms", "whatsapp"]:
+            recipient = applicant.phone
+        else:
+            recipient = applicant.email
+        
+        # Create match history record
+        match_record = MatchHistory(
+            applicant_id=applicant.id,
+            property_id=property.id,
+            match_score=score,
+            personalized_message=personalized_msg,
+            sent_at=request.schedule_for or datetime.utcnow(),
+            send_method=request.send_method,
+            recipient=recipient
+        )
+        db.add(match_record)
+        
+        sent_matches.append({
+            "property_id": property.id,
+            "address": property.address,
+            "score": round(score, 2),
+            "message": personalized_msg,
+            "sent_to": recipient,
+            "method": request.send_method
+        })
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "applicant": {
+            "id": applicant.id,
+            "name": f"{applicant.first_name} {applicant.last_name}",
+            "email": applicant.email
+        },
+        "matches_sent": len(sent_matches),
+        "send_method": request.send_method,
+        "sent_at": request.schedule_for or datetime.utcnow(),
+        "is_scheduled": request.schedule_for is not None,
+        "matches": sent_matches,
+        "message": f"Successfully sent {len(sent_matches)} personalized property matches via {request.send_method}"
+    }
+
+
+@router.get("/match-history/{applicant_id}")
+async def get_match_history(
+    applicant_id: str,
+    limit: int = 20,
+    db: Session = Depends(get_db)
+):
+    """
+    Get match sending history for an applicant
+    Blueprint page 779: "Match send history (when/which property details sent)"
+    """
+    
+    applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+    
+    # Get match history
+    history = db.query(MatchHistory).filter(
+        MatchHistory.applicant_id == applicant_id
+    ).order_by(MatchHistory.sent_at.desc()).limit(limit).all()
+    
+    history_records = []
+    for record in history:
+        property = db.query(Property).filter(Property.id == record.property_id).first()
+        
+        history_records.append({
+            "id": record.id,
+            "sent_at": record.sent_at.isoformat(),
+            "send_method": record.send_method,
+            "match_score": round(record.match_score, 2) if record.match_score else None,
+            "property": {
+                "id": property.id,
+                "address": property.address,
+                "rent": property.rent,
+                "bedrooms": property.bedrooms
+            } if property else None,
+            "viewed": record.viewed,
+            "responded": record.responded,
+            "response_type": record.response_type,
+            "viewing_booked": record.viewing_booked
+        })
+    
+    # Calculate engagement stats
+    total_sent = len(history)
+    viewed_count = sum(1 for r in history if r.viewed)
+    responded_count = sum(1 for r in history if r.responded)
+    viewing_booked_count = sum(1 for r in history if r.viewing_booked)
+    
+    return {
+        "applicant": {
+            "id": applicant.id,
+            "name": f"{applicant.first_name} {applicant.last_name}"
+        },
+        "history": history_records,
+        "stats": {
+            "total_matches_sent": total_sent,
+            "viewed_rate": f"{(viewed_count/total_sent*100):.1f}%" if total_sent > 0 else "0%",
+            "response_rate": f"{(responded_count/total_sent*100):.1f}%" if total_sent > 0 else "0%",
+            "viewing_conversion": f"{(viewing_booked_count/total_sent*100):.1f}%" if total_sent > 0 else "0%"
+        }
+    }
+
+
+@router.post("/match-response/{match_id}")
+async def record_match_response(
+    match_id: str,
+    response_type: str,  # interested, not_interested, booked_viewing
+    notes: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Record applicant's response to a match
+    Blueprint page 779: "Applicant feedback on matches (accepted/declined, notes)"
+    """
+    
+    match_record = db.query(MatchHistory).filter(MatchHistory.id == match_id).first()
+    if not match_record:
+        raise HTTPException(status_code=404, detail="Match record not found")
+    
+    # Update match record
+    match_record.responded = True
+    match_record.response_type = response_type
+    match_record.response_at = datetime.utcnow()
+    match_record.response_notes = notes
+    
+    if response_type == "booked_viewing":
+        match_record.viewing_booked = True
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "match_id": match_id,
+        "response_recorded": {
+            "type": response_type,
+            "notes": notes,
+            "recorded_at": datetime.utcnow().isoformat()
+        }
     }

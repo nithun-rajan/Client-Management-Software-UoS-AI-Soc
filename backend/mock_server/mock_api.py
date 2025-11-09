@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Query
-from faker import Faker
-from typing import List, Optional
 import random
-from datetime import datetime, timedelta
+
+from faker import Faker
+from fastapi import FastAPI
+
 
 fake = Faker('en_GB')  # UK based fake data
 app = FastAPI(
@@ -15,7 +15,7 @@ app = FastAPI(
 def generate_fake_property(property_id: int):
     property_types = ["flat", "house", "maisonette"]
     statuses = ["available", "let_by", "managed"]
-    
+
     return {
         "id": property_id,
         "address": fake.street_address(),
@@ -48,7 +48,7 @@ def generate_fake_landlord(landlord_id: int):
 def generate_fake_applicant(applicant_id: int):
     statuses = ["new", "qualified", "viewing_booked", "offer_submitted", "references", "let_agreed", "archived"]
     move_date = fake.date_between(start_date='today', end_date='+3m')
-    
+
     return {
         "id": applicant_id,
         "full_name": fake.name(),
@@ -142,15 +142,15 @@ def create_applicant(applicant_data: dict):
 # Search endpoint (simple mock)
 @app.get("/api/v1/search")
 def search_properties(
-    bedrooms: Optional[int] = None,
-    min_rent: Optional[float] = None,
-    max_rent: Optional[float] = None,
-    postcode: Optional[str] = None
+    bedrooms: int | None = None,
+    min_rent: float | None = None,
+    max_rent: float | None = None,
+    postcode: str | None = None
 ):
     """Mock search endpoint - returns filtered fake data"""
     # Generate 10 properties
     properties = [generate_fake_property(i) for i in range(1, 11)]
-    
+
     # Simple filtering
     if bedrooms:
         properties = [p for p in properties if p["bedrooms"] == bedrooms]
@@ -158,7 +158,7 @@ def search_properties(
         properties = [p for p in properties if p["rent"] >= min_rent]
     if max_rent:
         properties = [p for p in properties if p["rent"] <= max_rent]
-    
+
     return {
         "results": properties,
         "total": len(properties),

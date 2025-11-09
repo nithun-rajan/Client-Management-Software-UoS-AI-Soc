@@ -47,3 +47,4 @@ class Offer(BaseModel):
     # Relationships
     property = relationship("Property", backref="offers")
     applicant = relationship("Applicant", backref="offers")
+

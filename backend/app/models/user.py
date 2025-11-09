@@ -8,6 +8,7 @@ from app.schemas.user import Role
 
 class User(BaseModel):
     __tablename__ = "users"
+    
 
     email = Column(String, unique=True, index=True, nullable=False)
     first_name = Column(String)

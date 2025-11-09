@@ -39,3 +39,4 @@ class MatchHistory(BaseModel):
     # Relationships
     applicant = relationship("Applicant", backref="match_history")
     property = relationship("Property", backref="match_history")
+

@@ -16,7 +16,6 @@ class PropertyStatus(str, Enum):
     MAINTENANCE = "maintenance"
     WITHDRAWN = "withdrawn"
 
-
 class ApplicantStatus(str, Enum):
     """Applicant status enum - Blueprint page 23"""
     NEW = "new"
@@ -29,7 +28,6 @@ class ApplicantStatus(str, Enum):
     TENANCY_STARTED = "tenancy_started"
     ARCHIVED = "archived"
 
-
 class TenancyStatus(str, Enum):
     """Tenancy status"""
     PENDING = "pending"
@@ -37,7 +35,6 @@ class TenancyStatus(str, Enum):
     EXPIRED = "expired"
     TERMINATED = "terminated"
     RENEWED = "renewed"
-
 
 class DocumentType(str, Enum):
     """Document types"""
@@ -63,7 +60,6 @@ class DocumentType(str, Enum):
     PROPERTY_PHOTO = "property_photo"
     DAMAGE_PHOTO = "damage_photo"
 
-
 class DocumentStatus(str, Enum):
     """Document status"""
     PENDING = "pending"
@@ -71,7 +67,6 @@ class DocumentStatus(str, Enum):
     EXPIRING = "expiring"
     EXPIRED = "expired"
     REJECTED = "rejected"
-
 
 class EventType(str, Enum):
     """Event types for event bus"""
@@ -105,7 +100,6 @@ class EventType(str, Enum):
     OFFER_ACCEPTED = "offer.accepted"
     OFFER_REJECTED = "offer.rejected"
 
-
 class TaskPriority(str, Enum):
     """Task priority levels"""
     LOW = "low"
@@ -113,14 +107,12 @@ class TaskPriority(str, Enum):
     HIGH = "high"
     URGENT = "urgent"
 
-
 class TaskStatus(str, Enum):
     """Task status"""
     TODO = "todo"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
-
 
 class VendorStatus(str, Enum):
     """Vendor/Sales status"""
@@ -131,31 +123,12 @@ class VendorStatus(str, Enum):
     WITHDRAWN = "withdrawn"
     LOST = "lost"
 
-
 class UserRole(str, Enum):
     """User roles for RBAC"""
     ADMIN = "admin"
     MANAGER = "manager"
     AGENT = "agent"
     VIEWER = "viewer"
-
-
-class TicketStatus(str, Enum):
-    """Ticket / maintenance issue status"""
-    NEW = "new"
-    QUOTED = "quoted"
-    ASSIGNED = "assigned"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-
-
-class TicketUrgency(str, Enum):
-    """Ticket urgency levels"""
-    EMERGENCY = "emergency"
-    URGENT = "urgent"
-    ROUTINE = "routine"
-
 
 class CommunicationType(str, Enum):
     """Communication/Activity types for activity feed"""
@@ -166,7 +139,6 @@ class CommunicationType(str, Enum):
     TASK = "task"
     MEETING = "meeting"
     VIEWING = "viewing"
-
 
 class CommunicationDirection(str, Enum):
     """Communication direction"""

@@ -100,3 +100,4 @@ def delete_task(task_id: str, db: Session = Depends(get_db)):
 
     db.delete(task)
     db.commit()
+
