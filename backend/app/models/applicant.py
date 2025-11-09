@@ -2,6 +2,10 @@ from sqlalchemy import Column, String, Date, Text, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from app.models.enums import ApplicantStatus
+from app.models.communication import Communication
+
+
+
 
 class Applicant(BaseModel):
     __tablename__ = "applicants"
@@ -32,3 +36,4 @@ class Applicant(BaseModel):
     # Relationships
     reported_tickets = relationship("Ticket", back_populates="reporter")
     tenancies = relationship("Tenancy", back_populates="applicant")
+    communications = relationship("Communication", back_populates="applicant")

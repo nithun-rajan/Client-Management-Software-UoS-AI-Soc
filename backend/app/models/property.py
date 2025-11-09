@@ -1,10 +1,13 @@
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.models.base import BaseModel
 from app.models.enums import PropertyStatus
+from app.models.communication import Communication
+from datetime import datetime, timezone
 
-class Property(BaseModel):
+
+
+class Property(BaseModel): 
     __tablename__ = "properties"
     
     address = Column(String, nullable=False)
@@ -24,10 +27,10 @@ class Property(BaseModel):
     deposit = Column(Float)
     
     status = Column(String, default=PropertyStatus.AVAILABLE)
-    listed_date = Column(DateTime, default=datetime.utcnow)  # When first listed
+    listed_date = Column(DateTime, default=datetime.now(timezone.utc)) # When first listed
     let_agreed_date = Column(DateTime, nullable=True)  # When offer accepted
     let_date = Column(DateTime, nullable=True)  # When tenancy started
-    last_status_change = Column(DateTime, default=datetime.utcnow)
+    last_status_change = Column(DateTime, default=datetime.now(timezone.utc))
     
     # Engagement tracking
     viewing_count = Column(Integer, default=0)
@@ -49,12 +52,15 @@ class Property(BaseModel):
     # Photos
     main_photo_url = Column(String)
     photo_urls = Column(Text)  # JSON array of URLs
+    virtual_tour_url = Column(String)  # Matterport/360 virtual tour
     
     landlord_id = Column(String, ForeignKey('landlords.id'))
     landlord = relationship("Landlord", back_populates="properties")
     
     tenancies = relationship("Tenancy", back_populates="property")
-    tickets = relationship("Ticket", back_populates="property")
+    communications = relationship("Communication", back_populates="property")
+    tickets = relationship("Ticket", back_populates="property")  
+    
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)
     
@@ -62,7 +68,7 @@ class Property(BaseModel):
     def days_on_market(self):
         if self.let_date:
             return (self.let_date - self.listed_date).days
-        return (datetime.utcnow() - self.listed_date).days if self.listed_date else 0
+        return (datetime.now(timezone.utc)  - self.listed_date).days if self.listed_date else 0
     
     @property
     def price_achievement_rate(self):
@@ -72,7 +78,7 @@ class Property(BaseModel):
     
     @property
     def is_compliant(self):
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         checks = [
             self.epc_expiry and self.epc_expiry > today,
             self.gas_cert_expiry and self.gas_cert_expiry > today,
@@ -83,7 +89,7 @@ class Property(BaseModel):
     @property
     def expiring_documents(self):
         from datetime import timedelta
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         soon = today + timedelta(days=30)
         
         expiring = []

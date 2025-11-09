@@ -1,8 +1,10 @@
-from sqlalchemy import Column, String, Float, ForeignKey, Text, DateTime, Date, Boolean, Integer
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from app.models.base import BaseModel
 from app.models.enums import TenancyStatus
+
+
+
 
 class Tenancy(BaseModel):
     __tablename__ = "tenancies"
@@ -23,31 +25,35 @@ class Tenancy(BaseModel):
     
     # Dates
     start_date = Column(Date, nullable=False)
-    end_date = Column(Date)
-    notice_period_days = Column(Integer, default=30)
-    notice_given_date = Column(Date)
+    end_date = Column(Date, nullable=False)
     
     # Status
     status = Column(String, default=TenancyStatus.PENDING)
     
     # Progression tracking
-    offer_accepted_date = Column(Date)
-    referencing_completed_date = Column(Date)
-    contract_sent_date = Column(Date)
-    contract_signed_date = Column(Date)
-    keys_collected_date = Column(Date)
+    agreed_rent = Column(Float)
+    tenancy_term = Column(String)
+    special_conditions = Column(Text)
+
+    # Holding deposit tracking
+    holding_deposit_amount = Column(Float)
+    holding_deposit_date = Column(Date)
+    holding_deposit_payment_method = Column(String)
+
+    # Reference status
+    reference_status = Column(String)
+
+    # Right to Rent check
+    right_to_rent_status = Column(String)
+    right_to_rent_check_date = Column(Date)
+
+    # Move-in financials
+    move_in_monies_received = Column(Boolean, default=False)
+    security_deposit_registered = Column(Boolean, default=False)
+
+    # Document tracking
+    tenancy_agreement_sent = Column(Boolean, default=False)
+    statutory_documents_sent = Column(Boolean, default=False)
     
-    # Compliance
-    right_to_rent_verified = Column(Boolean, default=False)
-    right_to_rent_verified_date = Column(Date)
-    inventory_completed = Column(Boolean, default=False)
-    inventory_completed_date = Column(Date)
-    
-    # Additional occupants
-    additional_occupants = Column(Text)  # JSON: [{name, email, phone}]
-    
-    # Notes
-    notes = Column(Text)
-    
-    # Tasks
+    # Relationships
     tasks = relationship("Task", back_populates="tenancy")
