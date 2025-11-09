@@ -53,6 +53,17 @@ This installs **all dependencies** (backend + frontend):
 ./setup.sh
 ```
 
+**WARNING**
+If you are using a unix based OS, setup.sh and start.sh may have incompatible line endings.
+Meaning that you might want to use dos2unix on these files to fix that
+
+to install:
+```
+#for ubuntu:
+sudo apt install dos2unix
+#install using whatever package manager you are using
+```
+
 **What this does:**
 - ✅ Creates Python virtual environment
 - ✅ Installs backend dependencies (FastAPI, SQLAlchemy, etc.)

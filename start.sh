@@ -108,7 +108,7 @@ sleep 3
 # Check if frontend is running
 if ps -p $FRONTEND_PID > /dev/null; then
     echo -e "${GREEN}✓ Frontend started (PID: $FRONTEND_PID)${NC}"
-    echo -e "  ${BLUE}→ App: http://localhost:5173${NC}"
+    echo -e "  ${BLUE}→ App: http://localhost:8080${NC}"
 else
     echo -e "${RED}❌ Frontend failed to start. Check frontend/frontend.log${NC}"
     kill $BACKEND_PID 2>/dev/null
