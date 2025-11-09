@@ -2,7 +2,10 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException
 from enum import Enum
 from datetime import datetime, timedelta, timezone
-
+# --- 1. ADDED/UPDATED IMPORTS ---
+from app.models.tenancy import Tenancy
+from app.models.enums import TenancyStatus
+# --- END OF ADDED/UPDATED IMPORTS ---
 
 class Domain(str, Enum):
     PROPERTY = "property"
@@ -111,7 +114,8 @@ class WorkflowManager:
             ("tenancy", "ready_to_move_in", "active"): [
                 "register_security_deposit",  # Page 32: 3.4
                 "sign_tenancy_agreement",  # Page 32: 3.5
-                "execute_move_in"  # Page 33: 5.1
+                "execute_move_in",  # Page 33: 5.1
+                "trigger_compliance_tasks"
             ],
 
             # Applicant transitions
@@ -149,6 +153,53 @@ class WorkflowManager:
                 "archive_sales_progression"  # Archive sales progression
             ]
         }
+
+    # --- NEW FUNCTION: LETTINGS GUARDS (ADDED) ---
+    # This function is adapted to check string statuses against Enum values
+    def validate_tenancy_guards(self, tenancy: Tenancy, new_status: str):
+
+        """
+        Checks if a tenancy is allowed to move to a new status
+        based on the blueprint's "guard" rules (pages 29-34).
+
+        This function is called by the API endpoint BEFORE updating the status.
+        """
+
+        # --- Guard for Stage 2: REFERENCING ---
+        # Note: TenancyStatus.REFERENCING.value is "referencing"
+        if new_status == TenancyStatus.REFERENCING.value:
+            # GUARD: Must have paid holding deposit (Blueprint p. 29, 1.4)
+            if not tenancy.holding_deposit_date:
+                raise HTTPException(status_code=400,
+                    detail="Cannot start referencing. Holding deposit has not been received.")
+
+        # --- Guard for Stage 3: DOCUMENTATION ("referenced") ---
+        # Note: TenancyStatus.DOCUMENTATION.value is "referenced"
+        elif new_status == TenancyStatus.DOCUMENTATION.value:
+            # GUARD: Must have passed referencing (Blueprint p. 30-31, 2.2 & 2.3)
+            if tenancy.reference_status != "pass" or tenancy.right_to_rent_status != "pass":
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to documentation. References and Right to Rent must be 'pass'.")
+
+        # --- Guard for Stage 4: MOVE_IN_PREP ("legal_docs") ---
+        # Note: TenancyStatus.MOVE_IN_PREP.value is "legal_docs"
+        elif new_status == TenancyStatus.MOVE_IN_PREP.value:
+            # GUARD: Must have signed docs and paid monies (Blueprint p. 31, 3.3 & 3.5)
+            if not tenancy.tenancy_agreement_signed or not tenancy.move_in_monies_received:
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to prep. Tenancy agreement must be signed and move-in monies received.")
+
+        # --- Guard for Stage 5: ACTIVE ("ready_to_move_in") ---
+        # Note: TenancyStatus.ACTIVE.value is "active"
+        elif new_status == TenancyStatus.ACTIVE.value:
+            # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)
+            if not tenancy.inventory_check_in_complete or not tenancy.gas_safety_certificate_provided:
+                 raise HTTPException(status_code=400,
+                    detail="Cannot activate tenancy. Inventory check-in and compliance docs (Gas Safety) are required.")
+
+        # All checks passed
+        return True
+    # --- END OF NEW FUNCTION ---
 
     def get_valid_transitions(self, domain: Domain, current_status: str) -> List[str]:
         """Get all possible transitions from current status"""
