@@ -14,6 +14,7 @@ from .viewing import Viewing
 from .match_history import MatchHistory
 from .document import Document
 from .maintenance import MaintenanceIssue
+from .sales import SalesProgression
 
 __all__ = [
     "Applicant",
@@ -31,5 +32,6 @@ __all__ = [
     "MatchHistory",
     "Document",
     "MaintenanceIssue",
+    "SalesProgression",
 ]
 
