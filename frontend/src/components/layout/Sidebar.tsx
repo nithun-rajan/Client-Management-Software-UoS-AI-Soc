@@ -6,24 +6,35 @@ import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
-  Home, Building2, Users, UserCheck, Search,
-  BarChart3, Settings, MessageSquare, Store
+  Home, Building2, Users, UserCheck,
+  BarChart3, Settings, MessageSquare, Store, ShoppingBag,
+  User, UserCircle, Building
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Properties", href: "/properties", icon: Building2 },
-  { name: "Landlords", href: "/landlords", icon: UserCheck },
-  { name: "Applicants", href: "/applicants", icon: Users },
-  { name: "Vendors", href: "/vendors", icon: Store },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Search", href: "/search", icon: Search },
-  { name: "KPIs", href: "/kpis", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+const navigation = {
+  general: [
+    { name: "Dashboard", href: "/", icon: Home },
+  ],
+  lettings: [
+    { name: "Tenants", href: "/applicants", icon: Users },
+    { name: "Properties for Letting", href: "/properties", icon: Building2 },
+    { name: "Landlords", href: "/landlords", icon: UserCheck },
+  ],
+  sales: [
+    { name: "Buyers", href: "/buyers", icon: User },
+    { name: "Properties for Sale", href: "/properties-for-sale", icon: Building },
+    { name: "Vendors", href: "/vendors", icon: UserCircle },
+  ],
+        other: [
+          { name: "Messages", href: "/messages", icon: MessageSquare },
+          { name: "KPIs", href: "/kpis", icon: BarChart3 },
+          { name: "Settings", href: "/settings", icon: Settings },
+        ],
+};
 
 export default function Sidebar() {
   const location = useLocation();
@@ -82,8 +93,9 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {navigation.map((item) => {
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+          {/* General */}
+          {navigation.general.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
@@ -101,6 +113,84 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          {/* Lettings Section */}
+          <div className="pt-4">
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Lettings
+              </h3>
+            </div>
+            {navigation.lettings.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Sales Section */}
+          <div className="pt-4">
+            <Separator className="mb-3 bg-white/10" />
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Sales
+              </h3>
+            </div>
+            {navigation.sales.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Other Navigation */}
+          <div className="pt-4">
+            <Separator className="mb-3 bg-white/10" />
+            {navigation.other.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         {/* Theme Toggle */}

@@ -14,6 +14,8 @@ import ApplicantDetails from "./pages/ApplicantDetails";
 import PropertyDetails from "./pages/PropertyDetails";
 import Vendors from "./pages/Vendors";
 import VendorDetails from "./pages/VendorDetails";
+import Buyers from "./pages/Buyers";
+import PropertiesForSale from "./pages/PropertiesForSale";
 import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
@@ -50,6 +52,8 @@ const App = () => (
                 <Route path="/applicants/:id" element={<ApplicantDetails />} />
                 <Route path="/vendors" element={<Vendors />} />
                 <Route path="/vendors/:id" element={<VendorDetails />} />
+                <Route path="/buyers" element={<Buyers />} />
+                <Route path="/properties-for-sale" element={<PropertiesForSale />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/kpis" element={<KPIsDashboard />} />

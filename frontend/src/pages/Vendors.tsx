@@ -9,6 +9,8 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useVendors, useDeleteVendor, useUpdateVendor } from "@/hooks/useVendors";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
@@ -38,6 +39,7 @@ export default function Vendors() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleEdit = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -68,12 +70,10 @@ export default function Vendors() {
     try {
       await updateVendor.mutateAsync({
         id: selectedVendor.id,
-        title: formData.get("title") as string || undefined,
         first_name: formData.get("first_name") as string,
         last_name: formData.get("last_name") as string,
         email: formData.get("email") as string,
         primary_phone: formData.get("primary_phone") as string,
-        secondary_phone: formData.get("secondary_phone") as string || undefined,
         current_address: formData.get("current_address") as string || undefined,
       });
       setEditOpen(false);
@@ -103,16 +103,61 @@ export default function Vendors() {
   };
 
   const getFullName = (vendor: Vendor) => {
-    const parts = [vendor.title, vendor.first_name, vendor.last_name].filter(Boolean);
+    const parts = [vendor.first_name, vendor.last_name].filter(Boolean);
     return parts.join(" ");
   };
+
+  // Apply search
+  const filteredVendors = vendors?.filter((vendor: Vendor) => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      vendor.first_name?.toLowerCase().includes(query) ||
+      vendor.last_name?.toLowerCase().includes(query) ||
+      vendor.email?.toLowerCase().includes(query) ||
+      vendor.primary_phone?.includes(query) ||
+      vendor.current_address?.toLowerCase().includes(query) ||
+      vendor.status?.toLowerCase().includes(query) ||
+      vendor.aml_status?.toLowerCase().includes(query) ||
+      (vendor.vendor_complete_info ? "complete info" : "incomplete info").includes(query)
+    );
+  }) || [];
 
   return (
     <div>
       <Header title="Vendors" />
       <div className="p-6">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, phone, address, status, AML status, or complete info..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
+              className="pl-10 pr-10"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2">
-          {vendors?.map((vendor) => (
+          {filteredVendors.map((vendor) => (
             <Card
               key={vendor.id}
               className="shadow-card transition-shadow hover:shadow-elevated"
@@ -126,7 +171,7 @@ export default function Vendors() {
                     <h3 className="truncate text-lg font-semibold">
                       {getFullName(vendor)}
                     </h3>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <StatusBadge status={vendor.status} />
                       {vendor.aml_status === "verified" ? (
                         <Badge className="gap-1 bg-accent text-white">
@@ -137,6 +182,17 @@ export default function Vendors() {
                         <Badge variant="outline" className="gap-1">
                           <AlertCircle className="h-3 w-3" />
                           AML Pending
+                        </Badge>
+                      )}
+                      {vendor.vendor_complete_info ? (
+                        <Badge className="gap-1 bg-green-500 text-white">
+                          <CheckCircle className="h-3 w-3" />
+                          Complete Info
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Incomplete Info
                         </Badge>
                       )}
                     </div>
@@ -159,33 +215,19 @@ export default function Vendors() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" asChild>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" asChild>
                   <Link to={`/vendors/${vendor.id}`}>
-                    <Eye className="mr-1 h-4 w-4" />
-                    View Details
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
                   </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(vendor)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(vendor)}
-                >
-                  <Trash2 className="h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
 
-        {vendors?.length === 0 && (
+        {filteredVendors.length === 0 && (
           <EmptyState
             icon={Store}
             title="No vendors yet"
@@ -208,15 +250,6 @@ export default function Vendors() {
           {selectedVendor && (
             <form onSubmit={handleEditSubmit}>
               <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    defaultValue={selectedVendor.title || ""}
-                    placeholder="Mr, Mrs, Ms, Dr, etc."
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first_name">First Name</Label>
@@ -247,26 +280,15 @@ export default function Vendors() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="primary_phone">Primary Phone</Label>
-                    <Input
-                      id="primary_phone"
-                      name="primary_phone"
-                      type="tel"
-                      defaultValue={selectedVendor.primary_phone}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="secondary_phone">Secondary Phone</Label>
-                    <Input
-                      id="secondary_phone"
-                      name="secondary_phone"
-                      type="tel"
-                      defaultValue={selectedVendor.secondary_phone || ""}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="primary_phone">Phone</Label>
+                  <Input
+                    id="primary_phone"
+                    name="primary_phone"
+                    type="tel"
+                    defaultValue={selectedVendor.primary_phone}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="current_address">Current Address</Label>

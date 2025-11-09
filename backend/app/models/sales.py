@@ -93,12 +93,18 @@ class SalesProgression(BaseModel):
     days_from_exchange_to_completion = Column(Numeric(5, 0))
     total_days_to_complete = Column(Numeric(5, 0))
 
+    # Relationships
+    property = relationship("Property", back_populates="sales_progression")
+    vendor = relationship("Vendor")
+    buyer = relationship("Applicant", back_populates="sales_progression", foreign_keys=[buyer_id])
+    assigned_progressor = relationship("User")
+
     def __repr__(self):
         return f"<SalesProgression(property_id={self.property_id}, stage={self.current_stage}, status={self.sales_status})>"
 
 
-class Offer(BaseModel):
-    __tablename__ = "offers"
+class SalesOffer(BaseModel):
+    __tablename__ = "sales_offers"
 
     # Foreign Keys
     property_id = Column(String, ForeignKey("properties.id"), nullable=False, index=True)
@@ -124,6 +130,11 @@ class Offer(BaseModel):
     # Additional Details
     special_conditions = Column(Text)
     notes = Column(Text)
+
+    # Relationships
+    property = relationship("Property", back_populates="sales_offers")
+    buyer = relationship("Applicant", back_populates="sales_offers", foreign_keys=[buyer_id])
+    sales_progression = relationship("SalesProgression")
 
     def __repr__(self):
         return f"<Offer(property_id={self.property_id}, amount={self.offer_amount}, status={self.status})>"

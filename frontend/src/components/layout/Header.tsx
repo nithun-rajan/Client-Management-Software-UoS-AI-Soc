@@ -49,8 +49,10 @@ export default function Header({ title }: HeaderProps) {
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [landlordOpen, setLandlordOpen] = useState(false);
   const [applicantOpen, setApplicantOpen] = useState(false);
+  const [buyerOpen, setBuyerOpen] = useState(false);
   const [vendorOpen, setVendorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [propertyType, setPropertyType] = useState<"rent" | "sale">("rent");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: notifications = [] } = useNotifications();
@@ -98,18 +100,27 @@ export default function Header({ title }: HeaderProps) {
     try {
       const address = formData.get("address") as string;
       const city = formData.get("city") as string;
-      await api.post("/api/v1/properties/", {
+      const propertyData: any = {
         address: address ? `${address}, ${city}` : city,
         city: city,
         postcode: formData.get("postcode"),
         property_type: formData.get("property_type"),
         bedrooms: parseInt(formData.get("bedrooms") as string),
         bathrooms: parseInt(formData.get("bathrooms") as string),
-        rent: parseFloat(formData.get("rent") as string),
         status: "available",
-      });
+      };
+      
+      if (propertyType === "rent") {
+        propertyData.rent = parseFloat(formData.get("price") as string);
+      } else {
+        propertyData.asking_price = parseFloat(formData.get("price") as string);
+        propertyData.sales_status = "available";
+      }
+      
+      await api.post("/api/v1/properties/", propertyData);
       toast({ title: "Success", description: "Property added successfully" });
       setPropertyOpen(false);
+      setPropertyType("rent");
       window.location.reload();
     } catch (error) {
       toast({
@@ -151,16 +162,44 @@ export default function Header({ title }: HeaderProps) {
         last_name: formData.get("last_name"),
         email: formData.get("email"),
         phone: formData.get("phone"),
-        rent_budget_min: parseFloat(formData.get("rent_budget_min") as string),
-        rent_budget_max: parseFloat(formData.get("rent_budget_max") as string),
+        rent_budget_min: formData.get("rent_budget_min") ? parseFloat(formData.get("rent_budget_min") as string) : undefined,
+        rent_budget_max: formData.get("rent_budget_max") ? parseFloat(formData.get("rent_budget_max") as string) : undefined,
+        willing_to_rent: true,
+        willing_to_buy: false,
       });
-      toast({ title: "Success", description: "Applicant added successfully" });
+      toast({ title: "Success", description: "Tenant added successfully" });
       setApplicantOpen(false);
       window.location.reload();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add applicant",
+        description: "Failed to add tenant",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBuyerSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.post("/api/v1/applicants/", {
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        rent_budget_min: formData.get("purchase_budget_min") ? parseFloat(formData.get("purchase_budget_min") as string) : undefined,
+        rent_budget_max: formData.get("purchase_budget_max") ? parseFloat(formData.get("purchase_budget_max") as string) : undefined,
+        willing_to_rent: false,
+        willing_to_buy: true,
+      });
+      toast({ title: "Success", description: "Buyer added successfully" });
+      setBuyerOpen(false);
+      window.location.reload();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add buyer",
         variant: "destructive",
       });
     }
@@ -171,12 +210,10 @@ export default function Header({ title }: HeaderProps) {
     const formData = new FormData(e.currentTarget);
     try {
       await api.post("/api/v1/vendors/", {
-        title: formData.get("title") as string || undefined,
         first_name: formData.get("first_name"),
         last_name: formData.get("last_name"),
         email: formData.get("email"),
         primary_phone: formData.get("primary_phone"),
-        secondary_phone: formData.get("secondary_phone") as string || undefined,
         current_address: formData.get("current_address") as string || undefined,
       });
       toast({ title: "Success", description: "Vendor added successfully" });
@@ -208,11 +245,14 @@ export default function Header({ title }: HeaderProps) {
               <DropdownMenuItem onClick={() => setPropertyOpen(true)}>
                 + New Property
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setApplicantOpen(true)}>
+                + New Tenant
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setLandlordOpen(true)}>
                 + New Landlord
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setApplicantOpen(true)}>
-                + New Applicant
+              <DropdownMenuItem onClick={() => setBuyerOpen(true)}>
+                + New Buyer
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setVendorOpen(true)}>
                 + New Vendor
@@ -367,7 +407,7 @@ export default function Header({ title }: HeaderProps) {
       </header>
 
       {/* Property Dialog */}
-      <Dialog open={propertyOpen} onOpenChange={setPropertyOpen}>
+      <Dialog open={propertyOpen} onOpenChange={(open) => { setPropertyOpen(open); if (!open) setPropertyType("rent"); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Property</DialogTitle>
@@ -375,6 +415,18 @@ export default function Header({ title }: HeaderProps) {
           </DialogHeader>
           <form onSubmit={handlePropertySubmit}>
             <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="property_listing_type">Listing Type</Label>
+                <Select value={propertyType} onValueChange={(value: "rent" | "sale") => setPropertyType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rent">For Rent</SelectItem>
+                    <SelectItem value="sale">For Sale</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="address">Address</Label>
                 <Input id="address" name="address" required />
@@ -388,7 +440,7 @@ export default function Header({ title }: HeaderProps) {
                 <Input id="postcode" name="postcode" required />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="property_type">Type</Label>
+                <Label htmlFor="property_type">Property Type</Label>
                 <Select name="property_type" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -411,8 +463,15 @@ export default function Header({ title }: HeaderProps) {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="rent">Monthly Rent (£)</Label>
-                <Input id="rent" name="rent" type="number" step="0.01" required />
+                <Label htmlFor="price">
+                  {propertyType === "rent" ? "Monthly Rent (£)" : "Draft Price (£)"}
+                </Label>
+                <Input id="price" name="price" type="number" step="0.01" required />
+                {propertyType === "sale" && (
+                  <p className="text-xs text-muted-foreground">
+                    Agent will advise on final asking price
+                  </p>
+                )}
               </div>
             </div>
             <DialogFooter>
@@ -455,12 +514,12 @@ export default function Header({ title }: HeaderProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Applicant Dialog */}
+      {/* Tenant Dialog */}
       <Dialog open={applicantOpen} onOpenChange={setApplicantOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Applicant</DialogTitle>
-            <DialogDescription>Enter the applicant details below</DialogDescription>
+            <DialogTitle>Add New Tenant</DialogTitle>
+            <DialogDescription>Enter the tenant details below</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleApplicantSubmit}>
             <div className="grid gap-4 py-4">
@@ -480,7 +539,7 @@ export default function Header({ title }: HeaderProps) {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" />
+                <Input id="phone" name="phone" required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -494,7 +553,52 @@ export default function Header({ title }: HeaderProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit">Add Applicant</Button>
+              <Button type="submit">Add Tenant</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Buyer Dialog */}
+      <Dialog open={buyerOpen} onOpenChange={setBuyerOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Buyer</DialogTitle>
+            <DialogDescription>Enter the buyer details below</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleBuyerSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="buyer_first_name">First Name</Label>
+                  <Input id="buyer_first_name" name="first_name" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="buyer_last_name">Last Name</Label>
+                  <Input id="buyer_last_name" name="last_name" required />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="buyer_email">Email</Label>
+                <Input id="buyer_email" name="email" type="email" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="buyer_phone">Phone</Label>
+                <Input id="buyer_phone" name="phone" required />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="purchase_budget_min">Min Budget (£)</Label>
+                  <Input id="purchase_budget_min" name="purchase_budget_min" type="number" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="purchase_budget_max">Max Budget (£)</Label>
+                  <Input id="purchase_budget_max" name="purchase_budget_max" type="number" />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Add Buyer</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -509,21 +613,6 @@ export default function Header({ title }: HeaderProps) {
           </DialogHeader>
           <form onSubmit={handleVendorSubmit}>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
-                <Select name="title">
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select title" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mr">Mr</SelectItem>
-                    <SelectItem value="Mrs">Mrs</SelectItem>
-                    <SelectItem value="Ms">Ms</SelectItem>
-                    <SelectItem value="Miss">Miss</SelectItem>
-                    <SelectItem value="Dr">Dr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="first_name">First Name</Label>
@@ -538,15 +627,9 @@ export default function Header({ title }: HeaderProps) {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="primary_phone">Primary Phone</Label>
-                  <Input id="primary_phone" name="primary_phone" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="secondary_phone">Secondary Phone</Label>
-                  <Input id="secondary_phone" name="secondary_phone" />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="primary_phone">Phone</Label>
+                <Input id="primary_phone" name="primary_phone" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="current_address">Current Address</Label>

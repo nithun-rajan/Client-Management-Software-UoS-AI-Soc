@@ -26,8 +26,19 @@ class PropertyUpdate(AppBaseModel):
     rent: float | None = None
     status: str | None = None
     description: str | None = None
+    sales_status: str | None = None
+    asking_price: float | None = None
+    price_qualifier: str | None = None
+    has_valuation_pack: bool | None = None
 
 class PropertyResponse(PropertyBase):
     id: str
     status: PropertyStatus
     city: str
+    address_line1: str | None = None
+    address_line2: str | None = None
+    landlord_id: str | None = None
+    sales_status: str | None = None
+    asking_price: float | None = None
+    price_qualifier: str | None = None
+    has_valuation_pack: bool | None = None
