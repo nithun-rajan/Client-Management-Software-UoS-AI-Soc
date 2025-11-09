@@ -4,12 +4,10 @@ from typing import Optional
 
 
 class VendorBase(AppBaseModel):
-    title: Optional[str] = None
     first_name: str
     last_name: str
     email: str
     primary_phone: str
-    secondary_phone: Optional[str] = None
     current_address: Optional[str] = None
     date_of_birth: Optional[date] = None
     nationality: Optional[str] = None
@@ -18,6 +16,7 @@ class VendorBase(AppBaseModel):
     instruction_type: Optional[str] = None  # sole_agency, multi_agency
     agreed_commission: Optional[str] = None  # e.g., "1.5% + VAT"
     minimum_fee: Optional[str] = None
+    vendor_complete_info: bool = False
 
 
 class VendorCreate(VendorBase):
@@ -25,12 +24,10 @@ class VendorCreate(VendorBase):
 
 
 class VendorUpdate(AppBaseModel):
-    title: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
     primary_phone: Optional[str] = None
-    secondary_phone: Optional[str] = None
     current_address: Optional[str] = None
     date_of_birth: Optional[date] = None
     nationality: Optional[str] = None
@@ -39,10 +36,13 @@ class VendorUpdate(AppBaseModel):
     instruction_type: Optional[str] = None
     agreed_commission: Optional[str] = None
     minimum_fee: Optional[str] = None
+    vendor_complete_info: Optional[bool] = None
 
 
 class VendorResponse(VendorBase):
     id: str
+    instructed_property_id: Optional[str] = None
+    vendor_complete_info: bool = False
     created_at: datetime
     updated_at: Optional[datetime] = None
     

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import {
   Building2,
+  Building,
   UserCheck,
   Users,
+  User,
+  UserCircle,
   PoundSterling,
   Activity,
   AlertCircle,
@@ -45,32 +48,60 @@ export default function Dashboard() {
 
   const kpiCards = [
     {
-      title: "Properties",
+      title: "Properties for Letting",
       icon: Building2,
-      value: kpis?.properties.total || 0,
-      subtitle: `${kpis?.properties.available || 0} available, ${kpis?.properties.let_by || 0} let`,
+      value: kpis?.properties_letting?.total || kpis?.properties?.total || 0,
+      subtitle: `${kpis?.properties_letting?.available || kpis?.properties?.available || 0} available, ${kpis?.properties_letting?.let_by || kpis?.properties?.let_by || 0} let`,
       gradient: "from-primary to-secondary",
+    },
+    {
+      title: "Properties for Sale",
+      icon: Building,
+      value: kpis?.properties_sale?.total || 0,
+      subtitle: `Avg: £${(kpis?.properties_sale?.avg_selling_price || 0).toLocaleString()}`,
+      gradient: "from-purple-500 to-pink-500 dark:from-purple-600 dark:to-pink-600",
+    },
+    {
+      title: "Tenants",
+      icon: Users,
+      value: kpis?.tenants?.total || kpis?.applicants?.total || 0,
+      subtitle: `${(kpis?.tenants?.qualification_rate || kpis?.applicants?.qualification_rate || 0).toFixed(0)}% qualified`,
+      gradient: "from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600",
+    },
+    {
+      title: "Buyers",
+      icon: User,
+      value: kpis?.buyers?.total || 0,
+      subtitle: "Active buyers",
+      gradient: "from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600",
     },
     {
       title: "Landlords",
       icon: UserCheck,
-      value: kpis?.landlords.total || 0,
-      subtitle: `${kpis?.landlords.verification_rate.toFixed(0) || 0}% AML verified`,
+      value: kpis?.landlords?.total || 0,
+      subtitle: `${(kpis?.landlords?.verification_rate || 0).toFixed(0)}% AML verified`,
       gradient: "from-accent to-emerald-500 dark:from-teal-600 dark:to-emerald-600",
     },
     {
-      title: "Applicants",
-      icon: Users,
-      value: kpis?.applicants.total || 0,
-      subtitle: `${kpis?.applicants.qualification_rate.toFixed(0) || 0}% qualified`,
-      gradient: "from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600",
+      title: "Vendors",
+      icon: UserCircle,
+      value: kpis?.vendors?.total || 0,
+      subtitle: "Active vendors",
+      gradient: "from-indigo-500 to-blue-500 dark:from-indigo-600 dark:to-blue-600",
     },
     {
       title: "Average Rent",
       icon: PoundSterling,
-      value: `£${kpis?.properties.avg_rent.toFixed(0) || 0}`,
+      value: `£${(kpis?.properties_letting?.avg_rent || kpis?.properties?.avg_rent || 0).toFixed(0)}`,
       subtitle: "per calendar month",
-      gradient: "from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600",
+      gradient: "from-green-500 to-emerald-500 dark:from-green-600 dark:to-emerald-600",
+    },
+    {
+      title: "Average Selling Price",
+      icon: PoundSterling,
+      value: `£${(kpis?.properties_sale?.avg_selling_price || 0).toLocaleString()}`,
+      subtitle: "properties for sale",
+      gradient: "from-rose-500 to-pink-500 dark:from-rose-600 dark:to-pink-600",
     },
   ];
 
@@ -172,21 +203,33 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">New properties</span>
+                <span className="text-sm text-muted-foreground">Properties for Letting</span>
                 <span className="text-2xl font-bold text-accent">
-                  {kpis?.properties.available || 0}
+                  {kpis?.properties_letting?.total || kpis?.properties?.total || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Properties let</span>
+                <span className="text-sm text-muted-foreground">Properties for Sale</span>
                 <span className="text-2xl font-bold text-primary">
-                  {kpis?.properties.let_by || 0}
+                  {kpis?.properties_sale?.total || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">New applicants</span>
+                <span className="text-sm text-muted-foreground">Tenants</span>
                 <span className="text-2xl font-bold text-secondary">
-                  {kpis?.applicants.total || 0}
+                  {kpis?.tenants?.total || kpis?.applicants?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Buyers</span>
+                <span className="text-2xl font-bold text-blue-500">
+                  {kpis?.buyers?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Vendors</span>
+                <span className="text-2xl font-bold text-indigo-500">
+                  {kpis?.vendors?.total || 0}
                 </span>
               </div>
             </CardContent>
@@ -217,7 +260,7 @@ export default function Dashboard() {
                 </div>
                 <div className="text-center">
                   <div className="text-xl font-bold text-primary">
-                    {kpis?.properties.total || 0}
+                    {(kpis?.properties_letting?.total || kpis?.properties?.total || 0) + (kpis?.properties_sale?.total || 0)}
                   </div>
                   <div className="text-xs text-muted-foreground">Compliant</div>
                 </div>

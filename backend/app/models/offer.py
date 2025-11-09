@@ -45,6 +45,6 @@ class Offer(BaseModel):
     holding_deposit_date = Column(DateTime, nullable=True)
     
     # Relationships
-    property = relationship("Property", backref="offers")
-    applicant = relationship("Applicant", backref="offers")
+    property = relationship("Property", back_populates="offers")
+    applicant = relationship("Applicant", back_populates="letting_offers")
 
