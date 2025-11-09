@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+from typing import List, Optional
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -36,6 +37,10 @@ def list_tasks(
         query = query.filter(Task.status == status)
     if priority:
         query = query.filter(Task.priority == priority)
+     # --- ADD THIS BLOCK ---
+    if tenancy_id:
+        query = query.filter(Task.tenancy_id == tenancy_id)
+    # --- END ADD ---
     
     tasks = query.offset(skip).limit(limit).all()
     return tasks
