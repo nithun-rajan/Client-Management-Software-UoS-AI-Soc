@@ -9,7 +9,7 @@ from app.models.communication import Communication
 
 class Applicant(BaseModel):
     __tablename__ = "applicants"
-    
+
     # Basic identity (from page 22-23)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
@@ -34,6 +34,5 @@ class Applicant(BaseModel):
     special_requirements = Column(Text)
     
     # Relationships
-    reported_tickets = relationship("Ticket", back_populates="reporter")
     tenancies = relationship("Tenancy", back_populates="applicant")
     communications = relationship("Communication", back_populates="applicant")

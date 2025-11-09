@@ -1,40 +1,53 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import date
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, computed_field
+
 
 class ApplicantBase(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    phone: Optional[str] = None
-    bedrooms_min: Optional[int] = None
-    bedrooms_max: Optional[int] = None
-    rent_budget_min: Optional[float] = None
-    rent_budget_max: Optional[float] = None
-    desired_locations: Optional[str] = None
-    move_in_date: Optional[date] = None
-    notes: Optional[str] = None
+    phone: str
+    date_of_birth: date | None = None
+    desired_bedrooms: str | None = None
+    desired_property_type: str | None = None
+    rent_budget_min: float | None = None
+    rent_budget_max: float | None = None
+    preferred_locations: str | None = None
+    move_in_date: date | None = None
+    has_pets: bool = False
+    pet_details: str | None = None
+    special_requirements: str | None = None
 
 class ApplicantCreate(ApplicantBase):
     pass
 
 class ApplicantUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    bedrooms_min: Optional[int] = None
-    bedrooms_max: Optional[int] = None
-    rent_budget_min: Optional[float] = None
-    rent_budget_max: Optional[float] = None
-    desired_locations: Optional[str] = None
-    move_in_date: Optional[date] = None
-    status: Optional[str] = None
-    notes: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    date_of_birth: date | None = None
+    status: str | None = None
+    desired_bedrooms: str | None = None
+    desired_property_type: str | None = None
+    rent_budget_min: float | None = None
+    rent_budget_max: float | None = None
+    preferred_locations: str | None = None
+    move_in_date: date | None = None
+    has_pets: bool | None = None
+    pet_details: str | None = None
+    special_requirements: str | None = None
 
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
 
-    class Config:
-        from_attributes = True
+    @computed_field
+    @property
+    def full_name(self) -> str:
+        """Computed field combining first_name and last_name"""
+        return f"{self.first_name} {self.last_name}"
+
+    model_config = ConfigDict(from_attributes=True)
+   

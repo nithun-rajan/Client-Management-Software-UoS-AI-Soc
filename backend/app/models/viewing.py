@@ -42,3 +42,4 @@ class Viewing(BaseModel):
     # Relationships
     property = relationship("Property", backref="viewings")
     applicant = relationship("Applicant", backref="viewings")
+

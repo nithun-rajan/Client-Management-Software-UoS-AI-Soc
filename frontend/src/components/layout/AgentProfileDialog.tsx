@@ -1,0 +1,251 @@
+// src/components/AgentProfileDialog.tsx
+import { useState, useEffect } from "react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Home, UserCheck, Users, BarChart3, FileText,
+  TrendingUp, Clock, PoundSterling, Star, Mail, Phone,
+} from "lucide-react";
+
+const AGENT_KEY = "john-smith-agent";
+
+interface Agent {
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  qualifications: string;
+  avatarUrl: string;
+  kpis: {
+    askingPrice: string;
+    daysOnMarket: string;
+    monthlyFees: string;
+    satisfaction: string;
+  };
+}
+
+const defaultAgent: Agent = {
+  name: "John Smith",
+  title: "Senior Sales & Lettings Manager – Southampton",
+  email: "john.smith@uos-crm.co.uk",
+  phone: "023 8099 1111",
+  qualifications: "ARLA Level 3 • 7 years experience",
+  avatarUrl: "",
+  kpis: {
+    askingPrice: "96%",
+    daysOnMarket: "46",
+    monthlyFees: "£47.2k",
+    satisfaction: "4.1",
+  },
+};
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function AgentProfileDialog({ open, onOpenChange }: Props) {
+  const [tab, setTab] = useState("properties");
+  const [agent, setAgent] = useState<Agent>(defaultAgent);
+
+  useEffect(() => {
+    const load = () => {
+      const saved = localStorage.getItem(AGENT_KEY);
+      if (saved) setAgent(JSON.parse(saved));
+    };
+    load();
+    window.addEventListener("agent-saved", load);
+    return () => window.removeEventListener("agent-saved", load);
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={agent.avatarUrl} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                {agent.name.split(" ").map(n => n[0]).join("")}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <DialogTitle className="text-xl">{agent.name}</DialogTitle>
+              <p className="text-sm text-muted-foreground">{agent.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">{agent.qualifications}</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <Tabs value={tab} onValueChange={setTab} className="mt-4">
+          <TabsList className="grid w-full grid-cols-5">
+            {["properties", "landlords", "applicants", "kpis", "valuation"].map(t => (
+              <TabsTrigger key={t} value={t} className="text-xs sm:text-sm">
+                {t === "kpis" ? "KPIs" : t}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {/* PROPERTIES */}
+          <TabsContent value="properties" className="mt-4 space-y-3">
+            {[
+              { addr: "Court Road, SO15", price: "£195,000", status: "Offer Accepted", badge: "default" },
+              { addr: "High Street, SO14", price: "£1,200 pcm", status: "Viewing Tomorrow", badge: "secondary" },
+              { addr: "Portswood Rd", price: "£340,000", status: "New Instruction", badge: "outline" },
+              { addr: "The Avenue", price: "£850 pcm", status: "Tenancy Started", badge: "default" },
+            ].map((p, i) => (
+              <Card key={i} className="hover:shadow-sm transition-shadow">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <Home className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{p.addr}</p>
+                      <p className="text-sm font-semibold text-primary">{p.price}</p>
+                    </div>
+                  </div>
+                  <Badge variant={p.badge as any}>{p.status}</Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+
+          {/* LANDLORDS */}
+          <TabsContent value="landlords" className="mt-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[
+                "Mr A. Patel – 3 properties",
+                "Dr S. Chen – Court Road",
+                "Mrs J. Taylor – High St",
+                "Southampton Uni – 2 flats",
+                "Mr R. Kumar – Portswood",
+                "Trustees of L. Brown",
+              ].map((l, i) => (
+                <Card key={i} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <UserCheck className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm font-medium">{l}</span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* APPLICANTS */}
+          <TabsContent value="applicants" className="mt-4 space-y-3">
+            {[
+              { name: "Emma Wilson", budget: "£1,200 pcm", move: "Dec 1", hot: true },
+              { name: "Tom & Lisa", budget: "£380,000", move: "ASAP", hot: true },
+              { name: "Dr Mike Lee", budget: "2-bed flat", move: "Jan", hot: false },
+              { name: "Sarah Khan", budget: "£900 pcm", move: "Nov 15", hot: true },
+            ].map((a, i) => (
+              <Card key={i} className="hover:shadow-sm transition-shadow">
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{a.name}</p>
+                      <p className="text-xs text-muted-foreground">Budget: {a.budget}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {a.hot && <Badge className="mb-1">HOT LEAD</Badge>}
+                    <p className="text-xs text-muted-foreground">Move: {a.move}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+
+          {/* KPIs */}
+          <TabsContent value="kpis" className="mt-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <TrendingUp className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="text-2xl font-bold">{agent.kpis.askingPrice}</p>
+                  <p className="text-xs text-muted-foreground">Asking Price</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Clock className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="text-2xl font-bold">{agent.kpis.daysOnMarket}</p>
+                  <p className="text-xs text-muted-foreground">Days on Market</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <PoundSterling className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="text-2xl font-bold">{agent.kpis.monthlyFees}</p>
+                  <p className="text-xs text-muted-foreground">Monthly Fees</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <Star className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="text-2xl font-bold">{agent.kpis.satisfaction}</p>
+                  <p className="text-xs text-muted-foreground">Satisfaction</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* VALUATION */}
+          <TabsContent value="valuation" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5" />
+                  AI Valuation Pack – Court Road, SO15
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Guide Price</p>
+                    <p className="text-2xl font-bold">£195,000</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Comparable Sale</p>
+                    <p className="text-xl font-bold">£185,000</p>
+                    <p className="text-xs text-muted-foreground">Apr 2025</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-muted p-4">
+                  <p className="text-sm font-medium mb-1">AI Confidence</p>
+                  <p className="text-3xl font-bold">96%</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* CONTACT BAR */}
+        <div className="mt-6 border-t pt-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Contact {agent.name.split(" ")[0]}</p>
+              <div className="flex flex-col gap-2 text-sm sm:flex-row">
+                <a href={`mailto:${agent.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <Mail className="h-4 w-4" /> {agent.email}
+                </a>
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" /> {agent.phone}
+                </span>
+              </div>
+            </div>
+            <Button onClick={() => onOpenChange(false)} variant="outline">
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

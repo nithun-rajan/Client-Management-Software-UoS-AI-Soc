@@ -1,15 +1,15 @@
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
 from app.models.base import BaseModel
 from app.models.enums import PropertyStatus
 from app.models.communication import Communication
 from datetime import datetime, timezone
 
-
-
 class Property(BaseModel): 
     __tablename__ = "properties"
     
+
     address = Column(String, nullable=False)
     address_line1 = Column(String)
     address_line2 = Column(String)
@@ -27,7 +27,7 @@ class Property(BaseModel):
     deposit = Column(Float)
     
     status = Column(String, default=PropertyStatus.AVAILABLE)
-    listed_date = Column(DateTime, default=datetime.now(timezone.utc)) # When first listed
+    listed_date = Column(DateTime, default=datetime.now(timezone.utc) ) # When first listed
     let_agreed_date = Column(DateTime, nullable=True)  # When offer accepted
     let_date = Column(DateTime, nullable=True)  # When tenancy started
     last_status_change = Column(DateTime, default=datetime.now(timezone.utc))
@@ -59,7 +59,6 @@ class Property(BaseModel):
     
     tenancies = relationship("Tenancy", back_populates="property")
     communications = relationship("Communication", back_populates="property")
-    tickets = relationship("Ticket", back_populates="property")  
     
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)

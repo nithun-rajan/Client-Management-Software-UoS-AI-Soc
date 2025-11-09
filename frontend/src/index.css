@@ -37,19 +37,21 @@ All colors MUST be HSL.
     --ring: 248 73% 65%;
 
     --radius: 0.75rem;
-    
+
     --status-available: 158 64% 52%;
     --status-pending: 38 92% 50%;
     --status-urgent: 0 84.2% 60.2%;
     --status-active: 217 91% 60%;
     --status-inactive: 215 16.3% 46.9%;
-    
+
     --gradient-primary: linear-gradient(135deg, hsl(248 73% 65%), hsl(268 45% 54%));
+    --gradient-secondary: linear-gradient(135deg, hsl(280 65% 55%), hsl(248 73% 65%));
     --gradient-success: linear-gradient(135deg, hsl(158 64% 52%), hsl(172 66% 50%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
-    
+
     --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-elevated: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-elevated:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -69,16 +71,16 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 270 30% 8%; /* Dark midnight purple background */
     --foreground: 210 40% 98%;
 
-    --card: 220 13% 13%;
+    --card: 270 25% 12%; /* Slightly lighter midnight purple for cards */
     --card-foreground: 210 40% 98%;
 
-    --popover: 220 13% 13%;
+    --popover: 270 25% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 248 73% 65%;
+    --primary: 270 50% 45%; /* Midnight Purple */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 268 45% 54%;
@@ -95,15 +97,27 @@ All colors MUST be HSL.
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 248 73% 65%;
-    --sidebar-background: 240 5.9% 10%;
+    --ring: 270 50% 45%; /* Midnight Purple ring */
+    
+    --status-available: 158 64% 52%;
+    --status-pending: 38 92% 50%;
+    --status-urgent: 0 62.8% 50%;
+    --status-active: 217 91% 60%;
+    --status-inactive: 215 16.3% 46.9%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(270 50% 45%), hsl(268 45% 54%)); /* Midnight purple gradient */
+    --gradient-secondary: linear-gradient(135deg, hsl(280 55% 48%), hsl(270 50% 45%)); /* Vibrant purple-pink gradient for dark mode */
+    --gradient-success: linear-gradient(135deg, hsl(158 64% 52%), hsl(172 66% 50%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
+    
+    --sidebar-background: 270 35% 10%; /* Midnight purple sidebar */
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 270 50% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent: 270 30% 15%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 270 30% 15%;
+    --sidebar-ring: 270 50% 45%;
   }
 }
 

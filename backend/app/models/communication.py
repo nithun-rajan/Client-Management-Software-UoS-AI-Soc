@@ -7,8 +7,7 @@ As per Blueprint: Activity feed with calls logged, emails sent, SMS messages, ta
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
-
+from datetime import datetime
 
 from app.models.base import Base
 
@@ -59,3 +58,4 @@ class Communication(Base):
             "None"
         )
         return f"<Communication(id={self.id}, type={self.type}, entity={entity})>"
+

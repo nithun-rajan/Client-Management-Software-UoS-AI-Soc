@@ -1,5 +1,7 @@
-from fastapi import APIRouter
 from datetime import datetime
+
+from fastapi import APIRouter
+
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -26,7 +28,7 @@ def get_event_log():
     ]
 
 @router.post("/trigger")
-def trigger_event(event_type: str, entity_id: int):
+def trigger_event(event_type: str, entity_id: str):
     """Trigger an event - STUB for now"""
     return {
         "status": "ok",

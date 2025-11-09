@@ -194,3 +194,4 @@ def cancel_viewing(viewing_id: str, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Viewing cancelled successfully"}
+

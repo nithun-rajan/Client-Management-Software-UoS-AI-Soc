@@ -1,14 +1,3 @@
-from pydantic import BaseModel
-from datetime import date, datetime
-from typing import Optional
-from pydantic import ConfigDict
-
-
-from app.models.enums import TenancyStatus
-
-# Fields common to Create and Response
-class TenancyBase(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 from app.schemas.model_config import AppBaseModel
 
 from datetime import date, datetime

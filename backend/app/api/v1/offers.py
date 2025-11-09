@@ -13,8 +13,8 @@ router = APIRouter(prefix="/offers", tags=["offers"])
 
 # Schemas
 class OfferCreate(BaseModel):
-    property_id: int  # Fixed from str to int
-    applicant_id: int # Fixed from str to int
+    property_id: str
+    applicant_id: str
     offered_rent: float
     proposed_start_date: Optional[datetime] = None
     proposed_term_months: Optional[int] = 12
@@ -74,8 +74,8 @@ def create_offer(offer: OfferCreate, db: Session = Depends(get_db)):
 
 @router.get("/")
 def list_offers(
-    property_id: Optional[int] = None, # Fixed from str to int
-    applicant_id: Optional[int] = None, # Fixed from str to int
+    property_id: Optional[str] = None,
+    applicant_id: Optional[str] = None,
     status: Optional[str] = None,
     limit: int = 50,
     db: Session = Depends(get_db)
@@ -118,7 +118,7 @@ def list_offers(
 
 
 @router.get("/{offer_id}")
-def get_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from str to int
+def get_offer(offer_id: str, db: Session = Depends(get_db)):
     """Get offer details with negotiation history"""
     
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -162,7 +162,7 @@ def get_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from str to
 
 
 @router.put("/{offer_id}")
-def update_offer(offer_id: int, offer_update: OfferUpdate, db: Session = Depends(get_db)): # Fixed from str to int
+def update_offer(offer_id: str, offer_update: OfferUpdate, db: Session = Depends(get_db)):
     """
     Update offer status or counter-offer
     Blueprint page 779: "Negotiation history tracking"
@@ -196,7 +196,7 @@ def update_offer(offer_id: int, offer_update: OfferUpdate, db: Session = Depends
 
 
 @router.post("/{offer_id}/accept")
-def accept_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from str to int
+def accept_offer(offer_id: str, db: Session = Depends(get_db)):
     """Accept an offer"""
     
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -223,7 +223,7 @@ def accept_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from str
 
 
 @router.post("/{offer_id}/reject")
-def reject_offer(offer_id: int, reason: Optional[str] = None, db: Session = Depends(get_db)): # Fixed from str to int
+def reject_offer(offer_id: str, reason: Optional[str] = None, db: Session = Depends(get_db)):
     """Reject an offer"""
     
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -245,7 +245,7 @@ def reject_offer(offer_id: int, reason: Optional[str] = None, db: Session = Depe
 
 
 @router.delete("/{offer_id}")
-def withdraw_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from str to int
+def withdraw_offer(offer_id: str, db: Session = Depends(get_db)):
     """Withdraw an offer (by applicant)"""
     
     offer = db.query(Offer).filter(Offer.id == offer_id).first()
@@ -256,3 +256,4 @@ def withdraw_offer(offer_id: int, db: Session = Depends(get_db)): # Fixed from s
     db.commit()
     
     return {"message": "Offer withdrawn successfully"}
+
