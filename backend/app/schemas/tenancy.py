@@ -1,4 +1,5 @@
 from app.schemas.model_config import AppBaseModel
+from app.models.enums import TenancyStatus
 
 from datetime import date, datetime
 from typing import Optional
@@ -12,7 +13,6 @@ class TenancyBase(AppBaseModel):
     deposit_amount: float
     start_date: date
     end_date: Optional[date] = None
-    status: TenancyStatus = TenancyStatus.PENDING
     status: str = "pending"
     
 
@@ -37,8 +37,6 @@ class TenancyCreate(TenancyBase):
     pass
 
 # Schema for UPDATING a tenancy (matches your other 'Update' schemas)
-class TenancyUpdate(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 class TenancyUpdate(AppBaseModel):
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
