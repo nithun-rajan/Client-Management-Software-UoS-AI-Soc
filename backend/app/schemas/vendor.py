@@ -46,3 +46,4 @@ class VendorResponse(VendorBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
+    

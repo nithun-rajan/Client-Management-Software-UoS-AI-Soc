@@ -12,6 +12,7 @@ class TenancyBase(AppBaseModel):
     deposit_amount: float
     start_date: date
     end_date: Optional[date] = None
+    status: TenancyStatus = TenancyStatus.PENDING
     status: str = "pending"
     
 
@@ -36,6 +37,8 @@ class TenancyCreate(TenancyBase):
     pass
 
 # Schema for UPDATING a tenancy (matches your other 'Update' schemas)
+class TenancyUpdate(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 class TenancyUpdate(AppBaseModel):
     property_id: Optional[str] = None
     primary_applicant_id: Optional[str] = None
@@ -43,6 +46,7 @@ class TenancyUpdate(AppBaseModel):
     deposit_amount: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    status: Optional[TenancyStatus] = None
     status: Optional[str] = None
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
@@ -65,3 +69,6 @@ class TenancyResponse(TenancyBase):
     id: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
