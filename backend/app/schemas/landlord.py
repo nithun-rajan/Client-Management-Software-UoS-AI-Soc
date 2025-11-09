@@ -34,4 +34,5 @@ class LandlordResponse(LandlordBase):
     aml_verified: bool
     aml_verification_date: date | None = None
     aml_check_expiry: date | None = None
+    properties_count: int = 0  # Number of properties owned by this landlord
 

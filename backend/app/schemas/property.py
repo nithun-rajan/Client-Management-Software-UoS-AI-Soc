@@ -15,6 +15,7 @@ class PropertyBase(AppBaseModel):
 
 class PropertyCreate(PropertyBase):
     city: str
+    landlord_id: str | None = None
 
 class PropertyUpdate(AppBaseModel):
     address: str | None = None
@@ -30,6 +31,17 @@ class PropertyUpdate(AppBaseModel):
     asking_price: float | None = None
     price_qualifier: str | None = None
     has_valuation_pack: bool | None = None
+    landlord_id: str | None = None
+    managed_by: str | None = None
+    management_type: str | None = None
+    management_notes: str | None = None
+
+class LandlordInfo(AppBaseModel):
+    """Basic landlord information for property responses"""
+    id: str
+    full_name: str
+    email: str
+    phone: str | None = None
 
 class PropertyResponse(PropertyBase):
     id: str

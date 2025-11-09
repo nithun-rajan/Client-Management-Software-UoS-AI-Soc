@@ -50,11 +50,16 @@ class ApplicantUpdate(AppBaseModel):
     willing_to_rent: bool | None = None
     willing_to_buy: bool | None = None
     buyer_questions_answered: bool | None = None
+    assigned_agent_id: str | None = None
+    notes: str | None = None
 
 
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
+    assigned_agent_id: str | None = None
+    last_contacted_at: datetime | None = None
+    notes: str | None = None
 
     @computed_field
     @property

@@ -381,6 +381,16 @@ def main():
         db.commit()
         print("[OK] Linked vendors to properties-for-sale")
 
+        # Assign properties to landlords
+        print("\n[*] Assigning properties to landlords...")
+        for i, property in enumerate(properties):
+            # Assign each property to a random landlord
+            landlord = random.choice(landlords)
+            property.landlord_id = landlord.id
+        
+        db.commit()
+        print("[OK] Properties assigned to landlords")
+
         # Summary
         print("\n" + "="*60)
         print("[OK] SEEDING COMPLETE!")

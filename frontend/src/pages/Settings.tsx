@@ -1,6 +1,6 @@
 // src/pages/Settings.tsx
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow } from "lucide-react";
+import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow, Shield, Lock } from "lucide-react";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import Header from "@/components/layout/Header";
 import Pipeline from "./Pipeline";
+import { getAuthRequired, setAuthRequired } from "@/lib/authSettings";
 
 // GLOBAL AGENT STORE (shared with Sidebar & Dialog)
 interface Agent {
@@ -50,11 +52,14 @@ const defaultAgent: Agent = {
 export default function Settings() {
   const [agent, setAgent] = useState<Agent>(defaultAgent);
   const [saved, setSaved] = useState(false);
+  const [authRequired, setAuthRequiredState] = useState(getAuthRequired());
+  const [securitySaved, setSecuritySaved] = useState(false);
 
   // LOAD FROM LOCALSTORAGE ON MOUNT
   useEffect(() => {
     const saved = localStorage.getItem(AGENT_KEY);
     if (saved) setAgent(JSON.parse(saved));
+    setAuthRequiredState(getAuthRequired());
   }, []);
 
   // AUTO-SAVE TO LOCALSTORAGE
@@ -76,13 +81,22 @@ export default function Settings() {
     }
   };
 
+  // Handle auth requirement toggle
+  const handleAuthRequiredChange = (checked: boolean) => {
+    setAuthRequiredState(checked);
+    setAuthRequired(checked);
+    setSecuritySaved(true);
+    setTimeout(() => setSecuritySaved(false), 2000);
+  };
+
   return (
     <div>
       <Header title="Settings" />
       <div className="p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           </TabsList>
 
@@ -189,6 +203,70 @@ export default function Settings() {
             <Button className="w-full" variant="outline">Test Connection</Button>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* SECURITY TAB */}
+          <TabsContent value="security" className="space-y-6 max-w-4xl mx-auto mt-6">
+            {/* AUTHENTICATION SETTINGS */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Authentication Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <Label className="text-base font-medium flex items-center gap-2">
+                      <Lock className="h-4 w-4" />
+                      Require Sign In
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {authRequired 
+                        ? "Users must sign in to access the application. If authentication has issues, you may get locked out."
+                        : "Authentication is optional. Users can access the app without signing in. Turn this on to enable authentication checks."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={authRequired}
+                    onCheckedChange={handleAuthRequiredChange}
+                  />
+                </div>
+                
+                {securitySaved && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <Save className="h-4 w-4" />
+                    Settings saved!
+                  </div>
+                )}
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Note:</strong> When authentication is disabled, the application is accessible to everyone without signing in. 
+                    This is useful for development or if authentication services have issues. When enabled, all routes require authentication.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* BACKEND API */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Backend API</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>API Base URL</Label>
+                  <Input defaultValue="http://localhost:8000" placeholder="https://api.uos-crm.co.uk" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="text-sm text-muted-foreground">Connected</span>
+                </div>
+                <Button className="w-full" variant="outline">Test Connection</Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="pipeline" className="mt-6">
