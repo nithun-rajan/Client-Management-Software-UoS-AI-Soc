@@ -3,13 +3,26 @@ import api from "@/lib/api";
 import { Applicant } from "@/types";
 import { toast } from "sonner";
 
-export function useApplicants() {
+export function useApplicants(assignedAgentId?: string) {
   return useQuery({
-    queryKey: ["applicants"],
+    queryKey: ["applicants", assignedAgentId],
     queryFn: async () => {
-      const { data } = await api.get("/api/v1/applicants");
+      const params = assignedAgentId ? `?assigned_agent_id=${assignedAgentId}` : "";
+      const { data } = await api.get(`/api/v1/applicants${params}`);
       return data as Applicant[];
     },
+  });
+}
+
+export function useMyApplicants() {
+  return useQuery({
+    queryKey: ["applicants", "my-applicants"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/applicants/my-applicants");
+      return data as Applicant[];
+    },
+    // Only fetch if user is authenticated (has token)
+    enabled: !!localStorage.getItem("auth_token"),
   });
 }
 

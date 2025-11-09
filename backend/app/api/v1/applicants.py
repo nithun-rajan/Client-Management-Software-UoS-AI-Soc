@@ -75,9 +75,45 @@ def create_applicant(
     return db_applicant
 
 @router.get("/", response_model=List[ApplicantResponse])
-def list_applicants(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """List all applicants"""
-    applicants = db.query(Applicant).offset(skip).limit(limit).all()
+def list_applicants(
+    skip: int = 0, 
+    limit: int = 100, 
+    assigned_agent_id: Optional[str] = None,  # Filter by agent
+    db: Session = Depends(get_db)
+):
+    """List all applicants (optionally filter by assigned agent)"""
+    query = db.query(Applicant)
+    
+    # Filter by assigned agent if provided
+    if assigned_agent_id:
+        query = query.filter(Applicant.assigned_agent_id == assigned_agent_id)
+    
+    applicants = query.order_by(Applicant.last_contacted_at.desc().nulls_last(), Applicant.created_at.desc()).offset(skip).limit(limit).all()
+    return applicants
+
+@router.get("/my-applicants", response_model=List[ApplicantResponse])
+def get_my_applicants(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get applicants assigned to the current authenticated agent
+    
+    CRM Feature: "My Applicants" - Shows which applicants belong to which agent
+    and when they were last contacted.
+    """
+    applicants = db.query(Applicant)\
+        .filter(Applicant.assigned_agent_id == current_user.id)\
+        .order_by(
+            Applicant.last_contacted_at.desc().nulls_last(),  # Most recently contacted first, then nulls
+            Applicant.created_at.desc()  # Newest first if never contacted
+        )\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+    
     return applicants
 
 @router.get("/{applicant_id}", response_model=ApplicantResponse)

@@ -28,6 +28,9 @@ class PropertyUpdate(AppBaseModel):
     status: str | None = None
     description: str | None = None
     landlord_id: str | None = None
+    managed_by: str | None = None
+    management_type: str | None = None
+    management_notes: str | None = None
 
 class LandlordInfo(AppBaseModel):
     """Basic landlord information for property responses"""

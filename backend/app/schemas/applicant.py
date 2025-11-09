@@ -44,11 +44,16 @@ class ApplicantUpdate(AppBaseModel):
     has_pets: bool | None = None
     pet_details: str | None = None
     special_requirements: str | None = None
+    assigned_agent_id: str | None = None
+    notes: str | None = None
 
 
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
+    assigned_agent_id: str | None = None
+    last_contacted_at: datetime | None = None
+    notes: str | None = None
 
     @computed_field
     @property

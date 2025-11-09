@@ -29,6 +29,10 @@ export interface Property {
   landlord_id?: string;
   landlord?: LandlordInfo;
   virtual_tour_url?: string;
+  // Property management fields
+  managed_by?: string;
+  management_type?: string;
+  management_notes?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -78,6 +82,10 @@ export interface Applicant {
   pet_details?: string;
   special_requirements?: string;
   references_passed?: boolean;
+  // CRM fields
+  assigned_agent_id?: string;
+  last_contacted_at?: string;
+  notes?: string;
   created_at: string;
   updated_at?: string;
 }
