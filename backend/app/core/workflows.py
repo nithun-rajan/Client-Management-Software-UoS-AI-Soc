@@ -46,6 +46,7 @@ class WorkflowManager:
             Domain.VENDOR: {
                 # Vendor sales progression - Updated with sales instruction workflow
                 "new": ["valuation_booked", "instructed"],  # Can go straight to instructed
+                
                 "valuation_booked": ["instructed", "lost"],
                 "instructed": ["active", "sstc", "withdrawn", "lost"],  # Added SSTC stage
                 "active": ["sstc", "withdrawn", "lost"],  # Property on market
@@ -57,15 +58,23 @@ class WorkflowManager:
                 "past_client": []  # Final state for successful sales
             },
             Domain.APPLICANT: {
-                # Applicant lifecycle - Blueprint pages 21-27
-                "new": ["qualified"],
+                # Applicant lifecycle - Blueprint pages 21-27 + Sales buyer workflow (Pages 55-64)
+                "new": ["qualified", "sales_qualified"],
                 "qualified": ["viewing_booked", "archived"],
+                "sales_qualified": ["sales_viewing_booked", "archived"],
                 "viewing_booked": ["offer_submitted", "qualified", "archived"],
+                "sales_viewing_booked": ["sales_offer_submitted", "sales_qualified", "archived"],
                 "offer_submitted": ["offer_accepted", "viewing_booked", "archived"],  # Page 29
+                "sales_offer_submitted": ["sales_offer_accepted", "sales_viewing_booked", "archived"],
                 "offer_accepted": ["references", "viewing_booked"],  # Page 29: 1.2
+                "sales_offer_accepted": ["sales_references", "sales_viewing_booked"],
                 "references": ["let_agreed", "offer_accepted"],  # Page 30
+                "sales_references": ["sales_let_agreed", "sales_offer_accepted"],
                 "let_agreed": ["tenancy_started", "references"],  # Page 29
+                "sales_let_agreed": ["exchange_agreed", "sales_references"],
                 "tenancy_started": ["archived"],  # Page 33: 5.2
+                "exchange_agreed": ["completed", "sales_let_agreed"],
+                "completed": ["archived"],
                 "archived": ["new"]
             }
         }
@@ -121,6 +130,48 @@ class WorkflowManager:
             ("applicant", "let_agreed", "tenancy_started"): [
                 "archive_applicant_record",  # Page 33: 5.2
                 "create_active_tenancy"  # Page 33: 5.2
+            ],
+            #Applicant (Sales transitions)
+            # Add to self.side_effects
+            ("applicant", "new", "sales_qualified"): [
+                "setup_buyer_financial_profile",
+                "schedule_mortgage_advice",
+                "create_buyer_search_alerts"
+            ],
+            ("applicant", "sales_qualified", "sales_viewing_booked"): [
+                "book_sales_viewing",
+                "send_sales_property_pack", 
+                "update_buyer_match_score"
+            ],
+            ("applicant", "sales_viewing_booked", "sales_offer_submitted"): [
+                "create_sales_offer_record",
+                "notify_vendor_of_offer",
+                "start_sales_negotiation_process"
+            ],
+            ("applicant", "sales_offer_submitted", "sales_offer_accepted"): [
+                "mark_offer_accepted_sales",
+                "initiate_sales_progression",
+                "collect_reservation_deposit"
+            ],
+            ("applicant", "sales_offer_accepted", "sales_references"): [
+                "verify_buyer_finances_sales",
+                "conduct_buyer_aml_checks",
+                "connect_with_buyer_solicitor"
+            ],
+            ("applicant", "sales_references", "sales_let_agreed"): [
+                "update_property_to_sstc",
+                "generate_sales_memorandum", 
+                "notify_parties_sstc_status"
+            ],
+            ("applicant", "sales_let_agreed", "exchange_agreed"): [
+                "prepare_exchange_contracts",
+                "conduct_pre_exchange_checks",
+                "coordinate_completion_date"
+            ],
+            ("applicant", "exchange_agreed", "completed"): [
+                "finalize_property_purchase",
+                "process_land_registry_update",
+                "archive_completed_buyer"
             ],
 
             #Vendor transitions
