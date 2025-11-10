@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Handshake,
   Plus,
@@ -282,12 +282,12 @@ export default function Offers() {
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg font-semibold line-clamp-2">
                       {offer.property_id || offer.property?.id ? (
-                        <button
-                          onClick={() => navigate(`/properties/${offer.property_id || offer.property?.id}`)}
-                          className="text-left text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer font-semibold"
+                        <Link
+                          to={`/properties/${offer.property_id || offer.property?.id}`}
+                          className="text-left font-semibold hover:text-primary hover:underline transition-colors block"
                         >
                           {offer.property?.address || "Unknown Property"}
-                        </button>
+                        </Link>
                       ) : (
                         <span>{offer.property?.address || "Unknown Property"}</span>
                       )}
