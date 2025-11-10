@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow, Shield, Lock, Palette } from "lucide-react";
 import ThemeSelector from "@/components/shared/ThemeSelector";
+import AccentColorSelector from "@/components/shared/AccentColorSelector";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -281,14 +282,26 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <Label className="text-base font-medium">Theme</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Choose your preferred theme style
-                    </p>
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">Theme</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose your preferred theme style
+                      </p>
+                    </div>
+                    <ThemeSelector />
                   </div>
-                  <ThemeSelector />
+                  
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">Accent Color</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Customize the accent color for buttons and highlights
+                      </p>
+                    </div>
+                    <AccentColorSelector />
+                  </div>
                 </div>
               </CardContent>
             </Card>
