@@ -39,6 +39,7 @@ class Tenancy(BaseModel):
 
     # Document tracking
     tenancy_agreement_sent = Column(Boolean, default=False)  # Page 31: 3.1
+    tenancy_agreement_signed = Column(Boolean, default=False) # Page 32: 3.5
     statutory_documents_sent = Column(Boolean, default=False)  # Page 31: 3.2
     
     # Relationships

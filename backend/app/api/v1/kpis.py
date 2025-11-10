@@ -2,13 +2,17 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
+from datetime import datetime # --- ADDED ---
 
 from app.core.database import get_db
 from app.models.applicant import Applicant
 from app.models.landlord import Landlord
 from app.models.property import Property
 from app.models.vendor import Vendor
-from app.models.enums import PropertyStatus, ApplicantStatus
+from app.models.tenancy import Tenancy # --- ADDED ---
+from app.models.workflow import WorkflowTransition # --- ADDED ---
+from app.models.task import Task # --- ADDED ---
+from app.models.enums import PropertyStatus, ApplicantStatus, TaskStatus, TenancyStatus
 
 
 router = APIRouter(prefix="/kpis", tags=["kpis"])
@@ -78,6 +82,18 @@ def get_kpis(db: Session = Depends(get_db)):
     # Total vendors
     total_vendors = db.query(Vendor).count()
 
+    # --- SECTION ADDED ---
+    # Compliance KPIs (Blueprint p. 34)
+    overdue_tasks = db.query(Task).filter(
+        Task.status == TaskStatus.PENDING,
+        Task.due_date < datetime.utcnow()
+    ).count()
+    upcoming_tasks = db.query(Task).filter(
+        Task.status == TaskStatus.PENDING,
+        Task.due_date >= datetime.utcnow()
+    ).count()
+    # --- END OF SECTION ---
+
     return {
         "properties_letting": {
             "total": properties_for_let,
@@ -105,5 +121,104 @@ def get_kpis(db: Session = Depends(get_db)):
         },
         "vendors": {
             "total": total_vendors
+        },
+         # --- SECTION ADDED ---
+        "compliance": {
+            "overdue_tasks": overdue_tasks,
+            "upcoming_tasks": upcoming_tasks
         }
+        # --- END OF SECTION ---
     }
+
+# --- NEW ENDPOINT ADDED ---
+@router.get("/lettings-funnel")
+def get_lettings_funnel(db: Session = Depends(get_db)):
+    """
+    Get a KPI snapshot of the current lettings progression funnel.
+    (Blueprint pages 29-33)
+    """
+    # Define the order of the funnel
+    funnel_stages = [
+        TenancyStatus.OFFER_ACCEPTED,
+        TenancyStatus.REFERENCING,
+        TenancyStatus.DOCUMENTATION,
+        TenancyStatus.MOVE_IN_PREP,
+        TenancyStatus.ACTIVE
+    ]
+
+    # Query the count for each status
+    funnel_data = db.query(
+        Tenancy.status,
+        func.count(Tenancy.status)
+    ).filter(
+        Tenancy.status.in_(funnel_stages)
+    ).group_by(
+        Tenancy.status
+    ).all()
+    # Format the data
+    funnel_dict = {status: count for status, count in funnel_data}
+
+    # Ensure all stages are present in the response
+    response = {
+        stage.value: funnel_dict.get(stage.value, 0) for stage in funnel_stages
+    }
+
+    return response
+# --- END OF NEW ENDPOINT ---
+
+# --- NEW ENDPOINT ADDED ---
+@router.get("/lettings-performance")
+def get_lettings_performance(db: Session = Depends(get_db)):
+    """
+    Get KPIs on the performance (speed) of the lettings process.
+    """
+
+    # --- 1. Average Tenancy Progression Time ---
+    # (Time from "offer_accepted" to "active")
+
+    # Alias WorkflowTransition to join it to itself
+    t1 = aliased(WorkflowTransition)
+    t2 = aliased(WorkflowTransition)
+
+    # Calculate the average difference in seconds between the two timestamps
+    # NOTE: func.extract('epoch', ...) is for PostgreSQL.
+    # For SQLite, you might use: func.avg(func.julianday(t2.created_at) - func.julianday(t1.created_at)) * 86400
+    avg_progression_seconds_query = db.query(
+        func.avg(func.extract('epoch', t2.created_at - t1.created_at))
+    ).join(
+        t2, and_(
+            t1.entity_id == t2.entity_id,
+            t1.domain == 'tenancy',
+            t2.domain == 'tenancy'
+        )
+    ).filter(
+        t1.to_status == TenancyStatus.OFFER_ACCEPTED.value,
+        t2.to_status == TenancyStatus.ACTIVE.value
+    )
+
+    avg_progression_seconds = avg_progression_seconds_query.scalar() or 0
+    avg_progression_days = avg_progression_seconds / (60 * 60 * 24) # Convert seconds to days
+
+    # --- 2. Average Referencing Time ---
+    # (Time from "referencing" to "referenced")
+    avg_referencing_seconds_query = db.query(
+        func.avg(func.extract('epoch', t2.created_at - t1.created_at))
+    ).join(
+        t2, and_(
+            t1.entity_id == t2.entity_id,
+            t1.domain == 'tenancy',
+            t2.domain == 'tenancy'
+        )
+    ).filter(
+        t1.to_status == TenancyStatus.REFERENCING.value,
+        t2.to_status == TenancyStatus.DOCUMENTATION.value # "referenced"
+    )
+
+    avg_referencing_seconds = avg_referencing_seconds_query.scalar() or 0
+    avg_referencing_days = avg_referencing_seconds / (60 * 60 * 24)
+
+    return {
+        "avg_progression_time_days": round(avg_progression_days, 2),
+        "avg_referencing_time_days": round(avg_referencing_days, 2)
+    }
+# --- END OF NEW ENDPOINT ---

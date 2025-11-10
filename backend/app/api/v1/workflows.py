@@ -77,6 +77,16 @@ async def change_status(
                        f"Valid transitions: {valid_transitions}"
             )
         
+        # If the domain is 'tenancy', run additional blueprint checks
+        if domain_enum == Domain.TENANCY:
+            try:
+                # 'entity' is the tenancy object, transition.new_status is the string
+                # This function is defined in app/core/workflows.py
+                workflow_manager.validate_tenancy_guards(entity, transition.new_status)
+            except HTTPException as e:
+                # Re-raise the specific error from the guardrail
+                raise e
+        
         # Execute transition
         previous_status = current_status
         setattr(entity, 'status', transition.new_status)
