@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, MessageSquare, Store, ShoppingBag,
-  User, UserCircle, Building, CheckSquare, Wrench
+  User, UserCircle, Building, CheckSquare, Wrench, Handshake
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
@@ -33,6 +33,7 @@ const navigation = {
           { name: "Messages", href: "/messages", icon: MessageSquare },
           { name: "Tasks", href: "/tasks", icon: CheckSquare },
           { name: "Tickets", href: "/tickets", icon: Wrench },
+          { name: "Offers", href: "/offers", icon: Handshake },
           { name: "KPIs", href: "/kpis", icon: BarChart3 },
           { name: "Settings", href: "/settings", icon: Settings },
         ],

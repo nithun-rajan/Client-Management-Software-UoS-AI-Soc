@@ -23,6 +23,7 @@ import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
 import Tasks from "./pages/Tasks";
 import Tickets from "./pages/Tickets";
+import Offers from "./pages/Offers";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -73,6 +74,7 @@ const App = () => (
                         <Route path="/search" element={<Search />} />
                         <Route path="/tasks" element={<Tasks />} />
                         <Route path="/tickets" element={<Tickets />} />
+                        <Route path="/offers" element={<Offers />} />
                         <Route path="/kpis" element={<KPIsDashboard />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />

@@ -1,172 +1,122 @@
-import { useState } from 'react';
-import api from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { Offer } from "@/types";
+import { toast } from "sonner";
 
-export interface Offer {
-  id: string;
-  property_id: string;
-  applicant_id: string;
-  offered_rent: number;
-  proposed_start_date?: string;
-  proposed_term_months?: number;
-  status: string;
-  counter_offer_rent?: number;
-  negotiation_notes?: string;
-  special_conditions?: string;
-  applicant_notes?: string;
-  agent_notes?: string;
-  holding_deposit_paid: boolean;
-  holding_deposit_amount?: number;
-  submitted_at: string;
-  responded_at?: string;
-  accepted_at?: string;
-  property?: {
-    id: string;
-    address: string;
-    rent: number;
-    bedrooms: number;
-  };
-  applicant?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
+export function useOffers(filters?: { property_id?: string; applicant_id?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["offers", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.property_id) params.append("property_id", filters.property_id);
+      if (filters?.applicant_id) params.append("applicant_id", filters.applicant_id);
+      if (filters?.status) params.append("status", filters.status);
+      
+      const { data } = await api.get(`/api/v1/offers/?${params.toString()}`);
+      // API returns {offers: [...], total: ...}
+      return (data.offers || data) as Offer[];
+    },
+  });
 }
 
-export const useOffers = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useOffer(id: string) {
+  return useQuery({
+    queryKey: ["offers", id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/offers/${id}`);
+      return data as Offer;
+    },
+    enabled: !!id,
+  });
+}
 
-  const createOffer = async (offerData: {
-    property_id: string;
-    applicant_id: string;
-    offered_rent: number;
-    proposed_start_date?: string;
-    proposed_term_months?: number;
-    special_conditions?: string;
-    applicant_notes?: string;
-  }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.post('/offers/', offerData);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+export function useCreateOffer() {
+  const queryClient = useQueryClient();
 
-  const listOffers = async (filters?: {
-    property_id?: string;
-    applicant_id?: string;
-    status?: string;
-    limit?: number;
-  }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get('/offers/', { params: filters });
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch offers');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  return useMutation({
+    mutationFn: async (offerData: Partial<Offer>) => {
+      const { data } = await api.post("/api/v1/offers/", offerData);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to create offer");
+    },
+  });
+}
 
-  const getOffer = async (offerId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/offers/${offerId}`);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+export function useUpdateOffer() {
+  const queryClient = useQueryClient();
 
-  const updateOffer = async (offerId: string, updates: {
-    status?: string;
-    counter_offer_rent?: number;
-    negotiation_notes?: string;
-    agent_notes?: string;
-    holding_deposit_paid?: boolean;
-    holding_deposit_amount?: number;
-  }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.put(`/offers/${offerId}`, updates);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  return useMutation({
+    mutationFn: async ({ id, ...offerData }: Partial<Offer> & { id: string }) => {
+      const { data } = await api.put(`/api/v1/offers/${id}`, offerData);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to update offer");
+    },
+  });
+}
 
-  const acceptOffer = async (offerId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/offers/${offerId}/accept`);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to accept offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+export function useAcceptOffer() {
+  const queryClient = useQueryClient();
 
-  const rejectOffer = async (offerId: string, reason?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.post(`/offers/${offerId}/reject`, null, {
-        params: { reason }
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/api/v1/offers/${id}/accept`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer accepted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to accept offer");
+    },
+  });
+}
+
+export function useRejectOffer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { data } = await api.post(`/api/v1/offers/${id}/reject`, null, {
+        params: { reason },
       });
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to reject offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer rejected successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to reject offer");
+    },
+  });
+}
 
-  const withdrawOffer = async (offerId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.delete(`/offers/${offerId}`);
-      return response.data;
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to withdraw offer');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+export function useDeleteOffer() {
+  const queryClient = useQueryClient();
 
-  return {
-    createOffer,
-    listOffers,
-    getOffer,
-    updateOffer,
-    acceptOffer,
-    rejectOffer,
-    withdrawOffer,
-    loading,
-    error
-  };
-};
-
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/v1/offers/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success("Offer withdrawn successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || "Failed to withdraw offer");
+    },
+  });
+}
