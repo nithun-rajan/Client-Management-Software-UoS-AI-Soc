@@ -48,6 +48,7 @@ import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
 import { Badge } from "@/components/ui/badge";
+import NotesSection from "@/components/shared/NotesSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -329,53 +330,65 @@ export default function PropertyDetails() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Details</CardTitle>
-                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Details
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {property.landlord && (
-                      <div className="flex justify-between items-center pb-3 border-b">
-                        <span className="text-muted-foreground">Landlord</span>
-                        <Link 
-                          to={`/landlords/${property.landlord.id}`}
-                          className="font-medium text-primary hover:underline flex items-center gap-1"
-                        >
-                          {property.landlord.full_name}
-                          <Eye className="h-3 w-3" />
-                        </Link>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Property Type</span>
-                      <span className="font-medium capitalize">
-                        {property.property_type}
-                      </span>
+              <div className="flex flex-col gap-6">
+                <Card className="flex-shrink">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Details</CardTitle>
+                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Details
+                      </Button>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Bedrooms</span>
-                      <span className="font-medium">{property.bedrooms}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Bathrooms</span>
-                      <span className="font-medium">{property.bathrooms}</span>
-                    </div>
-                    {property.rent && (
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {property.landlord && (
+                        <div className="flex justify-between items-center pb-3 border-b">
+                          <span className="text-muted-foreground">Landlord</span>
+                          <Link 
+                            to={`/landlords/${property.landlord.id}`}
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {property.landlord.full_name}
+                            <Eye className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rent</span>
-                        <span className="font-medium">£{property.rent.toLocaleString()}/month</span>
+                        <span className="text-muted-foreground">Property Type</span>
+                        <span className="font-medium capitalize">
+                          {property.property_type}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bedrooms</span>
+                        <span className="font-medium">{property.bedrooms}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bathrooms</span>
+                        <span className="font-medium">{property.bathrooms}</span>
+                      </div>
+                      {property.rent && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Rent</span>
+                          <span className="font-medium">£{property.rent.toLocaleString()}/month</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes Section - matches remaining height to Property Information */}
+                <div className="flex-1">
+                  <NotesSection
+                    entityType="property"
+                    entityId={id || ""}
+                    initialNotes={property?.management_notes || ""}
+                    className="h-full"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Tickets Section */}

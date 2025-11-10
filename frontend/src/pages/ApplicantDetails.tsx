@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
+import NotesSection from "@/components/shared/NotesSection";
 
 export default function ApplicantDetails() {
   const { id } = useParams();
@@ -164,114 +165,120 @@ export default function ApplicantDetails() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <div className="flex items-start gap-4">
-                <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
-                  {getInitials(applicant.first_name, applicant.last_name)}
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-2xl">
-                    {applicant.first_name || ""} {applicant.last_name || ""}
-                  </CardTitle>
-                  <div className="mt-2 flex items-center gap-2">
-                    {applicant.status && <StatusBadge status={applicant.status} />}
+          <div className="md:col-span-2 space-y-6">
+            {/* Contact Info + Property Requirements Card */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
+                    {getInitials(applicant.first_name, applicant.last_name)}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-2xl">
+                      {applicant.first_name || ""} {applicant.last_name || ""}
+                    </CardTitle>
+                    <div className="mt-2 flex items-center gap-2">
+                      {applicant.status && <StatusBadge status={applicant.status} />}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">Contact Information</h3>
-                  <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Details
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {applicant.email && (
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Email</div>
-                        <div className="font-medium">{applicant.email}</div>
-                      </div>
-                    </div>
-                  )}
-                  {applicant.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Phone</div>
-                        <div className="font-medium">{applicant.phone}</div>
-                      </div>
-                    </div>
-                  )}
-                  {applicant.date_of_birth && (
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Date of Birth
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-semibold">Contact Information</h3>
+                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Details
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {applicant.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Email</div>
+                          <div className="font-medium">{applicant.email}</div>
                         </div>
+                      </div>
+                    )}
+                    {applicant.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Phone</div>
+                          <div className="font-medium">{applicant.phone}</div>
+                        </div>
+                      </div>
+                    )}
+                    {applicant.date_of_birth && (
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Date of Birth
+                          </div>
+                          <div className="font-medium">
+                            {(() => {
+                              try {
+                                return new Date(applicant.date_of_birth).toLocaleDateString();
+                              } catch {
+                                return applicant.date_of_birth;
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 font-semibold">Property Requirements</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {applicant.desired_bedrooms && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Bedrooms</div>
+                        <div className="font-medium">{applicant.desired_bedrooms}</div>
+                      </div>
+                    )}
+                    {applicant.desired_property_type && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Property Type</div>
+                        <div className="font-medium capitalize">
+                          {applicant.desired_property_type}
+                        </div>
+                      </div>
+                    )}
+                    {applicant.move_in_date && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Move-in Date</div>
                         <div className="font-medium">
                           {(() => {
                             try {
-                              return new Date(applicant.date_of_birth).toLocaleDateString();
+                              return new Date(applicant.move_in_date).toLocaleDateString();
                             } catch {
-                              return applicant.date_of_birth;
+                              return applicant.move_in_date;
                             }
                           })()}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    {applicant.preferred_locations && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">
+                          Preferred Locations
+                        </div>
+                        <div className="font-medium">{applicant.preferred_locations}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div>
-                <h3 className="mb-3 font-semibold">Property Requirements</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {applicant.desired_bedrooms && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Bedrooms</div>
-                      <div className="font-medium">{applicant.desired_bedrooms}</div>
-                    </div>
-                  )}
-                  {applicant.desired_property_type && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Property Type</div>
-                      <div className="font-medium capitalize">
-                        {applicant.desired_property_type}
-                      </div>
-                    </div>
-                  )}
-                  {applicant.move_in_date && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Move-in Date</div>
-                      <div className="font-medium">
-                        {(() => {
-                          try {
-                            return new Date(applicant.move_in_date).toLocaleDateString();
-                          } catch {
-                            return applicant.move_in_date;
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  {applicant.preferred_locations && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">
-                        Preferred Locations
-                      </div>
-                      <div className="font-medium">{applicant.preferred_locations}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
+            {/* Tasks, Tickets, Offers Card */}
+            <div className="space-y-6">
               {/* Assigned Tasks Section */}
               <Card>
                 <CardHeader>
@@ -415,58 +422,36 @@ export default function ApplicantDetails() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          </div>
 
-              {(applicant.has_pets || applicant.special_requirements) && (
-                <div>
-                  <h3 className="mb-3 font-semibold">Additional Information</h3>
-                  <div className="space-y-2">
-                    {applicant.has_pets && (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Has Pets</Badge>
-                        {applicant.pet_details && (
-                          <span className="text-sm text-muted-foreground">
-                            {applicant.pet_details}
-                          </span>
-                        )}
+          <div className="space-y-6 flex flex-col h-full">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Budget</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {applicant.rent_budget_min && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Minimum</span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <PoundSterling className="h-4 w-4" />
+                        {applicant.rent_budget_min.toLocaleString()}
                       </div>
-                    )}
-                    {applicant.special_requirements && (
-                      <p className="text-muted-foreground">
-                        {applicant.special_requirements}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Budget</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {applicant.rent_budget_min && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Minimum</span>
-                    <div className="flex items-center gap-1 font-medium">
-                      <PoundSterling className="h-4 w-4" />
-                      {applicant.rent_budget_min.toLocaleString()}
                     </div>
-                  </div>
-                )}
-                {applicant.rent_budget_max && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Maximum</span>
-                    <div className="flex items-center gap-1 font-medium">
-                      <PoundSterling className="h-4 w-4" />
-                      {applicant.rent_budget_max.toLocaleString()}
+                  )}
+                  {applicant.rent_budget_max && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Maximum</span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <PoundSterling className="h-4 w-4" />
+                        {applicant.rent_budget_max.toLocaleString()}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
 
             {/* Registration Questions for Buyers */}
             {isBuyer && (
@@ -609,6 +594,17 @@ export default function ApplicantDetails() {
                 </div>
               </CardContent>
             </Card>
+            </div>
+
+            {/* Notes Section - matches height of Budget + Matched Properties */}
+            <div className="flex-1">
+              <NotesSection
+                entityType="applicant"
+                entityId={id || ""}
+                initialNotes={applicant?.notes || ""}
+                className="h-full"
+              />
+            </div>
           </div>
         </div>
       </div>

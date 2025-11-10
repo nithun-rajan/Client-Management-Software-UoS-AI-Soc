@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NotesSection from "@/components/shared/NotesSection";
 
 export default function LandlordDetails() {
   const { id } = useParams();
@@ -215,100 +216,106 @@ export default function LandlordDetails() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Contact Information</CardTitle>
-                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Details
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Email</div>
-                        <div className="font-medium">{landlord.email}</div>
-                      </div>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Contact Information</CardTitle>
+                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Details
+                      </Button>
                     </div>
-                    {landlord.phone && (
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <Mail className="h-5 w-5 text-muted-foreground" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Phone</div>
-                          <div className="font-medium">{landlord.phone}</div>
+                          <div className="text-sm text-muted-foreground">Email</div>
+                          <div className="font-medium">{landlord.email}</div>
+                        </div>
+                      </div>
+                      {landlord.phone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Phone</div>
+                            <div className="font-medium">{landlord.phone}</div>
+                          </div>
+                        </div>
+                      )}
+                      {landlord.address && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Address</div>
+                            <div className="font-medium">{landlord.address}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {landlord.aml_verification_date && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Verified On</span>
+                          <span className="font-medium">
+                            {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {(landlord.bank_account_name ||
+                      landlord.sort_code ||
+                      landlord.account_number) && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h3 className="mb-3 font-semibold">Banking Details</h3>
+                        <div className="space-y-3">
+                          {landlord.bank_account_name && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Account Name</span>
+                              <span className="font-medium">{landlord.bank_account_name}</span>
+                            </div>
+                          )}
+                          {landlord.sort_code && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Sort Code</span>
+                              <span className="font-medium">{landlord.sort_code}</span>
+                            </div>
+                          )}
+                          {landlord.account_number && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Account Number</span>
+                              <span className="font-medium">
+                                ****{landlord.account_number.slice(-4)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
-                    {landlord.address && (
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="text-sm text-muted-foreground">Address</div>
-                          <div className="font-medium">{landlord.address}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {landlord.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <h3 className="mb-2 font-semibold">Notes</h3>
-                      <p className="text-muted-foreground">{landlord.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {landlord.aml_verification_date && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Verified On</span>
-                        <span className="font-medium">
-                          {new Date(landlord.aml_verification_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {(landlord.bank_account_name ||
-                    landlord.sort_code ||
-                    landlord.account_number) && (
-                    <div className="mt-4 pt-4 border-t">
-                      <h3 className="mb-3 font-semibold">Banking Details</h3>
-                      <div className="space-y-3">
-                        {landlord.bank_account_name && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Account Name</span>
-                            <span className="font-medium">{landlord.bank_account_name}</span>
-                          </div>
-                        )}
-                        {landlord.sort_code && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Sort Code</span>
-                            <span className="font-medium">{landlord.sort_code}</span>
-                          </div>
-                        )}
-                        {landlord.account_number && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Account Number</span>
-                            <span className="font-medium">
-                              ****{landlord.account_number.slice(-4)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="h-full">
+                {/* Notes Section - matches height of Contact Info + Details */}
+                <NotesSection
+                  entityType="landlord"
+                  entityId={id || ""}
+                  initialNotes={landlord?.notes || ""}
+                  className="h-full"
+                />
+              </div>
             </div>
 
             {/* Assigned Tasks Section */}
