@@ -10,9 +10,13 @@ import {
   Upload,
   Search,
   X,
+  Sparkles,
+  FileText,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useState } from "react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +27,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +53,9 @@ export default function Properties() {
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [valuationPackOpen, setValuationPackOpen] = useState(false);
+  const [valuationPack, setValuationPack] = useState<any>(null);
+  const [generatingPack, setGeneratingPack] = useState(false);
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -112,6 +128,37 @@ export default function Properties() {
       title: "Request Sent",
       description: `Photo upload request sent to landlord for ${property.address_line1}`,
     });
+  };
+
+  const handleGenerateValuationPack = async (property: any) => {
+    setSelectedProperty(property);
+    setGeneratingPack(true);
+    try {
+      const response = await api.post("/api/v1/land-registry/valuation-pack", {
+        postcode: property.postcode,
+        property_type: property.property_type,
+        bedrooms: property.bedrooms,
+      });
+      setValuationPack(response.data.data);
+      setValuationPackOpen(true);
+      // Update property flag
+      await api.patch(`/api/v1/properties/${property.id}`, {
+        has_valuation_pack: true,
+      });
+      toast({
+        title: "Success",
+        description: "Valuation pack generated successfully",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.detail || "Failed to generate valuation pack",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingPack(false);
+    }
   };
 
   const handleExportCSV = () => {
@@ -214,8 +261,14 @@ export default function Properties() {
               className="group shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader className="relative">
-                <div className="absolute right-4 top-4 z-10">
+                <div className="absolute right-4 top-4 z-10 flex flex-col gap-2 items-end">
                   <StatusBadge status={property.status} />
+                  {property.has_valuation_pack && (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                      Valuation Pack
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden relative">
                   {property.main_photo_url ? (
@@ -276,10 +329,20 @@ export default function Properties() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full" asChild>
+              <CardFooter className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => handleGenerateValuationPack(property)}
+                  disabled={generatingPack}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {property.has_valuation_pack ? "View Valuation Pack" : "Generate Valuation Pack"}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1" asChild>
                   <Link to={`/properties/${property.id}`}>
-                    <Eye className="mr-2 h-4 w-4" />
+                    <Eye className="mr-1 h-4 w-4" />
                     View
                   </Link>
                 </Button>
@@ -426,6 +489,142 @@ export default function Properties() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Valuation Pack Dialog */}
+      <Dialog open={valuationPackOpen} onOpenChange={setValuationPackOpen}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Valuation Pack - {selectedProperty?.address_line1 || selectedProperty?.address}
+            </DialogTitle>
+            <DialogDescription>
+              Comprehensive property valuation and market analysis
+            </DialogDescription>
+          </DialogHeader>
+
+          {valuationPack && (
+            <div className="space-y-6">
+              {/* Recommended Valuation - Highlighted */}
+              {valuationPack.valuation_summary && (
+                <Card className="border-2 border-primary bg-primary/5">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Recommended Valuation & Price Range</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="rounded-lg bg-background p-3">
+                        <div className="text-sm text-muted-foreground">Quick Sale Range</div>
+                        <div className="text-lg font-bold text-primary">
+                          £{valuationPack.valuation_summary?.recommended_range?.min?.toLocaleString()} - 
+                          £{Math.round((valuationPack.valuation_summary?.recommended_range?.min || 0) * 1.05).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-primary/10 p-3 border-2 border-primary">
+                        <div className="text-sm text-muted-foreground">Recommended Guide Price</div>
+                        <div className="text-xl font-bold text-primary">
+                          £{Math.round(((valuationPack.valuation_summary?.recommended_range?.min || 0) + (valuationPack.valuation_summary?.recommended_range?.max || 0)) / 2).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-background p-3">
+                        <div className="text-sm text-muted-foreground">Aspirational Range</div>
+                        <div className="text-lg font-bold text-primary">
+                          £{valuationPack.valuation_summary?.recommended_range?.max?.toLocaleString()}+
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <strong>Average Price:</strong> £{valuationPack.valuation_summary.average_price?.toLocaleString()} | 
+                      <strong> Median:</strong> £{valuationPack.valuation_summary.median_price?.toLocaleString()}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Market Trend */}
+              {valuationPack.market_trend && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Market Trend</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2">
+                      {valuationPack.market_trend.percentage_change > 0 ? (
+                        <AlertCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      <span>
+                        {valuationPack.market_trend.percentage_change > 0 ? "Increasing" : "Decreasing"} by{" "}
+                        {Math.abs(valuationPack.market_trend.percentage_change).toFixed(1)}% over{" "}
+                        {valuationPack.market_trend.period}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Comparables */}
+              {valuationPack.comparables && valuationPack.comparables.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Comparative Sales</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {valuationPack.comparables.slice(0, 10).map((comp: any, idx: number) => (
+                        <div key={idx} className="flex justify-between border-b pb-2">
+                          <div>
+                            <div className="font-medium">{comp.address || `${comp.street}, ${comp.town}`}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {comp.property_type} | Sold {comp.date || comp.sold_date}
+                            </div>
+                          </div>
+                          <div className="font-bold">£{comp.price?.toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Area Statistics */}
+              {valuationPack.area_statistics && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Area Statistics</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm text-muted-foreground">Total Sales</div>
+                        <div className="text-lg font-semibold">
+                          {valuationPack.area_statistics.total_sales || "N/A"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-muted-foreground">Average Price</div>
+                        <div className="text-lg font-semibold">
+                          £{valuationPack.area_statistics.average_price?.toLocaleString() || "N/A"}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {generatingPack && !valuationPack && (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="mb-2">Generating valuation pack...</div>
+                <p className="text-sm text-muted-foreground">This may take a few moments</p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

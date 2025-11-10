@@ -56,6 +56,8 @@ export interface Landlord {
   sort_code?: string;
   account_number?: string;
   notes?: string;
+  last_contacted_at?: string;
+  landlord_complete_info?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -86,6 +88,7 @@ export interface Vendor {
   conveyancer_contact?: string;
   instructed_property_id?: string;
   vendor_complete_info?: boolean;
+  last_contacted_at?: string;
   // Optional fields that may not be in model yet
   id_document_type?: string;
   proof_of_address_type?: string;
@@ -125,6 +128,8 @@ export interface Applicant {
   willing_to_rent?: boolean;
   willing_to_buy?: boolean;
   buyer_questions_answered?: boolean;
+  tenant_questions_answered?: boolean;
+  last_contacted_at?: string;
   created_at: string;
   updated_at?: string;
 }

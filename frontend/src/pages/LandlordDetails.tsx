@@ -14,6 +14,10 @@ import {
   Pencil,
   Trash2,
   CheckSquare,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Edit,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +49,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NotesSection from "@/components/shared/NotesSection";
 
 export default function LandlordDetails() {
   const { id } = useParams();
@@ -52,6 +57,8 @@ export default function LandlordDetails() {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
+  const [lastContactedDate, setLastContactedDate] = useState<string>("");
 
   const { data: landlord, isLoading, refetch } = useQuery({
     queryKey: ["landlord", id],
@@ -106,13 +113,58 @@ export default function LandlordDetails() {
       });
     }
   };
-  const handleSendEmail = () => {
-    console.log("📧 Sending email for property:", landlord.id);
+  const updateLastContacted = async () => {
+    if (!id) return;
+    try {
+      await api.put(`/api/v1/landlords/${id}/`, {
+        last_contacted_at: new Date().toISOString(),
+      });
+      refetch();
+    } catch (error) {
+      console.error("Failed to update last contacted:", error);
+    }
+  };
+
+  const handleEditLastContacted = async () => {
+    if (!id || !lastContactedDate) return;
+    try {
+      const date = new Date(lastContactedDate);
+      await api.put(`/api/v1/landlords/${id}/`, {
+        last_contacted_at: date.toISOString(),
+      });
+      toast({ title: "Success", description: "Last contacted date updated successfully" });
+      setEditLastContactedDialogOpen(false);
+      setLastContactedDate("");
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update last contacted date",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendEmail = async () => {
+    await updateLastContacted();
     toast({
       title: "Email Sent",
-      description: `Property details sent to interested parties`,
+      description: `Email sent to ${landlord?.email || "landlord"}`,
     });
   };
+
+  // Calculate days since last contacted
+  const getDaysSinceLastContacted = () => {
+    if (!landlord?.last_contacted_at) return null;
+    const lastContacted = new Date(landlord.last_contacted_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const daysSinceLastContacted = getDaysSinceLastContacted();
+  const [expandedInfo, setExpandedInfo] = useState(false);
   if (isLoading) {
     return (
       <div>
@@ -215,100 +267,252 @@ export default function LandlordDetails() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Contact Information</CardTitle>
-                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Details
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Email</div>
-                        <div className="font-medium">{landlord.email}</div>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Contact Information</CardTitle>
+                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Details
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Email</div>
+                          <div className="font-medium">{landlord.email}</div>
+                        </div>
+                      </div>
+                      {landlord.phone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Phone</div>
+                            <div className="font-medium">{landlord.phone}</div>
+                          </div>
+                        </div>
+                      )}
+                      {landlord.address && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Address</div>
+                            <div className="font-medium">{landlord.address}</div>
+                          </div>
+                        </div>
+                      )}
+                      {/* Last Contacted */}
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">Last Contacted</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                if (landlord.last_contacted_at) {
+                                  const date = new Date(landlord.last_contacted_at);
+                                  setLastContactedDate(date.toISOString().split('T')[0]);
+                                }
+                                setEditLastContactedDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {landlord.last_contacted_at ? (
+                              <>
+                                <div className="font-medium">
+                                  {new Date(landlord.last_contacted_at).toLocaleDateString()}
+                                </div>
+                                {daysSinceLastContacted !== null && (
+                                  <div className="text-sm">
+                                    (<span style={{ color: `hsl(var(--accent))`, fontWeight: 600 }}>
+                                      {daysSinceLastContacted}
+                                    </span>{" "}
+                                    {daysSinceLastContacted === 1 ? "day" : "days"} ago)
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-sm text-muted-foreground">Never contacted</div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    {landlord.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="text-sm text-muted-foreground">Phone</div>
-                          <div className="font-medium">{landlord.phone}</div>
+                  </CardContent>
+                </Card>
+
+                {/* Complete Landlord Information Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Complete Landlord Information</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedInfo(!expandedInfo)}
+                      >
+                        {expandedInfo ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Expand
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {expandedInfo && (
+                    <CardContent className="space-y-6">
+                      {/* Check if all data is filled */}
+                      {(() => {
+                        const hasAllData = landlord.bank_account_name && landlord.sort_code && 
+                          landlord.account_number && landlord.aml_verified;
+                        
+                        return !hasAllData && (
+                          <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 p-4 text-center">
+                            <AlertCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground">
+                              Some landlord information is missing
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                await updateLastContacted();
+                                toast({
+                                  title: "Request Sent",
+                                  description: "A request has been sent to the landlord to complete their profile information",
+                                });
+                              }}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Request Landlord to Complete Profile
+                            </Button>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Banking & Compliance Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-semibold">
+                          <FileText className="h-5 w-5 text-primary" />
+                          Banking & Compliance
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <div className="text-sm text-muted-foreground">Bank Account Name</div>
+                            <div className="font-medium">
+                              {landlord.bank_account_name || "Not provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Sort Code</div>
+                            <div className="font-medium">
+                              {landlord.sort_code || "Not provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Account Number</div>
+                            <div className="font-medium">
+                              {landlord.account_number || "Not provided"}
+                            </div>
+                          </div>
+                          {landlord.aml_verification_date && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">AML Verification Date</div>
+                              <div className="font-medium">
+                                {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm text-muted-foreground">AML Status</div>
+                            <div className="font-medium">
+                              {landlord.aml_verified ? (
+                                <Badge className="bg-green-500">Verified</Badge>
+                              ) : (
+                                <Badge variant="outline">Pending</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {landlord.aml_verification_date && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Verified On</span>
+                          <span className="font-medium">
+                            {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {(landlord.bank_account_name ||
+                      landlord.sort_code ||
+                      landlord.account_number) && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h3 className="mb-3 font-semibold">Banking Details</h3>
+                        <div className="space-y-3">
+                          {landlord.bank_account_name && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Account Name</span>
+                              <span className="font-medium">{landlord.bank_account_name}</span>
+                            </div>
+                          )}
+                          {landlord.sort_code && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Sort Code</span>
+                              <span className="font-medium">{landlord.sort_code}</span>
+                            </div>
+                          )}
+                          {landlord.account_number && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Account Number</span>
+                              <span className="font-medium">
+                                ****{landlord.account_number.slice(-4)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
-                    {landlord.address && (
-                      <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <div className="text-sm text-muted-foreground">Address</div>
-                          <div className="font-medium">{landlord.address}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {landlord.notes && (
-                    <div className="mt-4 pt-4 border-t">
-                      <h3 className="mb-2 font-semibold">Notes</h3>
-                      <p className="text-muted-foreground">{landlord.notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {landlord.aml_verification_date && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Verified On</span>
-                        <span className="font-medium">
-                          {new Date(landlord.aml_verification_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {(landlord.bank_account_name ||
-                    landlord.sort_code ||
-                    landlord.account_number) && (
-                    <div className="mt-4 pt-4 border-t">
-                      <h3 className="mb-3 font-semibold">Banking Details</h3>
-                      <div className="space-y-3">
-                        {landlord.bank_account_name && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Account Name</span>
-                            <span className="font-medium">{landlord.bank_account_name}</span>
-                          </div>
-                        )}
-                        {landlord.sort_code && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Sort Code</span>
-                            <span className="font-medium">{landlord.sort_code}</span>
-                          </div>
-                        )}
-                        {landlord.account_number && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Account Number</span>
-                            <span className="font-medium">
-                              ****{landlord.account_number.slice(-4)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <div className="h-full">
+                {/* Notes Section - matches height of Contact Info + Details */}
+                <NotesSection
+                  entityType="landlord"
+                  entityId={id || ""}
+                  initialNotes={landlord?.notes || ""}
+                  className="h-full"
+                />
+              </div>
             </div>
 
             {/* Assigned Tasks Section */}
@@ -505,6 +709,34 @@ export default function LandlordDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Last Contacted Dialog */}
+      <Dialog open={editLastContactedDialogOpen} onOpenChange={setEditLastContactedDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Last Contacted Date</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="last_contacted_date">Last Contacted Date</Label>
+              <Input
+                id="last_contacted_date"
+                type="date"
+                value={lastContactedDate}
+                onChange={(e) => setLastContactedDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditLastContactedDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleEditLastContacted}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

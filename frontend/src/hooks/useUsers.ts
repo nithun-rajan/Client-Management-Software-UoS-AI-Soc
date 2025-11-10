@@ -10,12 +10,13 @@ export interface User {
   is_active: boolean;
 }
 
-export function useUsers() {
+export function useUsers(role?: string) {
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", role],
     queryFn: async () => {
       try {
-        const { data } = await api.get("/api/v1/auth/users");
+        const params = role ? `?role=${role}` : "";
+        const { data } = await api.get(`/api/v1/auth/users${params}`);
         return (data || []) as User[];
       } catch (error) {
         console.error("Error fetching users:", error);

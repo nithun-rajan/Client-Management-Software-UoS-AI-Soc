@@ -8,14 +8,8 @@ import {
   Eye,
   MapPin,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
   CheckCircle,
   AlertCircle,
-  Calendar,
-  Home,
-  CreditCard,
-  Building,
   Search,
   X,
 } from "lucide-react";
@@ -44,34 +38,14 @@ import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Buyers() {
   const { data: applicants, isLoading } = useApplicants();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
-  const [expandedBuyers, setExpandedBuyers] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
 
   const matchingMutation = usePropertyMatching(5, 50);
-
-  const toggleBuyerExpanded = (buyerId: string) => {
-    const newExpanded = new Set(expandedBuyers);
-    if (newExpanded.has(buyerId)) {
-      newExpanded.delete(buyerId);
-    } else {
-      newExpanded.add(buyerId);
-    }
-    setExpandedBuyers(newExpanded);
-  };
-
-  const handleSendQuestionsEmail = (buyer: any) => {
-    toast({
-      title: "Email Sent",
-      description: `Buyer registration questions have been sent to ${buyer.email}`,
-    });
-  };
 
   const handleFindMatches = async (buyerId: string) => {
     setSelectedBuyerId(buyerId);
@@ -211,111 +185,6 @@ export default function Buyers() {
                     <span className="truncate">{buyer.preferred_locations}</span>
                   </div>
                 )}
-
-                {/* Buyer Questions Section */}
-                <div className="pt-2 border-t">
-                  {!buyer.buyer_questions_answered ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Registration Questions</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSendQuestionsEmail(buyer)}
-                        >
-                          <Mail className="mr-2 h-3 w-3" />
-                          Send Questions
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Buyer has not yet answered registration questions
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-between"
-                        onClick={() => toggleBuyerExpanded(buyer.id)}
-                      >
-                        <span className="text-sm font-medium">Registration Questions</span>
-                        {expandedBuyers.has(buyer.id) ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                      {expandedBuyers.has(buyer.id) && (
-                        <div className="space-y-3 rounded-lg bg-muted/50 p-3 text-sm">
-                          <div className="grid gap-2">
-                            <div className="flex items-start gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Ideal Timeframe</div>
-                                <div className="text-muted-foreground">
-                                  {buyer.move_in_date 
-                                    ? new Date(buyer.move_in_date).toLocaleDateString()
-                                    : "Not specified"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <PoundSterling className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Budget Range</div>
-                                <div className="text-muted-foreground">
-                                  {buyer.rent_budget_min && buyer.rent_budget_max
-                                    ? `£${buyer.rent_budget_min.toLocaleString()} - £${buyer.rent_budget_max.toLocaleString()}`
-                                    : "Not specified"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Home className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Property to Sell</div>
-                                <div className="text-muted-foreground">
-                                  {buyer.has_property_to_sell ? "Yes" : "No"}
-                                  {buyer.has_property_to_sell && buyer.is_chain_free && " (Chain-free)"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <CreditCard className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Mortgage Status</div>
-                                <div className="text-muted-foreground capitalize">
-                                  {buyer.mortgage_status?.replace("_", " ") || "Not specified"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-start gap-2">
-                              <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Buyer Type</div>
-                                <div className="text-muted-foreground capitalize">
-                                  {buyer.buyer_type?.replace("_", " ") || "Not specified"}
-                                </div>
-                              </div>
-                            </div>
-                            {buyer.special_requirements && (
-                              <div className="flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Special Requirements</div>
-                                  <div className="text-muted-foreground">
-                                    {buyer.special_requirements}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <Button
@@ -423,10 +292,10 @@ export default function Buyers() {
                           </CardDescription>
                         </div>
                         <div className="text-right">
-                          {match.property.asking_price ? (
+                          {(match.property as any).asking_price ? (
                             <>
                               <div className="text-2xl font-bold text-primary">
-                                £{match.property.asking_price.toLocaleString()}
+                                £{((match.property as any).asking_price as number).toLocaleString()}
                               </div>
                             </>
                           ) : (

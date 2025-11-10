@@ -8,14 +8,15 @@ import {
   Calendar,
   ArrowLeft,
   Home,
-  ChevronDown,
-  ChevronUp,
   CreditCard,
   Building,
   AlertCircle,
   CheckSquare,
   Wrench,
   Handshake,
+  Pencil,
+  Trash2,
+  Edit,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,13 +30,37 @@ import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
+import NotesSection from "@/components/shared/NotesSection";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
+  const [lastContactedDate, setLastContactedDate] = useState<string>("");
 
-  const { data: applicant, isLoading, error } = useQuery({
+  const { data: applicant, isLoading, error, refetch } = useQuery({
     queryKey: ["applicant", id],
     queryFn: async () => {
       if (!id) {
@@ -46,7 +71,6 @@ export default function ApplicantDetails() {
     },
     enabled: !!id, // Only run query if id exists
   });
-  const [expandedQuestions, setExpandedQuestions] = useState(false);
 
   // Get all tasks to filter by assigned_to
   const { data: allTasks } = useTasks();
@@ -78,12 +102,6 @@ export default function ApplicantDetails() {
     (offer) => offer.applicant_id === applicant?.id
   ) || [];
 
-  const handleSendEmail = () => {
-    toast({
-      title: "Email Sent",
-      description: `Property details sent to interested parties`,
-    });
-  };
 
   if (isLoading) {
     return (
@@ -139,15 +157,102 @@ export default function ApplicantDetails() {
   const backPath = isBuyer ? "/buyers" : "/applicants";
   const backLabel = isBuyer ? "Back to Buyers" : "Back to Tenants";
 
-  const handleSendQuestionsEmail = () => {
+  const updateLastContacted = async () => {
+    if (!id) return;
+    try {
+      await api.put(`/api/v1/applicants/${id}`, {
+        last_contacted_at: new Date().toISOString(),
+      });
+      refetch?.();
+    } catch (error) {
+      console.error("Failed to update last contacted:", error);
+    }
+  };
+
+  const handleSendQuestionsEmail = async () => {
+    await updateLastContacted();
     toast({
       title: "Email Sent",
-      description: `Buyer registration questions have been sent to ${applicant?.email || "the buyer"}`,
+      description: `${isBuyer ? "Buyer" : "Tenant"} registration questions have been sent to ${applicant?.email || "the applicant"}`,
     });
   };
 
-  const toggleQuestionsExpanded = () => {
-    setExpandedQuestions(!expandedQuestions);
+  const handleSendEmail = async () => {
+    await updateLastContacted();
+    toast({
+      title: "Email Sent",
+      description: `Property details sent to interested parties`,
+    });
+  };
+
+  // Calculate days since last contacted
+  const getDaysSinceLastContacted = () => {
+    if (!applicant?.last_contacted_at) return null;
+    const lastContacted = new Date(applicant.last_contacted_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const daysSinceLastContacted = getDaysSinceLastContacted();
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await api.delete(`/api/v1/applicants/${id}`);
+      toast({ title: "Success", description: `${isBuyer ? "Buyer" : "Tenant"} deleted successfully` });
+      navigate(backPath);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to delete ${isBuyer ? "buyer" : "tenant"}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id) return;
+    const formData = new FormData(e.currentTarget);
+    try {
+      await api.put(`/api/v1/applicants/${id}`, {
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+      });
+      toast({ title: "Success", description: `${isBuyer ? "Buyer" : "Tenant"} updated successfully` });
+      setEditDialogOpen(false);
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update ${isBuyer ? "buyer" : "tenant"}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditLastContacted = async () => {
+    if (!id || !lastContactedDate) return;
+    try {
+      const date = new Date(lastContactedDate);
+      await api.put(`/api/v1/applicants/${id}`, {
+        last_contacted_at: date.toISOString(),
+      });
+      toast({ title: "Success", description: "Last contacted date updated successfully" });
+      setEditLastContactedDialogOpen(false);
+      setLastContactedDate("");
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update last contacted date",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -160,118 +265,393 @@ export default function ApplicantDetails() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             {backLabel}
           </Button>
-          {applicant.status && <StatusBadge status={applicant.status} />}
+          <div className="flex items-center gap-2">
+            {applicant.status && <StatusBadge status={applicant.status} />}
+            <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setDeleteDialogOpen(true)} className="text-destructive hover:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <div className="flex items-start gap-4">
-                <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
-                  {getInitials(applicant.first_name, applicant.last_name)}
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-2xl">
-                    {applicant.first_name || ""} {applicant.last_name || ""}
-                  </CardTitle>
-                  <div className="mt-2 flex items-center gap-2">
-                    {applicant.status && <StatusBadge status={applicant.status} />}
+          <div className="md:col-span-2 space-y-6">
+            {/* Contact Info + Property Requirements Card */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
+                    {getInitials(applicant.first_name, applicant.last_name)}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-2xl">
+                      {applicant.first_name || ""} {applicant.last_name || ""}
+                    </CardTitle>
+                    <div className="mt-2 flex items-center gap-2">
+                      {applicant.status && <StatusBadge status={applicant.status} />}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">Contact Information</h3>
-                  <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Details
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {applicant.email && (
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Email</div>
-                        <div className="font-medium">{applicant.email}</div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="font-semibold">Contact Information</h3>
+                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Details
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {applicant.email && (
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Email</div>
+                          <div className="font-medium">{applicant.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {applicant.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Phone</div>
-                        <div className="font-medium">{applicant.phone}</div>
+                    )}
+                    {applicant.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Phone</div>
+                          <div className="font-medium">{applicant.phone}</div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {applicant.date_of_birth && (
+                    )}
+                    {applicant.date_of_birth && (
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">
+                            Date of Birth
+                          </div>
+                          <div className="font-medium">
+                            {(() => {
+                              try {
+                                return new Date(applicant.date_of_birth).toLocaleDateString();
+                              } catch {
+                                return applicant.date_of_birth;
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Last Contacted */}
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">
-                          Date of Birth
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">Last Contacted</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              if (applicant.last_contacted_at) {
+                                const date = new Date(applicant.last_contacted_at);
+                                setLastContactedDate(date.toISOString().split('T')[0]);
+                              }
+                              setEditLastContactedDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
                         </div>
+                        <div className="flex items-center gap-2">
+                          {applicant.last_contacted_at ? (
+                            <>
+                              <div className="font-medium">
+                                {new Date(applicant.last_contacted_at).toLocaleDateString()}
+                              </div>
+                              {daysSinceLastContacted !== null && (
+                                <div className="text-sm">
+                                  (<span style={{ color: `hsl(var(--accent))`, fontWeight: 600 }}>
+                                    {daysSinceLastContacted}
+                                  </span>{" "}
+                                  {daysSinceLastContacted === 1 ? "day" : "days"} ago)
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Never contacted</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 font-semibold">Property Requirements</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {applicant.desired_bedrooms && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Bedrooms</div>
+                        <div className="font-medium">{applicant.desired_bedrooms}</div>
+                      </div>
+                    )}
+                    {applicant.desired_property_type && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Property Type</div>
+                        <div className="font-medium capitalize">
+                          {applicant.desired_property_type}
+                        </div>
+                      </div>
+                    )}
+                    {applicant.move_in_date && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">Move-in Date</div>
                         <div className="font-medium">
                           {(() => {
                             try {
-                              return new Date(applicant.date_of_birth).toLocaleDateString();
+                              return new Date(applicant.move_in_date).toLocaleDateString();
                             } catch {
-                              return applicant.date_of_birth;
+                              return applicant.move_in_date;
                             }
                           })()}
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    {applicant.preferred_locations && (
+                      <div className="rounded-lg bg-muted p-3">
+                        <div className="text-sm text-muted-foreground">
+                          Preferred Locations
+                        </div>
+                        <div className="font-medium">{applicant.preferred_locations}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="mb-3 font-semibold">Property Requirements</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {applicant.desired_bedrooms && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Bedrooms</div>
-                      <div className="font-medium">{applicant.desired_bedrooms}</div>
+                {/* Registration Questions for Buyers */}
+                {isBuyer && (
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold">Registration Questions</h3>
+                      {!applicant.buyer_questions_answered && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSendQuestionsEmail}
+                        >
+                          <Mail className="mr-2 h-3 w-3" />
+                          Send Questions
+                        </Button>
+                      )}
                     </div>
-                  )}
-                  {applicant.desired_property_type && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Property Type</div>
-                      <div className="font-medium capitalize">
-                        {applicant.desired_property_type}
+                    {!applicant.buyer_questions_answered ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Buyer has not yet answered registration questions
+                        </p>
                       </div>
-                    </div>
-                  )}
-                  {applicant.move_in_date && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">Move-in Date</div>
-                      <div className="font-medium">
-                        {(() => {
-                          try {
-                            return new Date(applicant.move_in_date).toLocaleDateString();
-                          } catch {
-                            return applicant.move_in_date;
-                          }
-                        })()}
+                    ) : (
+                      <div className="space-y-3 rounded-lg bg-muted/50 p-3 text-sm">
+                        <div className="grid gap-2">
+                          {applicant.move_in_date && (
+                            <div className="flex items-start gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Ideal Timeframe</div>
+                                <div className="text-muted-foreground">
+                                  {(() => {
+                                    try {
+                                      return new Date(applicant.move_in_date).toLocaleDateString();
+                                    } catch {
+                                      return applicant.move_in_date;
+                                    }
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {(applicant.rent_budget_min || applicant.rent_budget_max) && (
+                            <div className="flex items-start gap-2">
+                              <PoundSterling className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Budget Range</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.rent_budget_min && applicant.rent_budget_max
+                                    ? `£${applicant.rent_budget_min.toLocaleString()} - £${applicant.rent_budget_max.toLocaleString()}`
+                                    : applicant.rent_budget_min
+                                    ? `From £${applicant.rent_budget_min.toLocaleString()}`
+                                    : applicant.rent_budget_max
+                                    ? `Up to £${applicant.rent_budget_max.toLocaleString()}`
+                                    : "Not specified"}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex items-start gap-2">
+                            <Home className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <div className="font-medium">Property to Sell</div>
+                              <div className="text-muted-foreground">
+                                {applicant.has_property_to_sell ? "Yes" : "No"}
+                                {applicant.has_property_to_sell && applicant.is_chain_free && " (Chain-free)"}
+                              </div>
+                            </div>
+                          </div>
+                          {applicant.mortgage_status && (
+                            <div className="flex items-start gap-2">
+                              <CreditCard className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Mortgage Status</div>
+                                <div className="text-muted-foreground capitalize">
+                                  {applicant.mortgage_status.replace(/_/g, " ")}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.buyer_type && (
+                            <div className="flex items-start gap-2">
+                              <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Buyer Type</div>
+                                <div className="text-muted-foreground capitalize">
+                                  {applicant.buyer_type.replace(/_/g, " ")}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.special_requirements && (
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Special Requirements</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.special_requirements}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {applicant.preferred_locations && (
-                    <div className="rounded-lg bg-muted p-3">
-                      <div className="text-sm text-muted-foreground">
-                        Preferred Locations
-                      </div>
-                      <div className="font-medium">{applicant.preferred_locations}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    )}
+                  </div>
+                )}
 
+                {/* Registration Questions for Tenants */}
+                {!isBuyer && (
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold">Registration Questions</h3>
+                      {!applicant.tenant_questions_answered && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSendQuestionsEmail}
+                        >
+                          <Mail className="mr-2 h-3 w-3" />
+                          Send Questions
+                        </Button>
+                      )}
+                    </div>
+                    {!applicant.tenant_questions_answered ? (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Tenant has not yet answered registration questions
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 rounded-lg bg-muted/50 p-3 text-sm">
+                        <div className="grid gap-2">
+                          {applicant.move_in_date && (
+                            <div className="flex items-start gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Ideal Move-in Date</div>
+                                <div className="text-muted-foreground">
+                                  {(() => {
+                                    try {
+                                      return new Date(applicant.move_in_date).toLocaleDateString();
+                                    } catch {
+                                      return applicant.move_in_date;
+                                    }
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {(applicant.rent_budget_min || applicant.rent_budget_max) && (
+                            <div className="flex items-start gap-2">
+                              <PoundSterling className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Budget Range</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.rent_budget_min && applicant.rent_budget_max
+                                    ? `£${applicant.rent_budget_min.toLocaleString()} - £${applicant.rent_budget_max.toLocaleString()}`
+                                    : applicant.rent_budget_min
+                                    ? `From £${applicant.rent_budget_min.toLocaleString()}`
+                                    : applicant.rent_budget_max
+                                    ? `Up to £${applicant.rent_budget_max.toLocaleString()}`
+                                    : "Not specified"}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.desired_bedrooms && (
+                            <div className="flex items-start gap-2">
+                              <Home className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Desired Bedrooms</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.desired_bedrooms}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.desired_property_type && (
+                            <div className="flex items-start gap-2">
+                              <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Property Type</div>
+                                <div className="text-muted-foreground capitalize">
+                                  {applicant.desired_property_type}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.has_pets && (
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Pets</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.has_pets ? (applicant.pet_details || "Yes") : "No"}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {applicant.special_requirements && (
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <div>
+                                <div className="font-medium">Special Requirements</div>
+                                <div className="text-muted-foreground">
+                                  {applicant.special_requirements}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tasks, Tickets, Offers Card */}
+            <div className="space-y-6">
               {/* Assigned Tasks Section */}
               <Card>
                 <CardHeader>
@@ -415,203 +795,145 @@ export default function ApplicantDetails() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          </div>
 
-              {(applicant.has_pets || applicant.special_requirements) && (
-                <div>
-                  <h3 className="mb-3 font-semibold">Additional Information</h3>
-                  <div className="space-y-2">
-                    {applicant.has_pets && (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Has Pets</Badge>
-                        {applicant.pet_details && (
-                          <span className="text-sm text-muted-foreground">
-                            {applicant.pet_details}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {applicant.special_requirements && (
-                      <p className="text-muted-foreground">
-                        {applicant.special_requirements}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Budget</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {applicant.rent_budget_min && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Minimum</span>
-                    <div className="flex items-center gap-1 font-medium">
-                      <PoundSterling className="h-4 w-4" />
-                      {applicant.rent_budget_min.toLocaleString()}
-                    </div>
-                  </div>
-                )}
-                {applicant.rent_budget_max && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Maximum</span>
-                    <div className="flex items-center gap-1 font-medium">
-                      <PoundSterling className="h-4 w-4" />
-                      {applicant.rent_budget_max.toLocaleString()}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Registration Questions for Buyers */}
-            {isBuyer && (
+          <div className="space-y-6 flex flex-col h-full">
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Registration Questions</CardTitle>
-                    {!applicant.buyer_questions_answered && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSendQuestionsEmail}
-                      >
-                        <Mail className="mr-2 h-3 w-3" />
-                        Send Questions
-                      </Button>
-                    )}
-                  </div>
+                  <CardTitle>Budget</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {!applicant.buyer_questions_answered ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        Buyer has not yet answered registration questions
-                      </p>
+                <CardContent className="space-y-3">
+                  {applicant.rent_budget_min && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Minimum</span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <PoundSterling className="h-4 w-4" />
+                        {applicant.rent_budget_min.toLocaleString()}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-between"
-                        onClick={toggleQuestionsExpanded}
-                      >
-                        <span className="text-sm font-medium">View Registration Answers</span>
-                        {expandedQuestions ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                      {expandedQuestions && (
-                        <div className="space-y-3 rounded-lg bg-muted/50 p-3 text-sm">
-                          <div className="grid gap-2">
-                            {applicant.move_in_date && (
-                              <div className="flex items-start gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Ideal Timeframe</div>
-                                  <div className="text-muted-foreground">
-                                    {(() => {
-                                      try {
-                                        return new Date(applicant.move_in_date).toLocaleDateString();
-                                      } catch {
-                                        return applicant.move_in_date;
-                                      }
-                                    })()}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {(applicant.rent_budget_min || applicant.rent_budget_max) && (
-                              <div className="flex items-start gap-2">
-                                <PoundSterling className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Budget Range</div>
-                                  <div className="text-muted-foreground">
-                                    {applicant.rent_budget_min && applicant.rent_budget_max
-                                      ? `£${applicant.rent_budget_min.toLocaleString()} - £${applicant.rent_budget_max.toLocaleString()}`
-                                      : applicant.rent_budget_min
-                                      ? `From £${applicant.rent_budget_min.toLocaleString()}`
-                                      : applicant.rent_budget_max
-                                      ? `Up to £${applicant.rent_budget_max.toLocaleString()}`
-                                      : "Not specified"}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex items-start gap-2">
-                              <Home className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <div>
-                                <div className="font-medium">Property to Sell</div>
-                                <div className="text-muted-foreground">
-                                  {applicant.has_property_to_sell ? "Yes" : "No"}
-                                  {applicant.has_property_to_sell && applicant.is_chain_free && " (Chain-free)"}
-                                </div>
-                              </div>
-                            </div>
-                            {applicant.mortgage_status && (
-                              <div className="flex items-start gap-2">
-                                <CreditCard className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Mortgage Status</div>
-                                  <div className="text-muted-foreground capitalize">
-                                    {applicant.mortgage_status.replace(/_/g, " ")}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {applicant.buyer_type && (
-                              <div className="flex items-start gap-2">
-                                <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Buyer Type</div>
-                                  <div className="text-muted-foreground capitalize">
-                                    {applicant.buyer_type.replace(/_/g, " ")}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {applicant.special_requirements && (
-                              <div className="flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                <div>
-                                  <div className="font-medium">Special Requirements</div>
-                                  <div className="text-muted-foreground">
-                                    {applicant.special_requirements}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                  )}
+                  {applicant.rent_budget_max && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Maximum</span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <PoundSterling className="h-4 w-4" />
+                        {applicant.rent_budget_max.toLocaleString()}
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Matched Properties</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <Home className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
-                  <div className="text-3xl font-bold">0</div>
-                  <p className="text-sm text-muted-foreground">Matches</p>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Matched Properties</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <Home className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
+                    <div className="text-3xl font-bold">0</div>
+                    <p className="text-sm text-muted-foreground">Matches</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Notes Section - matches height of Budget + Matched Properties */}
+            <div className="flex-1">
+              <NotesSection
+                entityType="applicant"
+                entityId={id || ""}
+                initialNotes={applicant?.notes || ""}
+                className="h-full"
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {isBuyer ? "Buyer" : "Tenant"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="first_name">First Name</Label>
+                <Input id="first_name" name="first_name" defaultValue={applicant?.first_name} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input id="last_name" name="last_name" defaultValue={applicant?.last_name} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" defaultValue={applicant?.email} required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" name="phone" defaultValue={applicant?.phone} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {isBuyer ? "buyer" : "tenant"}{" "}
+              "{applicant?.first_name} {applicant?.last_name}" and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Last Contacted Dialog */}
+      <Dialog open={editLastContactedDialogOpen} onOpenChange={setEditLastContactedDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Last Contacted Date</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="last_contacted_date">Last Contacted Date</Label>
+              <Input
+                id="last_contacted_date"
+                type="date"
+                value={lastContactedDate}
+                onChange={(e) => setLastContactedDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditLastContactedDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleEditLastContacted}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

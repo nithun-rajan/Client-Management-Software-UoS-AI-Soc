@@ -1,6 +1,8 @@
 // src/pages/Settings.tsx
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow, Shield, Lock } from "lucide-react";
+import { Settings as SettingsIcon, Save, Mail, Phone, Building2, Award, Camera, Workflow, Shield, Lock, Palette } from "lucide-react";
+import ThemeSelector from "@/components/shared/ThemeSelector";
+import AccentColorSelector from "@/components/shared/AccentColorSelector";
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -94,9 +96,10 @@ export default function Settings() {
       <Header title="Settings" />
       <div className="p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="personalisation">Personalisation</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           </TabsList>
 
@@ -265,6 +268,41 @@ export default function Settings() {
                   <span className="text-sm text-muted-foreground">Connected</span>
                 </div>
                 <Button className="w-full" variant="outline">Test Connection</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* PERSONALISATION TAB */}
+          <TabsContent value="personalisation" className="space-y-6 max-w-4xl mx-auto mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Appearance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">Theme</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose your preferred theme style
+                      </p>
+                    </div>
+                    <ThemeSelector />
+                  </div>
+                  
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">Accent Color</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Customize the accent color for buttons and highlights
+                      </p>
+                    </div>
+                    <AccentColorSelector />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
