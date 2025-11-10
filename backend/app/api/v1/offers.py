@@ -100,8 +100,15 @@ def list_offers(
         
         result.append({
             "id": o.id,
+            "property_id": o.property_id,
+            "applicant_id": o.applicant_id,
             "offered_rent": o.offered_rent,
+            "proposed_start_date": o.proposed_start_date.isoformat() if o.proposed_start_date else None,
+            "proposed_term_months": o.proposed_term_months,
             "status": o.status,
+            "counter_offer_rent": o.counter_offer_rent,
+            "special_conditions": o.special_conditions,
+            "applicant_notes": o.applicant_notes,
             "submitted_at": o.submitted_at.isoformat(),
             "property": {
                 "id": property.id,

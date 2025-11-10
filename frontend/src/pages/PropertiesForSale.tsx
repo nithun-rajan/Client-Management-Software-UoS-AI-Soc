@@ -33,6 +33,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
+import { getFlatOrUnitNumber } from "@/lib/utils";
 
 export default function PropertiesForSale() {
   const { data: properties, isLoading } = useProperties();
@@ -198,7 +199,7 @@ export default function PropertiesForSale() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-semibold leading-tight">
-                        {property.address_line1}
+                        {getFlatOrUnitNumber(property.address_line1, property.address, property.city, property.property_type) || property.city.toUpperCase()}
                       </h3>
                       {property.has_valuation_pack && (
                         <Badge variant="outline" className="gap-1">

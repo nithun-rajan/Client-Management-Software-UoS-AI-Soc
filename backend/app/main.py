@@ -268,6 +268,7 @@ app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Regis
 app.include_router(messaging.router, prefix="/api/v1")  # 💬 Communication Log / Activity Feed
 app.include_router(tenancy.router, prefix="/api/v1")  # 🏠 Tenancy Management (by Abdullah)
 app.include_router(tasks.router, prefix="/api/v1")  # ✅ Task Management
+app.include_router(tickets.router, prefix="/api/v1")  # 🎫 Tickets / Maintenance
 app.include_router(vendors.router, prefix="/api/v1")  # 🏪 Vendor Management
 app.include_router(viewings.router, prefix="/api/v1")  # 📅 Viewing Management
 app.include_router(offers.router, prefix="/api/v1")  # 💰 Offer Management

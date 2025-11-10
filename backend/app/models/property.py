@@ -78,7 +78,8 @@ class Property(BaseModel):
     maintenance_issues = relationship("MaintenanceIssue", back_populates="property", cascade="all, delete-orphan")
     sales_progression = relationship("SalesProgression", back_populates="property", uselist=False)
     offers = relationship("Offer", back_populates="property")  # Lettings offers
-    sales_offers = relationship("SalesOffer", back_populates="property")  # Sales offers    
+    sales_offers = relationship("SalesOffer", back_populates="property")  # Sales offers
+    tickets = relationship("Ticket", back_populates="property", cascade="all, delete-orphan")    
 
 
     # Sales specific fields

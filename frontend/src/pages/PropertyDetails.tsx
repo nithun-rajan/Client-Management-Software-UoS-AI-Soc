@@ -15,6 +15,8 @@ import {
   Workflow,
   Pencil,
   Trash2,
+  Wrench,
+  Handshake,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +45,9 @@ import {
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
+import { useTickets } from "@/hooks/useTickets";
+import { useOffers } from "@/hooks/useOffers";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,6 +127,22 @@ export default function PropertyDetails() {
     id || ""
   );
   const transitionMutation = useTransitionStatus();
+
+  // Get all tickets to filter by property_id
+  const { data: allTickets } = useTickets();
+  
+  // Filter tickets for this property
+  const propertyTickets = allTickets?.filter(
+    (ticket) => ticket.property_id === id
+  ) || [];
+
+  // Get all offers to filter by property_id
+  const { data: allOffers } = useOffers();
+  
+  // Filter offers for this property
+  const propertyOffers = allOffers?.filter(
+    (offer) => offer.property_id === id
+  ) || [];
 
   const handleSendEmail = () => {
     console.log("📧 Sending email for property:", property?.id);
@@ -356,6 +377,113 @@ export default function PropertyDetails() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Tickets Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyTickets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tickets</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyTickets.map((ticket) => (
+                      <button
+                        key={ticket.id}
+                        onClick={() => navigate("/tickets")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{ticket.title}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.status.replace("_", " ")}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.urgency}
+                            </Badge>
+                          </div>
+                        </div>
+                        {ticket.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {ticket.description}
+                          </p>
+                        )}
+                        {ticket.ticket_category && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Category: {ticket.ticket_category}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Offers Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Handshake className="h-5 w-5" />
+                  Offers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyOffers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No offers</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyOffers.map((offer) => (
+                      <button
+                        key={offer.id}
+                        onClick={() => navigate("/offers")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                              {offer.applicant_id && (
+                                <span className="text-xs text-muted-foreground">
+                                  by{" "}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/applicants/${offer.applicant_id}`);
+                                    }}
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                  >
+                                    {offer.applicant?.name || "Unknown"}
+                                  </button>
+                                </span>
+                              )}
+                            </div>
+                            {offer.proposed_term_months && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Term: {offer.proposed_term_months} months
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                        {offer.special_conditions && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {offer.special_conditions}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pipeline Tab */}

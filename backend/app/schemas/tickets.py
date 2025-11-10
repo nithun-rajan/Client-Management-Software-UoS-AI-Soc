@@ -12,7 +12,7 @@ class TicketBase(BaseModel):
     
     # Foreign keys (IDs); property_id must be a string (e.g., UUID)
     property_id: str 
-    applicant_id: Optional[int] = None 
+    applicant_id: Optional[str] = None 
     
     # Default status values for a new ticket
     status: TicketStatus = TicketStatus.NEW 
@@ -39,7 +39,7 @@ class TicketUpdate(BaseModel):
     status: Optional[TicketStatus] = None
     urgency: Optional[TicketUrgency] = None
     
-    assigned_contractor_id: Optional[int] = None 
+    assigned_contractor_id: Optional[str] = None 
     
     model_config = {
         "arbitrary_types_allowed": True
@@ -53,11 +53,11 @@ class TicketResponse(TicketBase):
     created_at: datetime
     updated_at: Optional[datetime] # Allows null value from the database
     
-    assigned_contractor_id: Optional[int] = None 
+    assigned_contractor_id: Optional[str] = None 
     
     
     property_id: str
-    applicant_id: Optional[int] = None
+    applicant_id: Optional[str] = None
     
     model_config = {
         "from_attributes": True

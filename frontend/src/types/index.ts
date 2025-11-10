@@ -245,3 +245,70 @@ export interface SalesOffer {
   created_at: string;
   updated_at?: string;
 }
+
+export interface Offer {
+  id: string;
+  property_id: string;
+  applicant_id: string;
+  offered_rent: number;
+  proposed_start_date?: string;
+  proposed_term_months?: number;
+  status: "submitted" | "accepted" | "rejected" | "countered" | "withdrawn";
+  counter_offer_rent?: number;
+  negotiation_notes?: string;
+  special_conditions?: string;
+  applicant_notes?: string;
+  agent_notes?: string;
+  deposit_amount?: number;
+  holding_deposit_paid?: boolean;
+  holding_deposit_amount?: number;
+  holding_deposit_date?: string;
+  submitted_at: string;
+  responded_at?: string;
+  accepted_at?: string;
+  created_at: string;
+  updated_at?: string;
+  // Nested data from API
+  property?: {
+    id: string;
+    address: string;
+    asking_rent?: number;
+  };
+  applicant?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: "todo" | "in_progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high" | "urgent";
+  due_date?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  tenancy_id?: string;
+  vendor_id?: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Ticket {
+  id: string;
+  title: string;
+  description?: string;
+  status: "new" | "open" | "in_progress" | "resolved" | "closed" | "cancelled";
+  urgency: "routine" | "normal" | "urgent" | "emergency";
+  ticket_category: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  reported_date: string;
+  property_id: string;
+  applicant_id?: string;
+  assigned_contractor_id?: string;
+  created_at: string;
+  updated_at?: string;
+}

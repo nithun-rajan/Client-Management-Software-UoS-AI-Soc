@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
@@ -41,8 +41,13 @@ def create_tenancy(tenancy_data: TenancyCreate, db: Session = Depends(get_db)):
 
     # 2. Create the new Tenancy
     # I set the status to ACTIVE on creation, as this is the "Move-In" step
+    tenancy_dict = tenancy_data.model_dump()
+    # Map primary_applicant_id from schema to applicant_id in model
+    if 'primary_applicant_id' in tenancy_dict:
+        tenancy_dict['applicant_id'] = tenancy_dict.pop('primary_applicant_id')
+    
     db_tenancy = Tenancy(
-        **tenancy_data.model_dump(),
+        **tenancy_dict,
         status=TenancyStatus.ACTIVE  
     )
     db.add(db_tenancy)
@@ -58,13 +63,67 @@ def create_tenancy(tenancy_data: TenancyCreate, db: Session = Depends(get_db)):
     db.refresh(db_tenancy)
     return db_tenancy
 
-@router.get("/", response_model=List[TenancyResponse])
-def list_tenancies(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@router.get("/")
+def list_tenancies(
+    skip: int = 0, 
+    limit: int = 100, 
+    status: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     """
-    List all tenancies.
+    List all tenancies with optional status filter.
+    Includes property information for easier frontend display.
     """
-    tenancies = db.query(Tenancy).offset(skip).limit(limit).all()
-    return tenancies
+    query = db.query(Tenancy)
+    
+    # Filter by status if provided
+    if status:
+        query = query.filter(Tenancy.status == status)
+    
+    tenancies = query.offset(skip).limit(limit).all()
+    
+    # Build response with property information
+    result = []
+    for tenancy in tenancies:
+        property = db.query(Property).filter(Property.id == tenancy.property_id).first()
+        
+        # Get applicant using applicant_id (the model field)
+        applicant = None
+        if tenancy.applicant_id:
+            applicant = db.query(Applicant).filter(Applicant.id == tenancy.applicant_id).first()
+        
+        tenancy_dict = {
+            "id": tenancy.id,
+            "property_id": tenancy.property_id,
+            "applicant_id": tenancy.applicant_id,
+            "rent_amount": tenancy.rent_amount,
+            "deposit_amount": tenancy.deposit_amount,
+            "start_date": tenancy.start_date.isoformat() if tenancy.start_date else None,
+            "end_date": tenancy.end_date.isoformat() if tenancy.end_date else None,
+            "status": tenancy.status,
+            "created_at": tenancy.created_at.isoformat() if hasattr(tenancy, 'created_at') and tenancy.created_at else None,
+            "updated_at": tenancy.updated_at.isoformat() if hasattr(tenancy, 'updated_at') and tenancy.updated_at else None,
+            "property": {
+                "id": property.id,
+                "address_line1": property.address_line1,
+                "address": property.address,
+                "city": property.city,
+                "postcode": property.postcode,
+                "rent": property.rent,
+                "bedrooms": property.bedrooms,
+                "bathrooms": property.bathrooms,
+            } if property else None,
+            "applicant": {
+                "id": applicant.id,
+                "first_name": applicant.first_name,
+                "last_name": applicant.last_name,
+                "email": applicant.email,
+                "phone": applicant.phone,
+            } if applicant else None,
+        }
+        result.append(tenancy_dict)
+    
+    return result
 
 @router.get("/{tenancy_id}", response_model=TenancyResponse)
 def get_tenancy(tenancy_id: str, db: Session = Depends(get_db)):
