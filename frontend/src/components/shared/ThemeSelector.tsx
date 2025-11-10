@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -12,17 +11,15 @@ import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark";
 
-const themes: { value: Theme; label: string; description: string; icon: typeof Sun }[] = [
+const themes: { value: Theme; label: string; icon: typeof Sun }[] = [
   {
     value: "light",
     label: "Light",
-    description: "Clean and bright interface",
     icon: Sun,
   },
   {
     value: "dark",
     label: "Dark",
-    description: "Easy on the eyes",
     icon: Moon,
   },
 ];
@@ -72,11 +69,6 @@ export default function ThemeSelector() {
                 <CardTitle className="text-sm">{t.label}</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <CardDescription className="text-xs">
-                {t.description}
-              </CardDescription>
-            </CardContent>
           </Card>
         );
       })}

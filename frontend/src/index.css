@@ -129,55 +129,56 @@ All colors MUST be HSL.
     --sidebar-ring: 270 50% 45%;
   }
 
-  /* Strict Theme - Minimalistic, monochrome */
+  /* Strict Theme - Pure black and white, no gradients, minimalistic */
   .strict {
     --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    --foreground: 0 0% 0%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 0%;
 
-    --primary: 0 0% 20%;
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 30%;
+    --secondary: 0 0% 0%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 0 0% 15%;
+    --accent: 0 0% 0%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 0% 40%;
+    --destructive: 0 0% 0%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 0 0% 20%;
+    --ring: 0 0% 0%;
 
-    --status-available: 0 0% 30%;
-    --status-pending: 0 0% 50%;
-    --status-urgent: 0 0% 40%;
-    --status-active: 0 0% 25%;
-    --status-inactive: 0 0% 60%;
+    --status-available: 0 0% 0%;
+    --status-pending: 0 0% 0%;
+    --status-urgent: 0 0% 0%;
+    --status-active: 0 0% 0%;
+    --status-inactive: 0 0% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 30%));
-    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 25%), hsl(0 0% 20%));
-    --gradient-success: linear-gradient(135deg, hsl(0 0% 30%), hsl(0 0% 35%));
-    --gradient-warning: linear-gradient(135deg, hsl(0 0% 50%), hsl(0 0% 45%));
+    /* No gradients - solid black only */
+    --gradient-primary: hsl(0 0% 0%);
+    --gradient-secondary: hsl(0 0% 0%);
+    --gradient-success: hsl(0 0% 0%);
+    --gradient-warning: hsl(0 0% 0%);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 0 0% 10%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 0%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 0%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 20%;
+    --sidebar-ring: 0 0% 0%;
   }
 
   /* Bright Theme - Vibrant, colorful */

@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
+import { useEffect } from "react";
+import { applyAccentColorFromStorage } from "@/lib/accentColor";
 import Sidebar from "./components/layout/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -42,13 +44,42 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <ThemeProvider 
-    attribute="class" 
-    defaultTheme="light" 
-    themes={["light", "dark"]}
-    enableSystem={false}
-  >
+const App = () => {
+  // Apply accent color on app mount and when theme changes
+  useEffect(() => {
+    // Small delay to ensure theme is applied first
+    const timer = setTimeout(() => {
+      applyAccentColorFromStorage();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="light" 
+      themes={["light", "dark"]}
+      enableSystem={false}
+    >
+      <AppContent />
+    </ThemeProvider>
+  );
+};
+
+const AppContent = () => {
+  const { theme } = useTheme();
+  
+  // Re-apply accent color when theme changes
+  useEffect(() => {
+    if (theme) {
+      const timer = setTimeout(() => {
+        applyAccentColorFromStorage();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [theme]);
+
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -101,7 +132,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-  </ThemeProvider>
-);
+  );
+};
 
 export default App;
