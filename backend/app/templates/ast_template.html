@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.5; }
+        h1 { text-align: center; }
+        .section { margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Assured Shorthold Tenancy Agreement</h1>
+
+<div class="section">
+    <p><strong>Tenant:</strong> {{ tenant_name }}</p>
+    <p><strong>Property:</strong> {{ address }}</p>
+</div>
+
+<div class="section">
+    <p>The tenancy will begin on <strong>{{ start_date }}</strong> and end on <strong>{{ end_date }}</strong>.</p>
+    <p>Rent is set at <strong>£{{ rent }}</strong> per month.</p>
+    <p>Deposit amount is <strong>£{{ deposit }}</strong>.</p>
+</div>
+
+<div class="section">
+    <p>Standard tenancy terms and legal conditions apply.</p>
+</div>
+
+</body>
+</html>

@@ -390,7 +390,7 @@ class WorkflowManager:
                         # This new function sends the email
                         await send_templated_email(
                             to_email=applicant.email,
-                            template_name="offer_confirmation",
+                            template_name="offer_confirmation.html",
                             context=email_context
                         )
                         print(f"Successfully sent offer confirmation email to {applicant.email}")
@@ -492,7 +492,7 @@ class WorkflowManager:
                 print(f"Starting AST generation for tenancy {entity_id}...")
 
                 # 2. Load HTML template
-                template_loader = jinja2.FileSystemLoader(searchpath="./templates")
+                template_loader = jinja2.FileSystemLoader(searchpath="app/templates")
                 template_env = jinja2.Environment(loader=template_loader)
                 template = template_env.get_template("ast_template.html")
 

@@ -36,13 +36,13 @@ async def send_templated_email(
                 "to": [{"email": to_email}],
                 "dynamic_template_data": context # Pass context to SendGrid
             }],
-            "from": {"email": settings.DEFAULT_FROM_EMAIL, "name": "Your Agency Name"},
+            "from": {"email": setting.DEFAULT_FROM_EMAIL, "name": "Your Agency Name"},
             "subject": subject,
             "content": [{"type": "text/html", "value": html_content}]
         }
         
         headers = {
-            "Authorization": f"Bearer {settings.SENDGRID_API_KEY}",
+            "Authorization": f"Bearer {setting.SENDGRID_API_KEY}",
             "Content-Type": "application/json"
         }
         
