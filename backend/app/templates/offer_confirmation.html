@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Offer Has Been Accepted!</title>
+</head>
+<body>
+    <p>Dear {{ applicant_name }},</p>
+    
+    <p>We are thrilled to inform you that your offer for the property at <strong>{{ property_address }}</strong> has been accepted!</p>
+    
+    <p>Here are the details:</p>
+    <ul>
+        <li>Address: {{ property_address }}</li>
+        <li>Agreed Rent: £{{ rent_amount_monthly }} per month</li>
+        <li>Holding Deposit to Pay: £{{ holding_deposit_amount }}</li>
+    </ul>
+    
+    <p>
+        To secure the property, please pay the holding deposit.
+        </p>
+    
+    <p>Our team will be in touch shortly to begin the referencing process.</p>
+    
+    <p>Best regards,<br>The Lettings Team</p>
+</body>
+</html>

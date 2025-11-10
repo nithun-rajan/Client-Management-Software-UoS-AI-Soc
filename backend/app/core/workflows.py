@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 # --- 1. ADDED/UPDATED IMPORTS ---
 from app.models.tenancy import Tenancy
 from app.models.enums import TenancyStatus
+from sqlalchemy.orm import Session
 # --- END OF ADDED/UPDATED IMPORTS ---
 
 class Domain(str, Enum):
@@ -359,7 +360,9 @@ class WorkflowManager:
         from app.models.tenancy import Tenancy
         from app.models.task import Task
         from app.models.enums import TaskStatus, TaskPriority
-
+        from app.services.email_service import send_templated_email
+        from app.models.applicant import Applicant
+        
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
             task = Task(
@@ -373,6 +376,26 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(hours=4)
             )
             db.add(task)
+
+            try:
+            # Find the applicant to get their email
+                if tenancy.applicant_id:
+                    applicant = db.query(Applicant).filter(Applicant.id == tenancy.applicant_id).first()
+                    if applicant and applicant.email:
+                        email_context = {
+                            "applicant_name": applicant.first_name,
+                            "property_address": tenancy.property.address,
+                            "rent_amount": tenancy.agreed_rent
+                        }
+                        # This new function sends the email
+                        await send_templated_email(
+                            to_email=applicant.email,
+                            template_name="offer_confirmation.html",
+                            context=email_context
+                        )
+                        print(f"Successfully sent offer confirmation email to {applicant.email}")
+            except Exception as e:
+                print(f"ERROR: Failed to send offer confirmation email: {e}")
 
     async def execute_start_referencing_process(self, domain: Domain, entity_id: str, db):
         """Start referencing process - Page 30: 2.1"""
@@ -435,14 +458,24 @@ class WorkflowManager:
             )
             db.add(task)
 
-    async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db):
-        """Draft tenancy agreement - Page 31: 3.1"""
-        from app.models.tenancy import Tenancy
-        from app.models.task import Task
-        from app.models.enums import TaskStatus, TaskPriority
 
+
+
+    async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db: Session):
+        """Draft tenancy agreement - Page 31: 3.1"""
+        import jinja2
+        from weasyprint import HTML
+        from app.api.v1.documents import upload_file_to_cloud
+        from app.models.document import Document
+        from app.schemas.documents import DocumentCreate, DocumentCategory
+        from app.models.tenancy import Tenancy
+        from app.models.tasks import Task
+        
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
+
         if tenancy:
+
+            # 1. Create workflow task (existing logic unchanged)
             task = Task(
                 title="Draft Tenancy Agreement (AST)",
                 description="Draft Assured Shorthold Tenancy agreement with all terms and conditions.",
@@ -454,6 +487,59 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(days=5)
             )
             db.add(task)
+
+            try:
+                print(f"Starting AST generation for tenancy {entity_id}...")
+
+                # 2. Load HTML template
+                template_loader = jinja2.FileSystemLoader(searchpath="app/templates")
+                template_env = jinja2.Environment(loader=template_loader)
+                template = template_env.get_template("ast_template.html")
+
+                # 3. Fill template context
+                context = {
+                    "tenant_name": f"{tenancy.applicant.first_name} {tenancy.applicant.last_name}",
+                    "address": tenancy.property.address,
+                    "start_date": tenancy.start_date.strftime("%d %B %Y"),
+                    "end_date": tenancy.end_date.strftime("%d %B %Y"),
+                    "rent": tenancy.agreed_rent,
+                    "deposit": tenancy.deposit_amount
+                }
+
+                html_out = template.render(context)
+
+                # 4. Convert HTML → PDF using WeasyPrint
+                pdf_bytes = HTML(string=html_out).write_pdf()
+
+                # 5. Create temporary file
+                file_name = f"AST_{tenancy.property.address.replace(' ', '_')}.pdf"
+                temp_file_path = f"/tmp/{file_name}"
+
+                with open(temp_file_path, "wb") as f:
+                    f.write(pdf_bytes)
+
+                # 6. Upload to cloud / S3 / etc.
+                file_path = upload_file_to_cloud(file_name, pdf_bytes)
+
+                # 7. Save document record
+                doc_create = DocumentCreate(
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_type="application/pdf",
+                    category=DocumentCategory.TENANCY_AGREEMENT,
+                    tenancy_id=tenancy.id,
+                    uploaded_by_id="system"
+                )   
+
+                db_document = Document(**doc_create.model_dump())
+                db.add(db_document)
+                db.commit()
+
+                print(f"✅ Successfully generated and saved AST: {file_name}")
+
+            except Exception as e:
+                print(f"❌ ERROR: Failed to generate AST: {e}")
+
 
     async def execute_send_statutory_documents(self, domain: Domain, entity_id: str, db):
         """Send statutory documents - Page 31: 3.2"""
