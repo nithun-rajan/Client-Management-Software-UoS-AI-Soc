@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NotesSection from "@/components/shared/NotesSection";
 
 export default function VendorDetails() {
   const { id } = useParams();
@@ -247,88 +248,99 @@ export default function VendorDetails() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Contact Information</CardTitle>
-                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Details
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Email</div>
-                        <div className="font-medium">{vendor.email}</div>
-                      </div>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Contact Information</CardTitle>
+                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Details
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Phone</div>
-                        <div className="font-medium">{vendor.primary_phone}</div>
-                      </div>
-                    </div>
-                    {vendor.current_address && (
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground" />
+                        <Mail className="h-5 w-5 text-muted-foreground" />
                         <div>
-                          <div className="text-sm text-muted-foreground">Current Address</div>
-                          <div className="font-medium">{vendor.current_address}</div>
+                          <div className="text-sm text-muted-foreground">Email</div>
+                          <div className="font-medium">{vendor.email}</div>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Vendor Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {vendor.date_of_birth && (
                       <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex-1">
-                          <div className="text-sm text-muted-foreground">Date of Birth</div>
-                          <div className="font-medium">
-                            {new Date(vendor.date_of_birth).toLocaleDateString()}
+                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm text-muted-foreground">Phone</div>
+                          <div className="font-medium">{vendor.primary_phone}</div>
+                        </div>
+                      </div>
+                      {vendor.current_address && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="text-sm text-muted-foreground">Current Address</div>
+                            <div className="font-medium">{vendor.current_address}</div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                    {vendor.nationality && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Nationality</span>
-                        <span className="font-medium">{vendor.nationality}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">AML Status</span>
-                      <Badge variant={vendor.aml_status === "verified" ? "default" : "outline"}>
-                        {vendor.aml_status}
-                      </Badge>
+                      )}
                     </div>
-                    {vendor.aml_status !== "verified" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleVerifyAML}
-                        className="w-full"
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Verify AML
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Vendor Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {vendor.date_of_birth && (
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <div className="text-sm text-muted-foreground">Date of Birth</div>
+                            <div className="font-medium">
+                              {new Date(vendor.date_of_birth).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {vendor.nationality && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Nationality</span>
+                          <span className="font-medium">{vendor.nationality}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">AML Status</span>
+                        <Badge variant={vendor.aml_status === "verified" ? "default" : "outline"}>
+                          {vendor.aml_status}
+                        </Badge>
+                      </div>
+                      {vendor.aml_status !== "verified" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleVerifyAML}
+                          className="w-full"
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Verify AML
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="h-full">
+                {/* Notes Section - matches height of Contact Info + Vendor Details */}
+                <NotesSection
+                  entityType="vendor"
+                  entityId={id || ""}
+                  className="h-full"
+                />
+              </div>
             </div>
 
             {/* Assigned Tasks Section */}
