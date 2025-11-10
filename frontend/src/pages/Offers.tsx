@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Handshake,
   Plus,
@@ -54,6 +55,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function Offers() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -279,7 +281,16 @@ export default function Offers() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg font-semibold line-clamp-2">
-                      {offer.property?.address || "Unknown Property"}
+                      {offer.property_id || offer.property?.id ? (
+                        <button
+                          onClick={() => navigate(`/properties/${offer.property_id || offer.property?.id}`)}
+                          className="text-left text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer font-semibold"
+                        >
+                          {offer.property?.address || "Unknown Property"}
+                        </button>
+                      ) : (
+                        <span>{offer.property?.address || "Unknown Property"}</span>
+                      )}
                     </CardTitle>
                     <div className="flex gap-1">
                       <Button
@@ -314,7 +325,19 @@ export default function Offers() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    <div>Applicant: {offer.applicant?.name || "Unknown"}</div>
+                    <div>
+                      Applicant:{" "}
+                      {offer.applicant_id || offer.applicant?.id ? (
+                        <button
+                          onClick={() => navigate(`/applicants/${offer.applicant_id || offer.applicant?.id}`)}
+                          className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                        >
+                          {offer.applicant?.name || "Unknown"}
+                        </button>
+                      ) : (
+                        <span>{offer.applicant?.name || "Unknown"}</span>
+                      )}
+                    </div>
                     {offer.proposed_term_months && (
                       <div>Term: {offer.proposed_term_months} months</div>
                     )}
