@@ -25,6 +25,8 @@ from app.models import (
     Communication, Organization, Branch, User, Offer,
     Viewing, MatchHistory, Document, MaintenanceIssue, SalesProgression, SalesOffer, Ticket
 )
+from app.core.security import get_password_hash
+from app.schemas.user import Role
 
 # Ensure all mapped classes are loaded
 
@@ -588,6 +590,82 @@ def create_tickets(db: Session, properties: list, applicants: list, count: int =
     print(f"[OK] Created {count} tickets")
     return tickets
 
+def create_agents(db: Session, count: int = 5):
+    """Create realistic agents (users with AGENT role)"""
+    print(f"\n[*] Creating {count} agents...")
+    
+    # First, create or get an organization
+    org = db.query(Organization).filter(Organization.name == "UoS Scouting Challenge").first()
+    if not org:
+        org = Organization(name="UoS Scouting Challenge")
+        db.add(org)
+        db.commit()
+        db.refresh(org)
+        print(f"   Created organization: {org.name}")
+    
+    # Agent names and details
+    agent_data = [
+        {
+            "first_name": "John",
+            "last_name": "Smith",
+            "email": "john.smith@uos-crm.co.uk",
+            "title": "Senior Sales & Lettings Manager – Southampton",
+        },
+        {
+            "first_name": "Sarah",
+            "last_name": "Johnson",
+            "email": "sarah.johnson@uos-crm.co.uk",
+            "title": "Lettings Specialist – Southampton",
+        },
+        {
+            "first_name": "Michael",
+            "last_name": "Brown",
+            "email": "michael.brown@uos-crm.co.uk",
+            "title": "Sales Manager – Southampton",
+        },
+        {
+            "first_name": "Emma",
+            "last_name": "Davis",
+            "email": "emma.davis@uos-crm.co.uk",
+            "title": "Property Consultant – Southampton",
+        },
+        {
+            "first_name": "David",
+            "last_name": "Wilson",
+            "email": "david.wilson@uos-crm.co.uk",
+            "title": "Senior Property Advisor – Southampton",
+        },
+    ]
+    
+    agents = []
+    for i in range(min(count, len(agent_data))):
+        agent_info = agent_data[i]
+        # Check if agent already exists
+        existing = db.query(User).filter(User.email == agent_info["email"]).first()
+        if existing:
+            agents.append(existing)
+            continue
+            
+        agent = User(
+            email=agent_info["email"],
+            first_name=agent_info["first_name"],
+            last_name=agent_info["last_name"],
+            role=Role.AGENT,
+            hashed_password=get_password_hash("password123"),  # Default password for all agents
+            organization_id=org.id,
+            is_active=True,
+        )
+        
+        db.add(agent)
+        agents.append(agent)
+        
+        if (i + 1) % 2 == 0:
+            print(f"   Created {i + 1}/{count} agents...")
+    
+    db.commit()
+    print(f"[OK] Created {len(agents)} agents")
+    return agents
+
 def create_offers(db: Session, properties: list, applicants: list, count: int = 20):
     """Create diverse offers with different statuses, rent amounts, terms, and dates"""
     print(f"\n[*] Creating {count} offers...")
@@ -753,6 +831,9 @@ def main():
         # Clear existing data
         clear_database()
 
+        # Create agents first (they might be needed for assignments)
+        agents = create_agents(db, count=5)
+        
         # Create all data
         properties_rent = create_properties(db, count=20)
         properties_sale = create_properties_for_sale(db, count=15)
@@ -811,6 +892,7 @@ def main():
         print(f"   - {len(tasks)} Tasks")
         print(f"   - {len(tickets)} Tickets")
         print(f"   - {len(offers)} Offers")
+        print(f"   - {len(agents)} Agents")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")

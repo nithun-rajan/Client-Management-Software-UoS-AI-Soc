@@ -26,6 +26,7 @@ import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
+import Agents from "./pages/Agents";
 import Tasks from "./pages/Tasks";
 import Tickets from "./pages/Tickets";
 import Offers from "./pages/Offers";
@@ -120,6 +121,7 @@ const AppContent = () => {
                         <Route path="/tickets" element={<Tickets />} />
                         <Route path="/offers" element={<Offers />} />
                         <Route path="/kpis" element={<KPIsDashboard />} />
+                        <Route path="/agents" element={<Agents />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
