@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 # Import your database and models
 from app.core.database import Base, SessionLocal, engine
 from app.models.applicant import Applicant
-from app.models.enums import ApplicantStatus, PropertyStatus, TaskStatus
+from app.models.enums import ApplicantStatus, PropertyStatus, TaskStatus, TicketStatus, TicketUrgency
 from app.models.landlord import Landlord
 from app.models.property import Property
 from app.models.vendor import Vendor
@@ -23,7 +23,7 @@ from datetime import datetime, timedelta
 from app.models import (
     Applicant, Landlord, Property, Task, Tenancy, Vendor,
     Communication, Organization, Branch, User, Offer,
-    Viewing, MatchHistory, Document, MaintenanceIssue, SalesProgression, SalesOffer
+    Viewing, MatchHistory, Document, MaintenanceIssue, SalesProgression, SalesOffer, Ticket
 )
 
 # Ensure all mapped classes are loaded
@@ -476,6 +476,118 @@ def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, 
     print(f"[OK] Created {count} tasks")
     return tasks
 
+def create_tickets(db: Session, properties: list, applicants: list, count: int = 25):
+    """Create diverse tickets with different statuses, urgencies, priorities, and categories"""
+    print(f"\n[*] Creating {count} tickets...")
+    
+    from app.models.tickets import Ticket
+    
+    ticket_templates = [
+        {"title": "Leaking tap in kitchen", "category": "Plumbing", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.NEW, "priority": "low"},
+        {"title": "Boiler not working", "category": "Heating", "urgency": TicketUrgency.URGENT, "status": TicketStatus.OPEN, "priority": "urgent"},
+        {"title": "Broken window latch", "category": "Structural", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.IN_PROGRESS, "priority": "medium"},
+        {"title": "Faulty electrical socket", "category": "Electrical", "urgency": TicketUrgency.URGENT, "status": TicketStatus.OPEN, "priority": "high"},
+        {"title": "Blocked drain", "category": "Plumbing", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.RESOLVED, "priority": "medium"},
+        {"title": "Washing machine not draining", "category": "Appliance", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.NEW, "priority": "low"},
+        {"title": "No hot water", "category": "Heating", "urgency": TicketUrgency.URGENT, "status": TicketStatus.IN_PROGRESS, "priority": "urgent"},
+        {"title": "Cracked tile in bathroom", "category": "Structural", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.NEW, "priority": "low"},
+        {"title": "Smoke alarm beeping", "category": "Electrical", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.RESOLVED, "priority": "medium"},
+        {"title": "Garden overgrown", "category": "Gardening", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.CLOSED, "priority": "low"},
+        {"title": "Front door lock jammed", "category": "Structural", "urgency": TicketUrgency.URGENT, "status": TicketStatus.OPEN, "priority": "high"},
+        {"title": "Dishwasher not starting", "category": "Appliance", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.IN_PROGRESS, "priority": "medium"},
+        {"title": "Water leak from ceiling", "category": "Plumbing", "urgency": TicketUrgency.EMERGENCY, "status": TicketStatus.OPEN, "priority": "urgent"},
+        {"title": "Fridge not cooling", "category": "Appliance", "urgency": TicketUrgency.URGENT, "status": TicketStatus.IN_PROGRESS, "priority": "high"},
+        {"title": "Loose banister rail", "category": "Structural", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.NEW, "priority": "medium"},
+        {"title": "Flickering lights", "category": "Electrical", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.RESOLVED, "priority": "medium"},
+        {"title": "Radiator not heating", "category": "Heating", "urgency": TicketUrgency.URGENT, "status": TicketStatus.OPEN, "priority": "high"},
+        {"title": "Toilet not flushing", "category": "Plumbing", "urgency": TicketUrgency.URGENT, "status": TicketStatus.IN_PROGRESS, "priority": "urgent"},
+        {"title": "Oven not heating", "category": "Appliance", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.NEW, "priority": "medium"},
+        {"title": "Window won't close", "category": "Structural", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.CLOSED, "priority": "low"},
+        {"title": "Power cut in one room", "category": "Electrical", "urgency": TicketUrgency.URGENT, "status": TicketStatus.OPEN, "priority": "high"},
+        {"title": "Shower head broken", "category": "Plumbing", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.RESOLVED, "priority": "low"},
+        {"title": "Central heating not working", "category": "Heating", "urgency": TicketUrgency.EMERGENCY, "status": TicketStatus.IN_PROGRESS, "priority": "urgent"},
+        {"title": "Gutter overflowing", "category": "Structural", "urgency": TicketUrgency.NORMAL, "status": TicketStatus.NEW, "priority": "medium"},
+        {"title": "Tumble dryer not working", "category": "Appliance", "urgency": TicketUrgency.ROUTINE, "status": TicketStatus.CLOSED, "priority": "low"},
+    ]
+    
+    ticket_categories = ["Plumbing", "Electrical", "Heating", "Structural", "Appliance", "Cleaning", "Gardening", "Decoration", "Emergency", "Other"]
+    statuses = [TicketStatus.NEW, TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED, TicketStatus.CLOSED, TicketStatus.CANCELLED]
+    urgencies = [TicketUrgency.ROUTINE, TicketUrgency.NORMAL, TicketUrgency.URGENT, TicketUrgency.EMERGENCY]
+    priorities = ["low", "medium", "high", "urgent"]
+    
+    tickets = []
+    for i in range(count):
+        # Pick a random template or create a custom one
+        if i < len(ticket_templates):
+            template = ticket_templates[i]
+        else:
+            # Generate random ticket
+            issues = ["leak", "not working", "broken", "faulty", "blocked", "damaged", "missing", "stuck"]
+            locations = ["kitchen", "bathroom", "bedroom", "living room", "hallway", "garden", "basement", "attic"]
+            category = random.choice(ticket_categories)
+            template = {
+                "title": f"{random.choice(issues).capitalize()} {random.choice(locations)}",
+                "category": category,
+                "urgency": random.choice(urgencies),
+                "status": random.choice(statuses),
+                "priority": random.choice(priorities)
+            }
+        
+        # Generate reported date (some past, some future, some today)
+        days_offset = random.choice([
+            -30, -21, -14, -7, -5, -3, -2, -1,  # Past dates
+            0,  # Today
+            1, 2, 3  # Recent future dates
+        ])
+        reported_date = datetime.now() + timedelta(days=days_offset)
+        reported_date = reported_date.date()  # Convert to date only
+        
+        # Assign to a random property (required)
+        property = random.choice(properties) if properties else None
+        if not property:
+            continue  # Skip if no properties available
+        
+        # Randomly assign to an applicant (60% chance)
+        applicant = None
+        if random.random() < 0.6 and applicants:
+            applicant = random.choice(applicants)
+        
+        # Add description sometimes
+        description = None
+        if random.random() < 0.5:
+            descriptions = [
+                "Issue reported by tenant. Please investigate and resolve as soon as possible.",
+                "Tenant has reported this issue multiple times. Requires urgent attention.",
+                "Standard maintenance request. No rush required.",
+                "Emergency situation - please respond immediately.",
+                "Part of routine property maintenance schedule.",
+                "Tenant has provided photos. Issue visible and needs repair.",
+            ]
+            description = random.choice(descriptions)
+        
+        ticket = Ticket(
+            title=template["title"],
+            description=description,
+            status=template["status"],
+            urgency=template["urgency"],
+            ticket_category=template["category"],
+            priority=template["priority"],
+            reported_date=reported_date,
+            property_id=property.id,
+            applicant_id=applicant.id if applicant else None,
+            assigned_contractor_id=None,  # Can be assigned later
+        )
+        
+        db.add(ticket)
+        tickets.append(ticket)
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} tickets...")
+    
+    db.commit()
+    print(f"[OK] Created {count} tickets")
+    return tickets
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -499,6 +611,10 @@ def main():
         
         # Create diverse tasks
         tasks = create_tasks(db, landlords, vendors, tenants, count=30)
+        
+        # Create diverse tickets
+        all_properties = properties_rent + properties_sale
+        tickets = create_tickets(db, all_properties, tenants, count=25)
 
         # Link landlords to properties-for-let
         print("\n[*] Linking landlords to properties...")
@@ -538,6 +654,7 @@ def main():
         print(f"   - {len(buyers)} Buyers")
         print(f"   - {len(vendors)} Vendors")
         print(f"   - {len(tasks)} Tasks")
+        print(f"   - {len(tickets)} Tickets")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
