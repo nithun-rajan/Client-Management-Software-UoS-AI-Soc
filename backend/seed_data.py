@@ -588,6 +588,158 @@ def create_tickets(db: Session, properties: list, applicants: list, count: int =
     print(f"[OK] Created {count} tickets")
     return tickets
 
+def create_offers(db: Session, properties: list, applicants: list, count: int = 20):
+    """Create diverse offers with different statuses, rent amounts, terms, and dates"""
+    print(f"\n[*] Creating {count} offers...")
+    
+    from app.models.offer import Offer
+    
+    offer_statuses = ["submitted", "accepted", "rejected", "countered", "withdrawn"]
+    term_months_options = [6, 12, 18, 24]
+    
+    special_conditions_templates = [
+        "Pet clause required",
+        "Early move-in requested",
+        "Furnished property preferred",
+        "Parking space required",
+        "Garden access essential",
+        "No break clause",
+        "Flexible start date",
+        "Furniture to be removed",
+        "Professional cleaning required",
+        None, None, None  # More chance of no special conditions
+    ]
+    
+    applicant_notes_templates = [
+        "Perfect location for work commute",
+        "Love the property, very interested",
+        "Looking for long-term tenancy",
+        "First-time renter, very excited",
+        "Moving for new job opportunity",
+        "Family relocating to area",
+        "Student accommodation needed",
+        "Downsizing from larger property",
+        None, None, None  # More chance of no notes
+    ]
+    
+    offers = []
+    for i in range(count):
+        # Pick a random property (only those with rent set)
+        property = random.choice([p for p in properties if p.rent])
+        asking_rent = property.rent
+        
+        # Pick a random applicant
+        applicant = random.choice(applicants)
+        
+        # Generate offered rent (some above asking, some below, some at asking)
+        rent_variation = random.choice([
+            -0.15, -0.10, -0.05, -0.02,  # Below asking
+            0,  # At asking
+            0.02, 0.05, 0.10  # Above asking
+        ])
+        offered_rent = round(asking_rent * (1 + rent_variation), 2)
+        
+        # Pick status (weighted towards submitted)
+        status_weights = {
+            "submitted": 0.4,
+            "accepted": 0.2,
+            "rejected": 0.15,
+            "countered": 0.15,
+            "withdrawn": 0.1
+        }
+        status = random.choices(
+            list(status_weights.keys()),
+            weights=list(status_weights.values())
+        )[0]
+        
+        # Generate proposed start date (some past, some future)
+        days_offset = random.choice([
+            -30, -21, -14, -7,  # Past dates
+            0,  # Today
+            7, 14, 21, 30, 45, 60, 90  # Future dates
+        ])
+        proposed_start_date = datetime.now() + timedelta(days=days_offset)
+        proposed_start_date = proposed_start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Pick term
+        proposed_term_months = random.choice(term_months_options)
+        
+        # Generate submitted date (before start date)
+        submitted_days_before = random.randint(1, 60)
+        submitted_at = proposed_start_date - timedelta(days=submitted_days_before)
+        submitted_at = submitted_at.replace(hour=random.randint(9, 17), minute=random.randint(0, 59))
+        
+        # Set responded_at and accepted_at based on status
+        responded_at = None
+        accepted_at = None
+        if status in ["accepted", "rejected", "countered"]:
+            responded_at = submitted_at + timedelta(days=random.randint(1, 7))
+            if status == "accepted":
+                accepted_at = responded_at
+        
+        # Counter offer rent (if countered)
+        counter_offer_rent = None
+        if status == "countered":
+            counter_variation = random.choice([0.02, 0.05, 0.10])
+            counter_offer_rent = round(offered_rent * (1 + counter_variation), 2)
+        
+        # Special conditions
+        special_conditions = random.choice(special_conditions_templates)
+        
+        # Applicant notes
+        applicant_notes = random.choice(applicant_notes_templates)
+        
+        # Agent notes (for some offers)
+        agent_notes = None
+        if status in ["accepted", "rejected", "countered"] and random.random() < 0.5:
+            agent_notes_templates = [
+                "Applicant passed all checks",
+                "Landlord requested higher rent",
+                "Property condition concerns",
+                "Excellent tenant profile",
+                "References pending",
+                "Deposit received",
+            ]
+            agent_notes = random.choice(agent_notes_templates)
+        
+        # Holding deposit (for accepted offers)
+        holding_deposit_paid = False
+        holding_deposit_amount = None
+        holding_deposit_date = None
+        if status == "accepted" and random.random() < 0.7:
+            holding_deposit_paid = True
+            holding_deposit_amount = round(offered_rent * 0.1, 2)  # 10% of rent
+            holding_deposit_date = accepted_at + timedelta(days=random.randint(1, 3))
+        
+        offer = Offer(
+            property_id=property.id,
+            applicant_id=applicant.id,
+            offered_rent=offered_rent,
+            proposed_start_date=proposed_start_date,
+            proposed_term_months=proposed_term_months,
+            status=status,
+            counter_offer_rent=counter_offer_rent,
+            special_conditions=special_conditions,
+            applicant_notes=applicant_notes,
+            agent_notes=agent_notes,
+            holding_deposit_paid=holding_deposit_paid,
+            holding_deposit_amount=holding_deposit_amount,
+            holding_deposit_date=holding_deposit_date,
+            submitted_at=submitted_at,
+            responded_at=responded_at,
+            accepted_at=accepted_at,
+        )
+        
+        db.add(offer)
+        offers.append(offer)
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} offers...")
+    
+    db.commit()
+    print(f"[OK] Created {count} offers")
+    return offers
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -615,6 +767,9 @@ def main():
         # Create diverse tickets
         all_properties = properties_rent + properties_sale
         tickets = create_tickets(db, all_properties, tenants, count=25)
+        
+        # Create diverse offers (only for letting properties)
+        offers = create_offers(db, properties_rent, tenants, count=20)
 
         # Link landlords to properties-for-let
         print("\n[*] Linking landlords to properties...")
@@ -655,6 +810,7 @@ def main():
         print(f"   - {len(vendors)} Vendors")
         print(f"   - {len(tasks)} Tasks")
         print(f"   - {len(tickets)} Tickets")
+        print(f"   - {len(offers)} Offers")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")

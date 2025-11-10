@@ -357,7 +357,7 @@ export default function Offers() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 hover:bg-red-500 hover:text-white hover:border-red-500"
                         onClick={() => handleReject(offer.id)}
                         disabled={rejectOffer.isPending}
                       >
