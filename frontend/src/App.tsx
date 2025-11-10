@@ -7,6 +7,9 @@ import { ThemeProvider } from "next-themes";
 import Sidebar from "./components/layout/Sidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import Calendar from "./pages/Calendar";
+import MyTasks from "./pages/MyTasks";
+import Notes from "./pages/Notes";
 import Properties from "./pages/Properties";
 import Landlords from "./pages/Landlords";
 import LandlordDetails from "./pages/LandlordDetails";
@@ -40,7 +43,12 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+  <ThemeProvider 
+    attribute="class" 
+    defaultTheme="light" 
+    themes={["light", "dark"]}
+    enableSystem={false}
+  >
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -61,6 +69,9 @@ const App = () => (
                     <main className="ml-64 flex-1">
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
+                        <Route path="/calendar" element={<Calendar />} />
+                        <Route path="/my-tasks" element={<MyTasks />} />
+                        <Route path="/notes" element={<Notes />} />
                         <Route path="/properties" element={<Properties />} />
                         <Route path="/properties/:id" element={<PropertyDetails />} />
                         <Route path="/landlords" element={<Landlords />} />

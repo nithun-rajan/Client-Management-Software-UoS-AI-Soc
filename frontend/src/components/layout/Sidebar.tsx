@@ -4,13 +4,13 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
-import ThemeToggle from "@/components/shared/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, MessageSquare, Store, ShoppingBag,
-  User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText
+  User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
+  Calendar, StickyNote
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
@@ -18,6 +18,9 @@ const AGENT_KEY = "john-smith-agent";
 const navigation = {
   general: [
     { name: "Dashboard", href: "/", icon: Home },
+    { name: "Calendar", href: "/calendar", icon: Calendar },
+    { name: "My Tasks", href: "/my-tasks", icon: CheckSquare },
+    { name: "Notes", href: "/notes", icon: StickyNote },
   ],
   lettings: [
     { name: "Tenants", href: "/applicants", icon: Users },
@@ -31,11 +34,13 @@ const navigation = {
     { name: "Valuations", href: "/valuations", icon: FileText },
   ],
         other: [
-          { name: "Messages", href: "/messages", icon: MessageSquare },
           { name: "Tasks", href: "/tasks", icon: CheckSquare },
           { name: "Tickets", href: "/tickets", icon: Wrench },
           { name: "Offers", href: "/offers", icon: Handshake },
           { name: "KPIs", href: "/kpis", icon: BarChart3 },
+        ],
+        admin: [
+          { name: "Messages", href: "/messages", icon: MessageSquare },
           { name: "Settings", href: "/settings", icon: Settings },
         ],
 };
@@ -195,14 +200,35 @@ export default function Sidebar() {
               );
             })}
           </div>
-        </nav>
 
-        {/* Theme Toggle */}
-        <div className="border-t border-white/10 p-3">
-          <div className="flex items-center justify-center">
-            <ThemeToggle variant="sidebar" />
+          {/* Admin Section */}
+          <div className="pt-4 mt-auto">
+            <Separator className="mb-3 bg-white/10" />
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Admin
+              </h3>
+            </div>
+            {navigation.admin.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
-        </div>
+        </nav>
 
         {/* Agent Profile - Compact & Clean */}
         <div className="border-t border-white/10 p-3">
