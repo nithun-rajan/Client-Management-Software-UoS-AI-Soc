@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Home, UserCheck, Users, BarChart3, FileText,
+  Home, UserCheck, Users, BarChart3,
   TrendingUp, Clock, PoundSterling, Star, Mail, Phone,
 } from "lucide-react";
 
@@ -84,10 +84,10 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
-            {["properties", "landlords", "applicants", "kpis", "valuation"].map(t => (
+          <TabsList className="grid w-full grid-cols-4">
+            {["properties", "landlords", "applicants", "kpis"].map(t => (
               <TabsTrigger key={t} value={t} className="text-xs sm:text-sm">
-                {t === "kpis" ? "KPIs" : t}
+                {t === "kpis" ? "KPIs" : t.charAt(0).toUpperCase() + t.slice(1)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -194,35 +194,6 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
-
-          {/* VALUATION */}
-          <TabsContent value="valuation" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5" />
-                  AI Valuation Pack – Court Road, SO15
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Guide Price</p>
-                    <p className="text-2xl font-bold">£195,000</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Comparable Sale</p>
-                    <p className="text-xl font-bold">£185,000</p>
-                    <p className="text-xs text-muted-foreground">Apr 2025</p>
-                  </div>
-                </div>
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-sm font-medium mb-1">AI Confidence</p>
-                  <p className="text-3xl font-bold">96%</p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
 

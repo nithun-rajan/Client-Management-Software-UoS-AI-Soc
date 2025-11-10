@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
   Home, Building2, Users, UserCheck,
-  BarChart3, Settings, MessageSquare, Store, ShoppingBag,
+  BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
   Calendar, StickyNote
 } from "lucide-react";
@@ -31,7 +31,6 @@ const navigation = {
     { name: "Buyers", href: "/buyers", icon: User },
     { name: "Properties for Sale", href: "/properties-for-sale", icon: Building },
     { name: "Vendors", href: "/vendors", icon: UserCircle },
-    { name: "Valuations", href: "/valuations", icon: FileText },
   ],
         other: [
           { name: "Tasks", href: "/tasks", icon: CheckSquare },
@@ -40,7 +39,6 @@ const navigation = {
           { name: "KPIs", href: "/kpis", icon: BarChart3 },
         ],
         admin: [
-          { name: "Messages", href: "/messages", icon: MessageSquare },
           { name: "Settings", href: "/settings", icon: Settings },
         ],
 };
@@ -204,11 +202,6 @@ export default function Sidebar() {
           {/* Admin Section */}
           <div className="pt-4 mt-auto">
             <Separator className="mb-3 bg-white/10" />
-            <div className="px-3 mb-2">
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Admin
-              </h3>
-            </div>
             {navigation.admin.map((item) => {
               const isActive = location.pathname === item.href;
               return (
