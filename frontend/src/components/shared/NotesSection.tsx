@@ -33,17 +33,39 @@ export default function NotesSection({
   useEffect(() => {
     const storageKey = `notes_${entityType}_${entityId}`;
     const timestampKey = `notes_${entityType}_${entityId}_timestamp`;
+    const previousContentKey = `notes_${entityType}_${entityId}_previous`;
+    const previousTimestampKey = `notes_${entityType}_${entityId}_previous_timestamp`;
     const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       setNotes(saved);
       const savedTimestamp = localStorage.getItem(timestampKey);
       if (savedTimestamp) {
         setLastSaved(new Date(savedTimestamp));
+        
+        // Check if the note was last saved before today
+        const lastSave = new Date(savedTimestamp);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        lastSave.setHours(0, 0, 0, 0);
+        const wasSavedBeforeToday = lastSave.getTime() < today.getTime();
+        
+        // If saved before today and no previous content exists, store current as previous
+        // This ensures we have the "before today" version when editing today
+        if (wasSavedBeforeToday) {
+          const existingPrevious = localStorage.getItem(previousContentKey);
+          if (!existingPrevious) {
+            localStorage.setItem(previousContentKey, saved);
+            localStorage.setItem(previousTimestampKey, savedTimestamp);
+          }
+        }
       } else {
         setLastSaved(new Date());
       }
     } else if (initialNotes) {
       setNotes(initialNotes);
+      // Store initial notes as previous content
+      localStorage.setItem(previousContentKey, initialNotes);
     }
   }, [entityType, entityId, initialNotes]);
 
@@ -51,7 +73,37 @@ export default function NotesSection({
   const saveNotes = async (notesToSave: string) => {
     const storageKey = `notes_${entityType}_${entityId}`;
     const timestampKey = `notes_${entityType}_${entityId}_timestamp`;
+    const previousContentKey = `notes_${entityType}_${entityId}_previous`;
+    const previousTimestampKey = `notes_${entityType}_${entityId}_previous_timestamp`;
     const now = new Date();
+    
+    // Get current content before saving (to store as previous)
+    const currentContent = localStorage.getItem(storageKey) || "";
+    const lastTimestampStr = localStorage.getItem(timestampKey);
+    const previousTimestampStr = localStorage.getItem(previousTimestampKey);
+    
+    // Check if last save was today
+    let lastSaveWasToday = false;
+    if (lastTimestampStr) {
+      const lastSave = new Date(lastTimestampStr);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      lastSave.setHours(0, 0, 0, 0);
+      lastSaveWasToday = lastSave.getTime() === today.getTime();
+    }
+    
+    // Save previous content if:
+    // 1. Current content exists and is different from new content
+    // 2. Last save was NOT today (so we capture the "before today" version)
+    //    OR there's no previous content stored yet
+    if (currentContent && currentContent !== notesToSave) {
+      const existingPrevious = localStorage.getItem(previousContentKey);
+      if (!lastSaveWasToday || !existingPrevious) {
+        // Store the current content as previous (the "before today" version)
+        localStorage.setItem(previousContentKey, currentContent);
+        localStorage.setItem(previousTimestampKey, now.toISOString());
+      }
+    }
     
     // Save to localStorage immediately
     localStorage.setItem(storageKey, notesToSave);
