@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session
 # Import your database and models
 from app.core.database import Base, SessionLocal, engine
 from app.models.applicant import Applicant
-from app.models.enums import ApplicantStatus, PropertyStatus
+from app.models.enums import ApplicantStatus, PropertyStatus, TaskStatus
 from app.models.landlord import Landlord
 from app.models.property import Property
 from app.models.vendor import Vendor
 from app.models.enums_sales import SalesStatus
+from datetime import datetime, timedelta
 
 # Import all models to ensure they're registered with SQLAlchemy
 # This ensures all relationships are properly configured
@@ -344,6 +345,137 @@ def create_vendors(db: Session, count: int = 8):
     print(f"[OK] Created {count} vendors")
     return vendors
 
+def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, count: int = 30):
+    """Create diverse tasks with different priorities, statuses, and assignments"""
+    print(f"\n[*] Creating {count} tasks...")
+    
+    from app.models.task import Task
+    
+    # Task templates with variety
+    task_templates = [
+        # High priority urgent tasks
+        {"title": "Follow up on viewing feedback", "priority": "urgent", "status": TaskStatus.TODO},
+        {"title": "Complete AML verification", "priority": "urgent", "status": TaskStatus.IN_PROGRESS},
+        {"title": "Send contract to client", "priority": "urgent", "status": TaskStatus.TODO},
+        {"title": "Schedule property inspection", "priority": "high", "status": TaskStatus.TODO},
+        {"title": "Process deposit payment", "priority": "urgent", "status": TaskStatus.IN_PROGRESS},
+        
+        # Medium priority tasks
+        {"title": "Update property listing photos", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Review tenant application", "priority": "medium", "status": TaskStatus.IN_PROGRESS},
+        {"title": "Prepare viewing schedule", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Contact landlord about maintenance", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Update CRM records", "priority": "medium", "status": TaskStatus.COMPLETED},
+        {"title": "Send welcome email to new tenant", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Schedule property viewing", "priority": "medium", "status": TaskStatus.IN_PROGRESS},
+        {"title": "Review offer details", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Prepare tenancy agreement", "priority": "medium", "status": TaskStatus.IN_PROGRESS},
+        
+        # Low priority tasks
+        {"title": "Archive old documents", "priority": "low", "status": TaskStatus.TODO},
+        {"title": "Update marketing materials", "priority": "low", "status": TaskStatus.TODO},
+        {"title": "Review quarterly reports", "priority": "low", "status": TaskStatus.COMPLETED},
+        {"title": "Organize client database", "priority": "low", "status": TaskStatus.TODO},
+        {"title": "Plan next month viewings", "priority": "low", "status": TaskStatus.TODO},
+        
+        # Vendor-related tasks
+        {"title": "Verify vendor AML documents", "priority": "high", "status": TaskStatus.TODO},
+        {"title": "Schedule property valuation", "priority": "high", "status": TaskStatus.IN_PROGRESS},
+        {"title": "Prepare sales instruction contract", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Follow up on vendor inquiry", "priority": "medium", "status": TaskStatus.TODO},
+        
+        # Tenant/Applicant related tasks
+        {"title": "Conduct tenant reference check", "priority": "high", "status": TaskStatus.IN_PROGRESS},
+        {"title": "Process tenant application", "priority": "high", "status": TaskStatus.TODO},
+        {"title": "Schedule move-in inspection", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Send viewing confirmation", "priority": "medium", "status": TaskStatus.COMPLETED},
+        
+        # Landlord related tasks
+        {"title": "Collect landlord bank details", "priority": "medium", "status": TaskStatus.TODO},
+        {"title": "Update landlord contact information", "priority": "low", "status": TaskStatus.TODO},
+        {"title": "Schedule property maintenance", "priority": "high", "status": TaskStatus.IN_PROGRESS},
+    ]
+    
+    priorities = ["low", "medium", "high", "urgent"]
+    statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, TaskStatus.CANCELLED]
+    
+    # Collect all assignable people
+    assignable_people = []
+    
+    # Add landlords (using full_name)
+    for landlord in landlords:
+        assignable_people.append(landlord.full_name)
+    
+    # Add vendors (using first_name + last_name)
+    for vendor in vendors:
+        assignable_people.append(f"{vendor.first_name} {vendor.last_name}")
+    
+    # Add applicants (using first_name + last_name)
+    for applicant in applicants:
+        assignable_people.append(f"{applicant.first_name} {applicant.last_name}")
+    
+    tasks = []
+    for i in range(count):
+        # Pick a random template or create a custom one
+        if i < len(task_templates):
+            template = task_templates[i]
+        else:
+            # Generate random task
+            action_verbs = ["Review", "Process", "Schedule", "Update", "Contact", "Prepare", "Send", "Follow up on"]
+            nouns = ["application", "contract", "viewing", "payment", "inspection", "documentation", "inquiry", "feedback"]
+            template = {
+                "title": f"{random.choice(action_verbs)} {random.choice(nouns)}",
+                "priority": random.choice(priorities),
+                "status": random.choice(statuses)
+            }
+        
+        # Generate due date (some past, some future, some today)
+        days_offset = random.choice([
+            -7, -5, -3, -2, -1,  # Past dates
+            0,  # Today
+            1, 2, 3, 5, 7, 10, 14, 21, 30  # Future dates
+        ])
+        due_date = datetime.now() + timedelta(days=days_offset)
+        # Set time to end of day for due dates
+        due_date = due_date.replace(hour=17, minute=0, second=0, microsecond=0)
+        
+        # Randomly assign to someone (70% chance of assignment)
+        assigned_to = None
+        if random.random() < 0.7 and assignable_people:
+            assigned_to = random.choice(assignable_people)
+        
+        # Add description sometimes
+        description = None
+        if random.random() < 0.4:
+            descriptions = [
+                "Please ensure all documentation is complete before proceeding.",
+                "Follow up within 24 hours if no response.",
+                "Priority task - needs attention today.",
+                "Standard procedure - no rush.",
+                "Client has requested urgent action on this matter.",
+                "Part of ongoing property management workflow.",
+            ]
+            description = random.choice(descriptions)
+        
+        task = Task(
+            title=template["title"],
+            description=description,
+            status=template["status"],
+            priority=template["priority"],
+            due_date=due_date if random.random() < 0.8 else None,  # 80% have due dates
+            assigned_to=assigned_to,
+        )
+        
+        db.add(task)
+        tasks.append(task)
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} tasks...")
+    
+    db.commit()
+    print(f"[OK] Created {count} tasks")
+    return tasks
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -364,6 +496,9 @@ def main():
         tenants = create_applicants(db, count=15)  # All are tenants
         buyers = create_buyers(db, count=10)
         vendors = create_vendors(db, count=8)
+        
+        # Create diverse tasks
+        tasks = create_tasks(db, landlords, vendors, tenants, count=30)
 
         # Link landlords to properties-for-let
         print("\n[*] Linking landlords to properties...")
@@ -383,7 +518,7 @@ def main():
 
         # Assign properties to landlords
         print("\n[*] Assigning properties to landlords...")
-        for i, property in enumerate(properties):
+        for i, property in enumerate(properties_rent):
             # Assign each property to a random landlord
             landlord = random.choice(landlords)
             property.landlord_id = landlord.id
@@ -402,6 +537,7 @@ def main():
         print(f"   - {len(tenants)} Tenants")
         print(f"   - {len(buyers)} Buyers")
         print(f"   - {len(vendors)} Vendors")
+        print(f"   - {len(tasks)} Tasks")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
         print("="*60 + "\n")
