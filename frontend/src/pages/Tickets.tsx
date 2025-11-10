@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Wrench,
   Plus,
@@ -61,6 +62,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function Tickets() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -390,15 +392,26 @@ export default function Tickets() {
                       )}
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Home className="h-4 w-4" />
-                        <span className="truncate">
-                          {property
-                            ? `${property.address_line1 || property.address || ""} ${property.postcode || ""}`.trim()
-                            : "Property not found"}
-                        </span>
+                        {property ? (
+                          <button
+                            onClick={() => navigate(`/properties/${property.id}`)}
+                            className="truncate text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer text-left"
+                          >
+                            {`${property.address_line1 || property.address || ""} ${property.postcode || ""}`.trim()}
+                          </button>
+                        ) : (
+                          <span className="truncate">Property not found</span>
+                        )}
                       </div>
                       {applicant && (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <span>Reported by: {applicant.first_name} {applicant.last_name}</span>
+                          <span>Reported by:{" "}</span>
+                          <button
+                            onClick={() => navigate(`/applicants/${applicant.id}`)}
+                            className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                          >
+                            {applicant.first_name} {applicant.last_name}
+                          </button>
                         </div>
                       )}
                       <div className="flex items-center gap-2 text-muted-foreground">
