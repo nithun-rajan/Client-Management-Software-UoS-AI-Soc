@@ -15,6 +15,7 @@ import {
   Workflow,
   Pencil,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,8 @@ import {
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
+import { useTickets } from "@/hooks/useTickets";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,6 +125,14 @@ export default function PropertyDetails() {
     id || ""
   );
   const transitionMutation = useTransitionStatus();
+
+  // Get all tickets to filter by property_id
+  const { data: allTickets } = useTickets();
+  
+  // Filter tickets for this property
+  const propertyTickets = allTickets?.filter(
+    (ticket) => ticket.property_id === id
+  ) || [];
 
   const handleSendEmail = () => {
     console.log("📧 Sending email for property:", property?.id);
@@ -356,6 +367,53 @@ export default function PropertyDetails() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Tickets Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyTickets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tickets</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyTickets.map((ticket) => (
+                      <button
+                        key={ticket.id}
+                        onClick={() => navigate("/tickets")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{ticket.title}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.status.replace("_", " ")}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.urgency}
+                            </Badge>
+                          </div>
+                        </div>
+                        {ticket.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {ticket.description}
+                          </p>
+                        )}
+                        {ticket.ticket_category && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Category: {ticket.ticket_category}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pipeline Tab */}

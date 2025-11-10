@@ -13,6 +13,7 @@ import {
   FileText,
   Pencil,
   Trash2,
+  CheckSquare,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import Header from "@/components/layout/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useTasks } from "@/hooks/useTasks";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +60,14 @@ export default function LandlordDetails() {
       return response.data;
     },
   });
+
+  // Get all tasks to filter by assigned_to
+  const { data: allTasks } = useTasks();
+  
+  // Filter tasks assigned to this landlord (landlords use full_name)
+  const assignedTasks = allTasks?.filter(
+    (task) => task.assigned_to === landlord?.full_name
+  ) || [];
 
   const handleDelete = async () => {
     if (!id) return;
@@ -300,6 +310,43 @@ export default function LandlordDetails() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Assigned Tasks Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5" />
+                  Assigned Tasks
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {assignedTasks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No assigned tasks</p>
+                ) : (
+                  <div className="space-y-2">
+                    {assignedTasks.map((task) => (
+                      <button
+                        key={task.id}
+                        onClick={() => navigate("/tasks")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{task.title}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {task.status.replace("_", " ")}
+                          </Badge>
+                        </div>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {task.description}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Properties Tab */}

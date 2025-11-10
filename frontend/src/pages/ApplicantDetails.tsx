@@ -13,6 +13,8 @@ import {
   CreditCard,
   Building,
   AlertCircle,
+  CheckSquare,
+  Wrench,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,8 @@ import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useTasks } from "@/hooks/useTasks";
+import { useTickets } from "@/hooks/useTickets";
 
 export default function ApplicantDetails() {
   const { id } = useParams();
@@ -41,6 +45,28 @@ export default function ApplicantDetails() {
     enabled: !!id, // Only run query if id exists
   });
   const [expandedQuestions, setExpandedQuestions] = useState(false);
+
+  // Get all tasks to filter by assigned_to
+  const { data: allTasks } = useTasks();
+  
+  // Get applicant's full name for matching tasks
+  const getApplicantFullName = () => {
+    if (!applicant) return "";
+    return `${applicant.first_name || ""} ${applicant.last_name || ""}`.trim();
+  };
+  
+  // Filter tasks assigned to this applicant
+  const assignedTasks = allTasks?.filter(
+    (task) => task.assigned_to === getApplicantFullName()
+  ) || [];
+
+  // Get all tickets to filter by applicant_id
+  const { data: allTickets } = useTickets();
+  
+  // Filter tickets reported by this applicant
+  const reportedTickets = allTickets?.filter(
+    (ticket) => ticket.applicant_id === applicant?.id
+  ) || [];
 
   const handleSendEmail = () => {
     toast({
@@ -234,6 +260,79 @@ export default function ApplicantDetails() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Assigned Tasks Section */}
+              <div>
+                <h3 className="mb-3 font-semibold">Assigned Tasks</h3>
+                {assignedTasks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No assigned tasks</p>
+                ) : (
+                  <div className="space-y-2">
+                    {assignedTasks.map((task) => (
+                      <button
+                        key={task.id}
+                        onClick={() => navigate("/tasks")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{task.title}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {task.status.replace("_", " ")}
+                          </Badge>
+                        </div>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {task.description}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reported Tickets Section */}
+              <div>
+                <h3 className="mb-3 font-semibold flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  Reported Tickets
+                </h3>
+                {reportedTickets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No reported tickets</p>
+                ) : (
+                  <div className="space-y-2">
+                    {reportedTickets.map((ticket) => (
+                      <button
+                        key={ticket.id}
+                        onClick={() => navigate("/tickets")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{ticket.title}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.status.replace("_", " ")}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.urgency}
+                            </Badge>
+                          </div>
+                        </div>
+                        {ticket.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {ticket.description}
+                          </p>
+                        )}
+                        {ticket.ticket_category && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Category: {ticket.ticket_category}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {(applicant.has_pets || applicant.special_requirements) && (
