@@ -15,6 +15,7 @@ import {
   AlertCircle,
   CheckSquare,
   Wrench,
+  Handshake,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
+import { useOffers } from "@/hooks/useOffers";
 
 export default function ApplicantDetails() {
   const { id } = useParams();
@@ -66,6 +68,14 @@ export default function ApplicantDetails() {
   // Filter tickets reported by this applicant
   const reportedTickets = allTickets?.filter(
     (ticket) => ticket.applicant_id === applicant?.id
+  ) || [];
+
+  // Get all offers to filter by applicant_id
+  const { data: allOffers } = useOffers();
+  
+  // Filter offers made by this applicant
+  const applicantOffers = allOffers?.filter(
+    (offer) => offer.applicant_id === applicant?.id
   ) || [];
 
   const handleSendEmail = () => {
@@ -263,77 +273,148 @@ export default function ApplicantDetails() {
               </div>
 
               {/* Assigned Tasks Section */}
-              <div>
-                <h3 className="mb-3 font-semibold">Assigned Tasks</h3>
-                {assignedTasks.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No assigned tasks</p>
-                ) : (
-                  <div className="space-y-2">
-                    {assignedTasks.map((task) => (
-                      <button
-                        key={task.id}
-                        onClick={() => navigate("/tasks")}
-                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{task.title}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {task.status.replace("_", " ")}
-                          </Badge>
-                        </div>
-                        {task.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {task.description}
-                          </p>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Reported Tickets Section */}
-              <div>
-                <h3 className="mb-3 font-semibold flex items-center gap-2">
-                  <Wrench className="h-4 w-4" />
-                  Reported Tickets
-                </h3>
-                {reportedTickets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No reported tickets</p>
-                ) : (
-                  <div className="space-y-2">
-                    {reportedTickets.map((ticket) => (
-                      <button
-                        key={ticket.id}
-                        onClick={() => navigate("/tickets")}
-                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{ticket.title}</span>
-                          <div className="flex items-center gap-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckSquare className="h-5 w-5" />
+                    Assigned Tasks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {assignedTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No assigned tasks</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {assignedTasks.map((task) => (
+                        <button
+                          key={task.id}
+                          onClick={() => navigate("/tasks")}
+                          className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{task.title}</span>
                             <Badge variant="outline" className="text-xs">
-                              {ticket.status.replace("_", " ")}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {ticket.urgency}
+                              {task.status.replace("_", " ")}
                             </Badge>
                           </div>
-                        </div>
-                        {ticket.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {ticket.description}
-                          </p>
-                        )}
-                        {ticket.ticket_category && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Category: {ticket.ticket_category}
-                          </p>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                          {task.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {task.description}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Reported Tickets Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    Reported Tickets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {reportedTickets.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No reported tickets</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reportedTickets.map((ticket) => (
+                        <button
+                          key={ticket.id}
+                          onClick={() => navigate("/tickets")}
+                          className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{ticket.title}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {ticket.status.replace("_", " ")}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {ticket.urgency}
+                              </Badge>
+                            </div>
+                          </div>
+                          {ticket.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {ticket.description}
+                            </p>
+                          )}
+                          {ticket.ticket_category && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Category: {ticket.ticket_category}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Offers Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Handshake className="h-5 w-5" />
+                    Offers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {applicantOffers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No offers</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {applicantOffers.map((offer) => (
+                        <button
+                          key={offer.id}
+                          onClick={() => navigate("/offers")}
+                          className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                                {offer.property_id && (
+                                  <span className="text-xs text-muted-foreground">
+                                    for{" "}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/properties/${offer.property_id}`);
+                                      }}
+                                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                    >
+                                      {offer.property?.address || "Unknown Property"}
+                                    </button>
+                                  </span>
+                                )}
+                              </div>
+                              {offer.proposed_term_months && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Term: {offer.proposed_term_months} months
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {offer.status}
+                            </Badge>
+                          </div>
+                          {offer.special_conditions && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {offer.special_conditions}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {(applicant.has_pets || applicant.special_requirements) && (
                 <div>

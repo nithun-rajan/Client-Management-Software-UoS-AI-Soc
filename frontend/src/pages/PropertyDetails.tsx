@@ -16,6 +16,7 @@ import {
   Pencil,
   Trash2,
   Wrench,
+  Handshake,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ import {
 import { useState } from "react";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
 import { useTickets } from "@/hooks/useTickets";
+import { useOffers } from "@/hooks/useOffers";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -132,6 +134,14 @@ export default function PropertyDetails() {
   // Filter tickets for this property
   const propertyTickets = allTickets?.filter(
     (ticket) => ticket.property_id === id
+  ) || [];
+
+  // Get all offers to filter by property_id
+  const { data: allOffers } = useOffers();
+  
+  // Filter offers for this property
+  const propertyOffers = allOffers?.filter(
+    (offer) => offer.property_id === id
   ) || [];
 
   const handleSendEmail = () => {
@@ -406,6 +416,66 @@ export default function PropertyDetails() {
                         {ticket.ticket_category && (
                           <p className="text-xs text-muted-foreground mt-1">
                             Category: {ticket.ticket_category}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Offers Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Handshake className="h-5 w-5" />
+                  Offers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyOffers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No offers</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyOffers.map((offer) => (
+                      <button
+                        key={offer.id}
+                        onClick={() => navigate("/offers")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                              {offer.applicant_id && (
+                                <span className="text-xs text-muted-foreground">
+                                  by{" "}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/applicants/${offer.applicant_id}`);
+                                    }}
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                  >
+                                    {offer.applicant?.name || "Unknown"}
+                                  </button>
+                                </span>
+                              )}
+                            </div>
+                            {offer.proposed_term_months && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Term: {offer.proposed_term_months} months
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                        {offer.special_conditions && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {offer.special_conditions}
                           </p>
                         )}
                       </button>
