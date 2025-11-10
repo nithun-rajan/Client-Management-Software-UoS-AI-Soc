@@ -10,7 +10,7 @@ import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
-  Calendar, StickyNote
+  Calendar, StickyNote, UserCog
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
@@ -39,6 +39,7 @@ const navigation = {
           { name: "KPIs", href: "/kpis", icon: BarChart3 },
         ],
         admin: [
+          { name: "Agents", href: "/agents", icon: UserCog },
           { name: "Settings", href: "/settings", icon: Settings },
         ],
 };
