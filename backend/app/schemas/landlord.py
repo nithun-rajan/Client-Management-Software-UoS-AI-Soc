@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import ConfigDict, EmailStr
 from app.schemas.model_config import AppBaseModel
@@ -28,6 +28,8 @@ class LandlordUpdate(AppBaseModel):
     sort_code: str | None = None
     account_number: str | None = None
     notes: str | None = None
+    last_contacted_at: datetime | None = None
+    landlord_complete_info: bool | None = None
 
 class LandlordResponse(LandlordBase):
     id: str
@@ -35,4 +37,6 @@ class LandlordResponse(LandlordBase):
     aml_verification_date: date | None = None
     aml_check_expiry: date | None = None
     properties_count: int = 0  # Number of properties owned by this landlord
+    last_contacted_at: datetime | None = None
+    landlord_complete_info: bool = False
 
