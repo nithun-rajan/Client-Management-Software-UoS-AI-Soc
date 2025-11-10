@@ -58,3 +58,6 @@ class Applicant(BaseModel):
     
     # Buyer registration questions
     buyer_questions_answered = Column(Boolean, default=False)  # Flag indicating if buyer answered registration questions
+    
+    # Tenant registration questions
+    tenant_questions_answered = Column(Boolean, default=False)  # Flag indicating if tenant answered registration questions

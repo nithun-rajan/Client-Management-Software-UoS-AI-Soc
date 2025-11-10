@@ -25,6 +25,7 @@ class ApplicantBase(AppBaseModel):
     willing_to_rent: bool = True
     willing_to_buy: bool = False
     buyer_questions_answered: bool = False
+    tenant_questions_answered: bool = False
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -50,7 +51,9 @@ class ApplicantUpdate(AppBaseModel):
     willing_to_rent: bool | None = None
     willing_to_buy: bool | None = None
     buyer_questions_answered: bool | None = None
+    tenant_questions_answered: bool | None = None
     assigned_agent_id: str | None = None
+    last_contacted_at: datetime | None = None
     notes: str | None = None
 
 

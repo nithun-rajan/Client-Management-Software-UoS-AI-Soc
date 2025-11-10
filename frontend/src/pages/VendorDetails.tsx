@@ -22,6 +22,7 @@ import {
   Pencil,
   Trash2,
   CheckSquare,
+  Edit,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,8 @@ export default function VendorDetails() {
   const [expandedInfo, setExpandedInfo] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
+  const [lastContactedDate, setLastContactedDate] = useState<string>("");
 
   const { data: vendor, isLoading, refetch } = useQuery({
     queryKey: ["vendors", id],
@@ -77,6 +80,30 @@ export default function VendorDetails() {
     },
     enabled: !!id,
   });
+
+  const updateLastContacted = async () => {
+    if (!id) return;
+    try {
+      await api.put(`/api/v1/vendors/${id}`, {
+        last_contacted_at: new Date().toISOString(),
+      });
+      refetch();
+    } catch (error) {
+      console.error("Failed to update last contacted:", error);
+    }
+  };
+
+  // Calculate days since last contacted
+  const getDaysSinceLastContacted = () => {
+    if (!vendor?.last_contacted_at) return null;
+    const lastContacted = new Date(vendor.last_contacted_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const daysSinceLastContacted = getDaysSinceLastContacted();
 
   // Get all tasks to filter by assigned_to
   const { data: allTasks } = useTasks();
@@ -130,10 +157,31 @@ export default function VendorDetails() {
     }
   };
 
-  const handleSendEmail = () => {
+  const handleEditLastContacted = async () => {
+    if (!id || !lastContactedDate) return;
+    try {
+      const date = new Date(lastContactedDate);
+      await api.put(`/api/v1/vendors/${id}`, {
+        last_contacted_at: date.toISOString(),
+      });
+      toast({ title: "Success", description: "Last contacted date updated successfully" });
+      setEditLastContactedDialogOpen(false);
+      setLastContactedDate("");
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update last contacted date",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendEmail = async () => {
+    await updateLastContacted();
     toast({
       title: "Email Sent",
-      description: `Vendor details sent successfully`,
+      description: `Email sent to ${vendor?.email || "vendor"}`,
     });
   };
 
@@ -284,13 +332,250 @@ export default function VendorDetails() {
                           </div>
                         </div>
                       )}
+                      {/* Last Contacted */}
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">Last Contacted</div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                if (vendor.last_contacted_at) {
+                                  const date = new Date(vendor.last_contacted_at);
+                                  setLastContactedDate(date.toISOString().split('T')[0]);
+                                }
+                                setEditLastContactedDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {vendor.last_contacted_at ? (
+                              <>
+                                <div className="font-medium">
+                                  {new Date(vendor.last_contacted_at).toLocaleDateString()}
+                                </div>
+                                {daysSinceLastContacted !== null && (
+                                  <div className="text-sm">
+                                    (<span style={{ color: `hsl(var(--accent))`, fontWeight: 600 }}>
+                                      {daysSinceLastContacted}
+                                    </span>{" "}
+                                    {daysSinceLastContacted === 1 ? "day" : "days"} ago)
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-sm text-muted-foreground">Never contacted</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Complete Vendor Information Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Vendor Details</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Complete Vendor Information</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setExpandedInfo(!expandedInfo)}
+                      >
+                        {expandedInfo ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Expand
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {expandedInfo && (
+                    <CardContent className="space-y-6">
+                      {/* Check if all data is filled */}
+                      {(() => {
+                        const hasAllData = vendor.date_of_birth && vendor.nationality && 
+                          vendor.aml_verification_date && vendor.conveyancer_name && 
+                          vendor.instruction_date && vendor.agreed_commission;
+                        
+                        return !hasAllData && (
+                          <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 p-4 text-center">
+                            <AlertCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                            <p className="mb-2 text-sm text-muted-foreground">
+                              Some vendor information is missing
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                await updateLastContacted();
+                                toast({
+                                  title: "Request Sent",
+                                  description: "A request has been sent to the vendor to complete their profile information",
+                                });
+                              }}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Request Vendor to Complete Profile
+                            </Button>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Compliance & Verification Section */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-semibold">
+                          <Shield className="h-5 w-5 text-primary" />
+                          Compliance & Verification
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div>
+                            <div className="text-sm text-muted-foreground">ID Document Type</div>
+                            <div className="font-medium">
+                              {vendor.id_document_type || "Not provided"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Proof of Address Type</div>
+                            <div className="font-medium">
+                              {vendor.proof_of_address_type || "Not provided"}
+                            </div>
+                          </div>
+                          {vendor.aml_verification_date && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">AML Completed Date</div>
+                              <div className="font-medium">
+                                {new Date(vendor.aml_verification_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          )}
+                          {vendor.aml_verification_expiry && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">AML Expiry Date</div>
+                              <div className="font-medium">
+                                {new Date(vendor.aml_verification_expiry).toLocaleDateString()}
+                              </div>
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm text-muted-foreground">PEP Check</div>
+                            <div className="font-medium">
+                              {vendor.pep_check ? "Completed" : "Not completed"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground">Proof of Ownership</div>
+                            <div className="font-medium">
+                              {vendor.proof_of_ownership_uploaded ? "Uploaded" : "Not uploaded"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sales Instruction Details */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-semibold">
+                          <Briefcase className="h-5 w-5 text-primary" />
+                          Sales Instruction & Terms
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {vendor.instruction_date && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">Instruction Date</div>
+                              <div className="font-medium">
+                                {new Date(vendor.instruction_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          )}
+                          {vendor.contract_expiry_date && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">Contract Expiry Date</div>
+                              <div className="font-medium">
+                                {new Date(vendor.contract_expiry_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          )}
+                          {vendor.contract_length_weeks && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">Contract Length</div>
+                              <div className="font-medium">{vendor.contract_length_weeks} weeks</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Conveyancer Information */}
+                      {(vendor.conveyancer_name || vendor.conveyancer_firm || vendor.conveyancer_contact) && (
+                        <div className="space-y-4">
+                          <h3 className="flex items-center gap-2 font-semibold">
+                            <FileCheck className="h-5 w-5 text-primary" />
+                            Conveyancer Information
+                          </h3>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {vendor.conveyancer_name && (
+                              <div>
+                                <div className="text-sm text-muted-foreground">Conveyancer Name</div>
+                                <div className="font-medium">{vendor.conveyancer_name}</div>
+                              </div>
+                            )}
+                            {vendor.conveyancer_firm && (
+                              <div>
+                                <div className="text-sm text-muted-foreground">Law Firm</div>
+                                <div className="font-medium">{vendor.conveyancer_firm}</div>
+                              </div>
+                            )}
+                            {vendor.conveyancer_contact && (
+                              <div>
+                                <div className="text-sm text-muted-foreground">Contact</div>
+                                <div className="font-medium">{vendor.conveyancer_contact}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Relationship Tracking */}
+                      <div className="space-y-4">
+                        <h3 className="flex items-center gap-2 font-semibold">
+                          <User className="h-5 w-5 text-primary" />
+                          Relationship & Tracking
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {vendor.source_of_lead && (
+                            <div>
+                              <div className="text-sm text-muted-foreground">Source of Lead</div>
+                              <div className="font-medium capitalize">
+                                {vendor.source_of_lead.replace("_", " ")}
+                              </div>
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-sm text-muted-foreground">Marketing Consent</div>
+                            <div className="font-medium">
+                              {vendor.marketing_consent ? "Yes" : "No"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
@@ -334,10 +619,11 @@ export default function VendorDetails() {
               </div>
 
               <div className="h-full">
-                {/* Notes Section - matches height of Contact Info + Vendor Details */}
+                {/* Notes Section - matches height of Contact Info + Details */}
                 <NotesSection
                   entityType="vendor"
                   entityId={id || ""}
+                  initialNotes={vendor?.notes || ""}
                   className="h-full"
                 />
               </div>
@@ -378,200 +664,6 @@ export default function VendorDetails() {
                   </div>
                 )}
               </CardContent>
-            </Card>
-
-            {/* Expandable Vendor Information Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Complete Vendor Information</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedInfo(!expandedInfo)}
-                  >
-                    {expandedInfo ? (
-                      <>
-                        <ChevronUp className="mr-2 h-4 w-4" />
-                        Collapse
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="mr-2 h-4 w-4" />
-                        Expand
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardHeader>
-              {expandedInfo && (
-                <CardContent className="space-y-6">
-                  {/* Check if all data is filled */}
-                  {(() => {
-                    const hasAllData = vendor.date_of_birth && vendor.nationality && 
-                      vendor.aml_verification_date && vendor.conveyancer_name && 
-                      vendor.instruction_date && vendor.agreed_commission;
-                    
-                    return !hasAllData && (
-                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 p-4 text-center">
-                        <AlertCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                          Some vendor information is missing
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            toast({
-                              title: "Request Sent",
-                              description: "A request has been sent to the vendor to complete their profile information",
-                            });
-                          }}
-                        >
-                          <Mail className="mr-2 h-4 w-4" />
-                          Request Vendor to Complete Profile
-                        </Button>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Compliance & Verification Section */}
-                  <div className="space-y-4">
-                    <h3 className="flex items-center gap-2 font-semibold">
-                      <Shield className="h-5 w-5 text-primary" />
-                      Compliance & Verification
-                    </h3>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <div className="text-sm text-muted-foreground">ID Document Type</div>
-                        <div className="font-medium">
-                          {vendor.id_document_type || "Not provided"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Proof of Address Type</div>
-                        <div className="font-medium">
-                          {vendor.proof_of_address_type || "Not provided"}
-                        </div>
-                      </div>
-                      {vendor.aml_verification_date && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">AML Completed Date</div>
-                          <div className="font-medium">
-                            {new Date(vendor.aml_verification_date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      )}
-                      {vendor.aml_verification_expiry && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">AML Expiry Date</div>
-                          <div className="font-medium">
-                            {new Date(vendor.aml_verification_expiry).toLocaleDateString()}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-sm text-muted-foreground">PEP Check</div>
-                        <div className="font-medium">
-                          {vendor.pep_check ? "Completed" : "Not completed"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Proof of Ownership</div>
-                        <div className="font-medium">
-                          {vendor.proof_of_ownership_uploaded ? "Uploaded" : "Not uploaded"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sales Instruction Details */}
-                  <div className="space-y-4">
-                    <h3 className="flex items-center gap-2 font-semibold">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                      Sales Instruction & Terms
-                    </h3>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {vendor.instruction_date && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">Instruction Date</div>
-                          <div className="font-medium">
-                            {new Date(vendor.instruction_date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      )}
-                      {vendor.contract_expiry_date && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">Contract Expiry Date</div>
-                          <div className="font-medium">
-                            {new Date(vendor.contract_expiry_date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      )}
-                      {vendor.contract_length_weeks && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">Contract Length</div>
-                          <div className="font-medium">{vendor.contract_length_weeks} weeks</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Conveyancer Information */}
-                  {(vendor.conveyancer_name || vendor.conveyancer_firm || vendor.conveyancer_contact) && (
-                    <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 font-semibold">
-                        <FileCheck className="h-5 w-5 text-primary" />
-                        Conveyancer Information
-                      </h3>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {vendor.conveyancer_name && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Conveyancer Name</div>
-                            <div className="font-medium">{vendor.conveyancer_name}</div>
-                          </div>
-                        )}
-                        {vendor.conveyancer_firm && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Law Firm</div>
-                            <div className="font-medium">{vendor.conveyancer_firm}</div>
-                          </div>
-                        )}
-                        {vendor.conveyancer_contact && (
-                          <div>
-                            <div className="text-sm text-muted-foreground">Contact</div>
-                            <div className="font-medium">{vendor.conveyancer_contact}</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Relationship Tracking */}
-                  <div className="space-y-4">
-                    <h3 className="flex items-center gap-2 font-semibold">
-                      <User className="h-5 w-5 text-primary" />
-                      Relationship & Tracking
-                    </h3>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {vendor.source_of_lead && (
-                        <div>
-                          <div className="text-sm text-muted-foreground">Source of Lead</div>
-                          <div className="font-medium capitalize">
-                            {vendor.source_of_lead.replace("_", " ")}
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-sm text-muted-foreground">Marketing Consent</div>
-                        <div className="font-medium">
-                          {vendor.marketing_consent ? "Yes" : "No"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              )}
             </Card>
           </TabsContent>
 
@@ -771,6 +863,34 @@ export default function VendorDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Last Contacted Dialog */}
+      <Dialog open={editLastContactedDialogOpen} onOpenChange={setEditLastContactedDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Last Contacted Date</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="last_contacted_date">Last Contacted Date</Label>
+              <Input
+                id="last_contacted_date"
+                type="date"
+                value={lastContactedDate}
+                onChange={(e) => setLastContactedDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditLastContactedDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleEditLastContacted}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

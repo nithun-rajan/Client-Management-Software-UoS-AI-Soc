@@ -47,6 +47,9 @@ class Vendor(BaseModel):
     
     # Complete info flag (similar to buyer_questions_answered)
     vendor_complete_info = Column(Boolean, default=False)
+    
+    # Contact tracking
+    last_contacted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # When last contacted (updated on communication)
 
     # Relationships
     tasks = relationship("Task", back_populates="vendor")
