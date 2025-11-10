@@ -50,6 +50,7 @@ import Header from "@/components/layout/Header";
 import EmptyState from "@/components/shared/EmptyState";
 import { Task } from "@/types";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,73 +75,6 @@ export default function Tasks() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
-  // Date validation function
-  const validateDate = (dateStr: string): { valid: boolean; error?: string } => {
-    if (!dateStr) return { valid: true }; // Optional field
-    
-    // Check format DD/MM/YYYY
-    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const match = dateStr.match(dateRegex);
-    
-    if (!match) {
-      return { valid: false, error: "Date must be in DD/MM/YYYY format" };
-    }
-    
-    const day = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10);
-    const year = parseInt(match[3], 10);
-    
-    // Validate month
-    if (month < 1 || month > 12) {
-      return { valid: false, error: "Invalid month. Month must be between 01 and 12" };
-    }
-    
-    // Validate day
-    const daysInMonth = new Date(year, month, 0).getDate();
-    if (day < 1 || day > daysInMonth) {
-      return { valid: false, error: `Invalid day. Day must be between 01 and ${daysInMonth} for month ${month}` };
-    }
-    
-    // Validate year (reasonable range)
-    if (year < 1900 || year > 2100) {
-      return { valid: false, error: "Year must be between 1900 and 2100" };
-    }
-    
-    return { valid: true };
-  };
-
-  // Convert DD/MM/YYYY to ISO string
-  const convertDateToISO = (dateStr: string): string | undefined => {
-    if (!dateStr) return undefined;
-    const [day, month, year] = dateStr.split("/");
-    return new Date(`${year}-${month}-${day}`).toISOString();
-  };
-
-  // Convert ISO string to DD/MM/YYYY
-  const convertISOToDate = (isoStr: string): string => {
-    if (!isoStr) return "";
-    try {
-      const date = new Date(isoStr);
-      if (isNaN(date.getTime())) return "";
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    } catch (error) {
-      console.error("Error converting date:", error);
-      return "";
-    }
-  };
-
-  // Format date for display
-  const formatDateDisplay = (isoStr: string): string => {
-    try {
-      return convertISOToDate(isoStr);
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "";
-    }
-  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -152,8 +86,7 @@ export default function Tasks() {
     assigned_to: "",
   });
   
-  // State for date validation display and assigned user search
-  const [showDateError, setShowDateError] = useState(false);
+  // State for assigned user search
   const [assignedToInput, setAssignedToInput] = useState("");
   const [showUserSuggestions, setShowUserSuggestions] = useState(false);
   const [assignedToInputEdit, setAssignedToInputEdit] = useState("");
@@ -169,7 +102,6 @@ export default function Tasks() {
       assigned_to: "",
     });
     setAssignedToInput("");
-    setShowDateError(false);
     setShowUserSuggestions(false);
   };
   
@@ -239,31 +171,33 @@ export default function Tasks() {
   const handleEdit = (task: Task) => {
     setSelectedTask(task);
     const assignedName = task.assigned_to || "";
+    // Convert ISO date to YYYY-MM-DD format for date input
+    let dueDate = "";
+    if (task.due_date) {
+      try {
+        const date = new Date(task.due_date);
+        if (!isNaN(date.getTime())) {
+          dueDate = date.toISOString().split("T")[0];
+        }
+      } catch (error) {
+        console.error("Error converting date:", error);
+      }
+    }
     setFormData({
       title: task.title,
       description: task.description || "",
       status: task.status,
       priority: task.priority,
-      due_date: task.due_date ? convertISOToDate(task.due_date) : "",
+      due_date: dueDate,
       assigned_to: assignedName,
     });
     setAssignedToInputEdit(assignedName);
-    setShowDateError(false);
     setShowUserSuggestionsEdit(false);
     setEditDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate date if provided
-    if (formData.due_date) {
-      const dateValidation = validateDate(formData.due_date);
-      if (!dateValidation.valid) {
-        toast.error(dateValidation.error || "Invalid date");
-        return;
-      }
-    }
 
     // Validate assigned person exists if provided (check both users and landlords)
     if (formData.assigned_to) {
@@ -279,7 +213,8 @@ export default function Tasks() {
 
     const taskPayload: Partial<Task> = {
       ...formData,
-      due_date: formData.due_date ? convertDateToISO(formData.due_date) : undefined,
+      // Convert YYYY-MM-DD to ISO string for API
+      due_date: formData.due_date ? new Date(formData.due_date).toISOString() : undefined,
       assigned_to: formData.assigned_to || undefined,
     };
 
@@ -474,7 +409,7 @@ export default function Tasks() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        Due: {formatDateDisplay(task.due_date) || "Invalid date"}
+                        Due: {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "No due date"}
                       </span>
                     </div>
                   )}
@@ -566,62 +501,15 @@ export default function Tasks() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="due_date">Due Date (DD/MM/YYYY)</Label>
+                <Label htmlFor="due_date">Due Date</Label>
                 <Input
                   id="due_date"
-                  type="text"
-                  value={formData.due_date}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    
-                    // Remove any non-digit, non-slash characters
-                    value = value.replace(/[^\d/]/g, "");
-                    
-                    // Remove double slashes
-                    value = value.replace(/\/+/g, "/");
-                    
-                    // Extract digits in order
-                    const digits = value.split("").filter(c => c !== "/");
-                    
-                    // Rebuild with format DD/MM/YYYY (max 8 digits)
-                    let formatted = "";
-                    for (let i = 0; i < Math.min(digits.length, 8); i++) {
-                      if (i === 2 || i === 4) {
-                        formatted += "/";
-                      }
-                      formatted += digits[i];
-                    }
-                    
-                    // Limit to 10 characters
-                    if (formatted.length <= 10) {
-                      setFormData({ ...formData, due_date: formatted });
-                      setShowDateError(false);
-                    }
-                  }}
-                  onBlur={() => {
-                    // Only show error after user finishes typing
-                    if (formData.due_date && formData.due_date.length === 10) {
-                      setShowDateError(true);
-                    }
-                  }}
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                />
-                {showDateError && formData.due_date && (() => {
-                  try {
-                    const validation = validateDate(formData.due_date);
-                    if (!validation.valid) {
-                      return (
-                        <p className="text-xs mt-1 text-destructive">
-                          {validation.error}
-                        </p>
-                      );
-                    }
-                    return null;
-                  } catch (error) {
-                    return null;
+                  type="date"
+                  value={formData.due_date || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, due_date: e.target.value || undefined })
                   }
-                })()}
+                />
               </div>
               <div className="relative">
                 <Label htmlFor="assigned_to">Assigned To</Label>
@@ -644,7 +532,7 @@ export default function Tasks() {
                     // Delay hiding to allow click on suggestion
                     setTimeout(() => setShowUserSuggestions(false), 200);
                   }}
-                  placeholder="Type name (user, landlord, vendor, or applicant)..."
+                  placeholder="Type full name"
                 />
                 {showUserSuggestions && filteredPeople.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">
@@ -765,62 +653,15 @@ export default function Tasks() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="edit-due_date">Due Date (DD/MM/YYYY)</Label>
+                <Label htmlFor="edit-due_date">Due Date</Label>
                 <Input
                   id="edit-due_date"
-                  type="text"
-                  value={formData.due_date}
-                  onChange={(e) => {
-                    let value = e.target.value;
-                    
-                    // Remove any non-digit, non-slash characters
-                    value = value.replace(/[^\d/]/g, "");
-                    
-                    // Remove double slashes
-                    value = value.replace(/\/+/g, "/");
-                    
-                    // Extract digits in order
-                    const digits = value.split("").filter(c => c !== "/");
-                    
-                    // Rebuild with format DD/MM/YYYY (max 8 digits)
-                    let formatted = "";
-                    for (let i = 0; i < Math.min(digits.length, 8); i++) {
-                      if (i === 2 || i === 4) {
-                        formatted += "/";
-                      }
-                      formatted += digits[i];
-                    }
-                    
-                    // Limit to 10 characters
-                    if (formatted.length <= 10) {
-                      setFormData({ ...formData, due_date: formatted });
-                      setShowDateError(false);
-                    }
-                  }}
-                  onBlur={() => {
-                    // Only show error after user finishes typing
-                    if (formData.due_date && formData.due_date.length === 10) {
-                      setShowDateError(true);
-                    }
-                  }}
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                />
-                {showDateError && formData.due_date && (() => {
-                  try {
-                    const validation = validateDate(formData.due_date);
-                    if (!validation.valid) {
-                      return (
-                        <p className="text-xs mt-1 text-destructive">
-                          {validation.error}
-                        </p>
-                      );
-                    }
-                    return null;
-                  } catch (error) {
-                    return null;
+                  type="date"
+                  value={formData.due_date || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, due_date: e.target.value || undefined })
                   }
-                })()}
+                />
               </div>
               <div className="relative">
                 <Label htmlFor="edit-assigned_to">Assigned To</Label>
@@ -843,7 +684,7 @@ export default function Tasks() {
                     // Delay hiding to allow click on suggestion
                     setTimeout(() => setShowUserSuggestionsEdit(false), 200);
                   }}
-                  placeholder="Type name (user, landlord, vendor, or applicant)..."
+                  placeholder="Type full name"
                 />
                 {showUserSuggestionsEdit && filteredPeopleEdit.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md max-h-60 overflow-auto">

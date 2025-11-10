@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -17,22 +17,34 @@ router = APIRouter(prefix="/kpis", tags=["kpis"])
 def get_kpis(db: Session = Depends(get_db)):
     """Get dashboard KPIs"""
 
-    # Count properties for letting
-    properties_for_let = db.query(Property).filter(Property.sales_status == None).count()
+    # Count properties for letting (properties with rent set, not for sale)
+    properties_for_let = db.query(Property).filter(Property.rent != None).count()
     available_let = db.query(Property).filter(
-        Property.status == PropertyStatus.AVAILABLE,
-        Property.sales_status == None
+        and_(
+            Property.status == PropertyStatus.AVAILABLE,
+            Property.rent != None
+        )
     ).count()
-    let_by = db.query(Property).filter(Property.status == PropertyStatus.LET_BY).count()
-    tenanted = db.query(Property).filter(Property.status == PropertyStatus.TENANTED).count()
+    let_by = db.query(Property).filter(
+        and_(
+            Property.status == PropertyStatus.LET_BY,
+            Property.rent != None
+        )
+    ).count()
+    tenanted = db.query(Property).filter(
+        and_(
+            Property.status == PropertyStatus.TENANTED,
+            Property.rent != None
+        )
+    ).count()
     # Managed properties = properties that are actively being managed (tenanted or let_by)
     managed = let_by + tenanted
 
     # Average rent (only for letting properties)
     avg_rent = db.query(func.avg(Property.rent)).filter(Property.rent != None).scalar() or 0
 
-    # Count properties for sale
-    properties_for_sale = db.query(Property).filter(Property.sales_status != None).count()
+    # Count properties for sale (properties with asking_price set)
+    properties_for_sale = db.query(Property).filter(Property.asking_price != None).count()
     # Average selling price
     avg_selling_price = db.query(func.avg(Property.asking_price)).filter(
         Property.asking_price != None
@@ -46,16 +58,18 @@ def get_kpis(db: Session = Depends(get_db)):
     total_tenants = db.query(Applicant).filter(Applicant.willing_to_rent != False).count()
     # Qualified tenants = those who have passed initial qualification (QUALIFIED status or beyond)
     qualified_tenants = db.query(Applicant).filter(
-        Applicant.willing_to_rent != False,
-        Applicant.status.in_([
-            ApplicantStatus.QUALIFIED,
-            ApplicantStatus.VIEWING_BOOKED,
-            ApplicantStatus.OFFER_SUBMITTED,
-            ApplicantStatus.OFFER_ACCEPTED,
-            ApplicantStatus.REFERENCES,
-            ApplicantStatus.LET_AGREED,
-            ApplicantStatus.TENANCY_STARTED
-        ])
+        and_(
+            Applicant.willing_to_rent != False,
+            Applicant.status.in_([
+                ApplicantStatus.QUALIFIED,
+                ApplicantStatus.VIEWING_BOOKED,
+                ApplicantStatus.OFFER_SUBMITTED,
+                ApplicantStatus.OFFER_ACCEPTED,
+                ApplicantStatus.REFERENCES,
+                ApplicantStatus.LET_AGREED,
+                ApplicantStatus.TENANCY_STARTED
+            ])
+        )
     ).count()
 
     # Total buyers

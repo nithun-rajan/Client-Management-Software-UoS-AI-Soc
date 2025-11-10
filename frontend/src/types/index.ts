@@ -261,3 +261,19 @@ export interface Task {
   created_at: string;
   updated_at?: string;
 }
+
+export interface Ticket {
+  id: string;
+  title: string;
+  description?: string;
+  status: "new" | "open" | "in_progress" | "resolved" | "closed" | "cancelled";
+  urgency: "routine" | "normal" | "urgent" | "emergency";
+  ticket_category: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  reported_date: string;
+  property_id: string;
+  applicant_id?: string;
+  assigned_contractor_id?: string;
+  created_at: string;
+  updated_at?: string;
+}

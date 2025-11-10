@@ -13,6 +13,7 @@ from app.api.v1 import (
     search,
     tenancy,
     tasks,
+    tickets,
     vendors,
     viewings,
     offers,
@@ -34,6 +35,7 @@ api_router.include_router(property_matching.router)
 api_router.include_router(search.router)
 api_router.include_router(tenancy.router)
 api_router.include_router(tasks.router)
+api_router.include_router(tickets.router)
 api_router.include_router(vendors.router)
 api_router.include_router(viewings.router)
 api_router.include_router(offers.router)

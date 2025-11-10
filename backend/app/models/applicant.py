@@ -44,6 +44,7 @@ class Applicant(BaseModel):
     letting_offers = relationship("Offer", back_populates="applicant")  # Lettings offers
     sales_progression = relationship("SalesProgression", back_populates="buyer")
     sales_offers = relationship("SalesOffer", back_populates="buyer")  # Sales offers
+    reported_tickets = relationship("Ticket", back_populates="reporter")
 
     # Sales buyer specific fields
     buyer_type = Column(String)
