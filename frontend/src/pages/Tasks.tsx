@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckSquare,
   Plus,
@@ -53,6 +54,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 export default function Tasks() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
@@ -256,6 +258,34 @@ export default function Tasks() {
     }
   };
 
+  // Helper function to find person by name and get their route
+  const getPersonRoute = (name: string): string | null => {
+    const allPeople = getAllAssignablePeople();
+    const person = allPeople.find((p) => p.name === name);
+    if (!person) return null;
+    
+    switch (person.type) {
+      case "landlord":
+        return `/landlords/${person.id}`;
+      case "vendor":
+        return `/vendors/${person.id}`;
+      case "applicant":
+        return `/applicants/${person.id}`;
+      case "user":
+        // Users don't have a detail page, return null
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const handleAssignedToClick = (name: string) => {
+    const route = getPersonRoute(name);
+    if (route) {
+      navigate(route);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -415,7 +445,17 @@ export default function Tasks() {
                   )}
                   {task.assigned_to && (
                     <div className="text-sm text-muted-foreground">
-                      Assigned to: {task.assigned_to}
+                      Assigned to:{" "}
+                      {getPersonRoute(task.assigned_to) ? (
+                        <button
+                          onClick={() => handleAssignedToClick(task.assigned_to!)}
+                          className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                        >
+                          {task.assigned_to}
+                        </button>
+                      ) : (
+                        <span>{task.assigned_to}</span>
+                      )}
                     </div>
                   )}
                 </CardContent>
