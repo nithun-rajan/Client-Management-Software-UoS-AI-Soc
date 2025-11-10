@@ -478,9 +478,13 @@ class WorkflowManager:
             # 1. Create workflow task (existing logic unchanged)
             task = Task(
                 title="Draft Tenancy Agreement (AST)",
-                domain_id=domain.id,
-                tenancy_id=tenancy.id,
-                status="in_progress"
+                description="Draft Assured Shorthold Tenancy agreement with all terms and conditions.",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.HIGH,
+                related_entity_type="tenancy",
+                related_entity_id=entity_id,
+                tenancy_id=entity_id,
+                due_date=datetime.now(timezone.utc) + timedelta(days=5)
             )
             db.add(task)
 
