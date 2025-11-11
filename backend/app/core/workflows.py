@@ -394,6 +394,9 @@ class WorkflowManager:
                             context=email_context
                         )
                         print(f"Successfully sent offer confirmation email to {applicant.email}")
+                        task.status=TaskStatus.COMPLETED
+                        task.priority=TaskPriority.LOW
+                        task.description=f"Successfully sent offer confirmation email to {applicant.email}"
             except Exception as e:
                 print(f"ERROR: Failed to send offer confirmation email: {e}")
 
@@ -466,8 +469,8 @@ class WorkflowManager:
         import jinja2
         from weasyprint import HTML
         from app.api.v1.documents import upload_file_to_cloud
-        from app.models.document import Document
-        from app.schemas.documents import DocumentCreate, DocumentCategory
+        from app.models.document import Document, DocumentType
+        from app.schemas.documents import DocumentCreate
         from app.models.tenancy import Tenancy
         from app.models.tasks import Task
         
@@ -523,19 +526,22 @@ class WorkflowManager:
 
                 # 7. Save document record
                 doc_create = DocumentCreate(
-                    file_name=file_name,
-                    file_path=file_path,
-                    file_type="application/pdf",
-                    category=DocumentCategory.TENANCY_AGREEMENT,
-                    tenancy_id=tenancy.id,
-                    uploaded_by_id="system"
-                )   
-
+                title=file_name,
+                document_type=DocumentType.TENANCY_AGREEMENT,
+                file_url=file_path,
+                file_name=file_name,
+                file_size=len(pdf_bytes),
+                mime_type="application/pdf",
+                tenancy_id=tenancy.id,
+                uploaded_by_user_id="system"
+            )
                 db_document = Document(**doc_create.model_dump())
                 db.add(db_document)
-                db.commit()
 
                 print(f"✅ Successfully generated and saved AST: {file_name}")
+                task.status=TaskStatus.COMPLETED
+                task.priority=TaskPriority.LOW
+                task.description=f"Successfully generated and saved AST: {file_name}"
 
             except Exception as e:
                 print(f"❌ ERROR: Failed to generate AST: {e}")

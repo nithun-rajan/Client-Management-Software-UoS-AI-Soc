@@ -2,8 +2,8 @@ from app.schemas.model_config import AppBaseModel
 from app.models.enums import TenancyStatus
 
 from datetime import date, datetime
-from typing import Optional
-
+from typing import Optional, List
+from pydantic import BaseModel
 
 # Fields common to Create and Response
 class TenancyBase(AppBaseModel):
@@ -46,6 +46,10 @@ class TenancyUpdate(AppBaseModel):
     end_date: Optional[date] = None
     status: Optional[TenancyStatus] = None
     status: Optional[str] = None
+    # --- ADD THESE TWO LINES ---
+    reference_status: Optional[str] = None
+    right_to_rent_status: Optional[str] = None
+    # --- END OF ADDITION ---
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = None
@@ -70,3 +74,22 @@ class TenancyResponse(TenancyBase):
 
     class Config:
         from_attributes = True
+
+class StatementLineItem(BaseModel):
+    """A single line item for a financial statement."""
+    description: str
+    amount: float
+
+class PreTenancyStatementResponse(BaseModel):
+    """Defines the response for a pre-tenancy financial statement."""
+    tenancy_id: str
+    tenant_name: str
+    property_address: str
+    start_date: date
+    
+    # A list of charges and credits
+    line_items: List[StatementLineItem]
+    
+    # The final calculated total
+    total_amount_due: float
+    notes: Optional[str] = None

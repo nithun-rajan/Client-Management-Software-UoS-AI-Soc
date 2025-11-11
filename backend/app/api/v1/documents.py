@@ -6,7 +6,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.models.document import Document
-from app.schemas.documents import DocumentCreate, DocumentResponse, DocumentCategory, DocumentLinkResponse
+from app.schemas.documents import DocumentCreate, DocumentResponse, DocumentLinkResponse
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -30,26 +30,26 @@ def upload_file_to_cloud(file_name: str, file_content: bytes) -> str:
         
     return file_path # In production, this would be the cloud URL/key
 
-@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_2_0_CREATED)
 def upload_document(
-    # We use Form() for mixed file/data uploads
-    tenancy_id: uuid.UUID = Form(None),
-    property_id: uuid.UUID = Form(None),
-    category: DocumentCategory = Form(DocumentCategory.OTHER),
+    tenancy_id: str = Form(None),
+    property_id: str = Form(None),
+    applicant_id: str = Form(None),
+    document_type: str = Form(..., description="Specific type, e.g., 'reference', 'right_to_rent', 'epc'"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
-    # current_user: User = Depends(get_current_user) # --- REMOVED auth
 ):
     """
     Upload a document and associate it with a tenancy or property.
     """
-    if not tenancy_id and not property_id:
+    if not tenancy_id and not property_id and applicant_id:
         raise HTTPException(status_code=400, detail="A tenancy_id or property_id must be provided.")
 
     # Generate a unique file name to prevent conflicts
+
     file_extension = os.path.splitext(file.filename)[1]
     unique_file_name = f"{uuid.uuid4()}{file_extension}"
-    
+
     file_content = file.file.read()
 
     try:
@@ -60,13 +60,16 @@ def upload_document(
         raise HTTPException(status_code=500, detail="File upload failed.")
 
     doc_create = DocumentCreate(
-        file_name=file.filename, # Save the *original* file name for display
-        file_path=file_path,     # Save the *new* unique path/key
-        file_type=file.content_type,
-        category=category,
+        title=file.filename,
+        document_type=document_type,
+        file_url=file_path,
+        file_name=file.filename,
+        file_size=len(file_content),
+        mime_type=file.content_type,
         tenancy_id=tenancy_id,
         property_id=property_id,
-        uploaded_by_id="system"
+        applicant_id=applicant_id,
+        uploaded_by_user_id="system"
     )
 
     db_document = Document(**doc_create.model_dump())
@@ -78,7 +81,7 @@ def upload_document(
 # --- Secure Download Endpoint ---
 @router.get("/{document_id}/download", response_model=DocumentLinkResponse)
 def get_document_download_link(
-    document_id: uuid.UUID,
+    document_id: str,
     db: Session = Depends(get_db)
 ):
     """
