@@ -197,13 +197,7 @@ def get_kpis(db: Session = Depends(get_db)):
 
     # --- SECTION ADDED ---
     # Compliance KPIs (Blueprint p. 34)
-<<<<<<< HEAD
     # Filter for incomplete tasks (not completed or cancelled)
-    incomplete_task_statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS]
-    overdue_tasks = db.query(Task).filter(
-        Task.status.in_(incomplete_task_statuses),
-        Task.due_date < datetime.utcnow()
-    ).count()
     active_task_statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS]
     overdue_tasks = db.query(Task).filter(
         Task.status.in_(active_task_statuses),
