@@ -1,9 +1,10 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, and_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func, and_, cast, Float
 from datetime import datetime # --- ADDED ---
+from typing import Dict
 
 from app.core.database import get_db
 from app.models.applicant import Applicant
@@ -14,6 +15,95 @@ from app.models.tenancy import Tenancy # --- ADDED ---
 from app.models.workflow import WorkflowTransition # --- ADDED ---
 from app.models.task import Task # --- ADDED ---
 from app.models.enums import PropertyStatus, ApplicantStatus, TaskStatus, TenancyStatus
+from app.models.enums_sales import SalesStatus
+from app.models.sales import SalesProgression
+
+def _to_float(value) -> float:
+    return float(value) if value not in (None,) else 0.0
+
+def _average_sale_price_per_bedroom(db: Session) -> float:
+    total_price , total_bedrooms = (
+        db.query(
+            func.sum(Property.asking_price),
+            func.sum(Property.bedrooms),
+        )
+        .filter(
+            Property.asking_price != None,
+            Property.bedrooms != None,
+            Property.bedrooms > 0,
+        )
+        .one()
+    )
+
+    if total_price and total_bedrooms:
+        return float(total_price) / float(total_bedrooms)
+    return 0.0
+
+def _asking_vs_achieved_price(db: Session):
+    avg_asking = (
+        db.query(func.avg(Property.asking_price))
+        .filter(Property.asking_price != None)
+        .scalar()
+    )
+    avg_achieved = (
+        db.query(func.avg(SalesProgression.agreed_price))
+        .filter(SalesProgression.agreed_price != None)
+        .scalar()
+    )
+
+    avg_asking_float = _to_float(avg_asking)
+    avg_achieved_float = _to_float(avg_achieved)
+    achievement_rate = (
+        (avg_achieved_float / avg_asking_float)*100
+        if avg_asking_float
+        else 0.0
+    )
+
+    return {
+        "avg_asking_price": round(avg_asking_float, 2),
+        'avg_achieved_price': round(avg_achieved_float, 2),
+        'achievement': round(achievement_rate, 2),
+        'price_gap': round(avg_achieved_float - avg_asking_float, 2),
+    }
+
+
+def _listing_to_sales_ratio(db: Session, total_listed: int):
+    completed_sales = (
+        db.query(func.count(Property.id))
+        .filter(Property.sales_status == SalesStatus.COMPLETED)
+        .scalar()
+    )
+
+    conversion_rate = (
+        (completed_sales / total_listed) * 100
+        if total_listed
+        else 0.0
+    )
+
+    loss_rows = (
+        db.query(
+            SalesProgression.fall_through_reason,
+            func.count(SalesProgression.id),
+        )
+        .filter(SalesProgression.is_fall_through == True)
+        .group_by(SalesProgression.fall_through_reason)
+        .all()
+    )
+
+    loss_breakdown: Dict[str, int] = {}
+    for reason, count in loss_rows:
+        label = reason or 'unspecified'
+        loss_breakdown[label] = count
+
+    total_losses = sum(loss_breakdown.values())
+
+    return {
+        'total_listed': total_listed,
+        'total_completed': completed_sales,
+        'conversion_rate': round(conversion_rate, 2),
+        'total_losses': total_losses,
+        'loss_breakdown': loss_breakdown,
+    }
 
 
 router = APIRouter(prefix="/kpis", tags=["kpis"])
@@ -75,7 +165,8 @@ def get_kpis(db: Session = Depends(get_db)):
     ).scalar() or 0
 
     avg_sale_price_per_bedroom = _average_sale_price_per_bedroom(db)
-
+    price_comparison =  _asking_vs_achieved_price(db)
+    listing_to_sales = _listing_to_sales_ratio(db, properties_for_sale)
 
     # Total landlords
     total_landlords = db.query(Landlord).count()
@@ -107,12 +198,13 @@ def get_kpis(db: Session = Depends(get_db)):
 
     # --- SECTION ADDED ---
     # Compliance KPIs (Blueprint p. 34)
+    active_task_statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS]
     overdue_tasks = db.query(Task).filter(
-        Task.status == TaskStatus.PENDING,
+        Task.status.in_(active_task_statuses),
         Task.due_date < datetime.utcnow()
     ).count()
     upcoming_tasks = db.query(Task).filter(
-        Task.status == TaskStatus.PENDING,
+        Task.status.in_(active_task_statuses),
         Task.due_date >= datetime.utcnow()
     ).count()
     # --- END OF SECTION ---
@@ -129,6 +221,8 @@ def get_kpis(db: Session = Depends(get_db)):
             "total": properties_for_sale,
             "avg_selling_price": round(avg_selling_price, 2),
             "avg_price_per_bedroom": round(avg_sale_price_per_bedroom, 2),
+            "price_comparison": price_comparison,
+            "listing_to_sales": listing_to_sales,
         },
         "landlords": {
             "total": total_landlords,
