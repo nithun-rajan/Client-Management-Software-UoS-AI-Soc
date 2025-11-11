@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useUsers } from "@/hooks/useUsers";
+import { useAgents, Agent } from "@/hooks/useAgents";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/shared/EmptyState";
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
@@ -33,91 +33,26 @@ const getAgentPhotoUrl = (firstName: string, lastName: string): string => {
   return `https://i.pravatar.cc/150?img=${Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)) % 70}`;
 };
 
-// Mock team assignments (in real app, this would come from backend)
-const getAgentTeam = (agentId: string): string => {
-  // Assign teams based on agent ID to ensure consistent assignment
-  // First two agents: Sales Team, rest: Lettings Team
-  const hash = agentId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
-  const index = Math.abs(hash) % 5; // 5 agents total
-  // Make first two agents (index 0, 1) Sales Team, rest Lettings Team
-  if (index < 2) {
-    return "Sales Team";
-  }
-  return "Lettings Team";
-};
-
-// Mock position/title based on agent
-const getAgentPosition = (agentId: string, firstName: string): string => {
-  const positions = [
-    "Senior Sales & Lettings Manager",
-    "Lettings Specialist",
-    "Sales Manager",
-    "Property Consultant",
-    "Senior Property Advisor"
-  ];
-  const index = parseInt(agentId.slice(-1)) || 0;
-  return positions[index % positions.length];
-};
-
-// Mock phone number
-const getAgentPhone = (agentId: string): string => {
-  const phones = [
-    "023 8099 1111",
-    "023 8099 1122",
-    "023 8099 1133",
-    "023 8099 1144",
-    "023 8099 1155"
-  ];
-  const index = parseInt(agentId.slice(-1)) || 0;
-  return phones[index % phones.length];
-};
-
-// Mock online status (FE only, randomly generated per agent)
-const getAgentOnlineStatus = (agentId: string): boolean => {
-  // Use agent ID to generate consistent online status
-  const hash = agentId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
-  return Math.abs(hash) % 3 !== 0; // 2/3 chance of being online
-};
+// Note: Team, position, phone, and online status now come from the API
 
 export default function Agents() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [onMyTeamFilter, setOnMyTeamFilter] = useState(false);
-  const { data: agents, isLoading } = useUsers("agent"); // Filter for agents only
-
+  
   // Get current user's team (mock - in real app would come from auth)
   // Set to "Sales Team" for testing - change this to "Lettings Team" to test the other team
   const currentUserTeam = "Sales Team"; // This would come from the logged-in user's data
+  
+  const { data: agents, isLoading } = useAgents(onMyTeamFilter ? currentUserTeam : undefined, searchQuery || undefined);
 
-  // Filter agents based on search and team filter
-  const filteredAgents = useMemo(() => {
-    if (!agents) return [];
-    
-    let filtered = agents;
-    
-    // Apply team filter
-    if (onMyTeamFilter) {
-      filtered = filtered.filter((agent) => getAgentTeam(agent.id) === currentUserTeam);
-    }
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((agent) => {
-        const fullName = `${agent.first_name || ""} ${agent.last_name || ""}`.toLowerCase();
-        const email = (agent.email || "").toLowerCase();
-        const position = getAgentPosition(agent.id, agent.first_name || "").toLowerCase();
-        return fullName.includes(query) || email.includes(query) || position.includes(query);
-      });
-    }
-    
-    return filtered;
-  }, [agents, searchQuery, onMyTeamFilter, currentUserTeam]);
+  // Agents are already filtered by the API, so we can use them directly
+  const filteredAgents = agents || [];
 
-  // Calculate stats
+  // Calculate stats from API data
   const stats = useMemo(() => {
     if (!agents) return { total: 0, active: 0, inactive: 0, online: 0, offline: 0 };
-    const onlineCount = agents.filter((a) => getAgentOnlineStatus(a.id)).length;
+    const onlineCount = agents.filter((a) => a.online_status).length;
     return {
       total: agents.length,
       active: agents.filter((a) => a.is_active).length,
@@ -133,14 +68,21 @@ export default function Agents() {
     return agents.find((a) => a.id === selectedAgent);
   }, [selectedAgent, agents]);
 
-  // Calculate stats for an agent (mock data for now)
-  const getAgentStats = (agentId: string) => {
-    // In a real app, these would come from the API
+  // Get agent stats from API data
+  const getAgentStats = (agent: Agent) => {
     return {
-      askingPrice: `${Math.floor(Math.random() * 20) + 85}%`,
-      daysOnMarket: `${Math.floor(Math.random() * 30) + 30}`,
-      monthlyFees: `£${(Math.random() * 30 + 20).toFixed(1)}k`,
-      satisfaction: (Math.random() * 1.5 + 3.5).toFixed(1),
+      askingPrice: agent.stats.asking_price_achievement 
+        ? `${agent.stats.asking_price_achievement.toFixed(0)}%`
+        : "N/A",
+      daysOnMarket: agent.stats.days_on_market_avg 
+        ? `${agent.stats.days_on_market_avg.toFixed(0)}`
+        : "N/A",
+      monthlyFees: agent.stats.monthly_fees 
+        ? `£${(agent.stats.monthly_fees / 1000).toFixed(1)}k`
+        : "£0",
+      satisfaction: agent.stats.satisfaction_score 
+        ? agent.stats.satisfaction_score.toFixed(1)
+        : "N/A",
     };
   };
 
@@ -240,7 +182,7 @@ export default function Agents() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredAgents.map((agent) => {
-              const stats = getAgentStats(agent.id);
+              const stats = getAgentStats(agent);
               const fullName = `${agent.first_name || ""} ${agent.last_name || ""}`.trim() || "Unknown";
               const initials = fullName
                 .split(" ")
@@ -249,11 +191,11 @@ export default function Agents() {
                 .toUpperCase()
                 .slice(0, 2);
               const agentId = getAgentId(agent.id);
-              const isOnline = getAgentOnlineStatus(agent.id);
+              const isOnline = agent.online_status;
               const photoUrl = getAgentPhotoUrl(agent.first_name || "", agent.last_name || "");
-              const phone = getAgentPhone(agent.id);
-              const position = getAgentPosition(agent.id, agent.first_name || "");
-              const team = getAgentTeam(agent.id);
+              const phone = agent.phone || "N/A";
+              const position = agent.position || "Agent";
+              const team = agent.team || "N/A";
 
               return (
                 <Card
@@ -317,14 +259,14 @@ export default function Agents() {
               const fullName = `${selectedAgentData.first_name || ""} ${selectedAgentData.last_name || ""}`.trim() || "Unknown";
               const initials = fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
               const agentId = getAgentId(selectedAgentData.id);
-              const isOnline = getAgentOnlineStatus(selectedAgentData.id);
+              const isOnline = selectedAgentData.online_status;
               const photoUrl = getAgentPhotoUrl(selectedAgentData.first_name || "", selectedAgentData.last_name || "");
-              const phone = getAgentPhone(selectedAgentData.id);
-              const position = getAgentPosition(selectedAgentData.id, selectedAgentData.first_name || "");
-              const team = getAgentTeam(selectedAgentData.id);
+              const phone = selectedAgentData.phone || "N/A";
+              const position = selectedAgentData.position || "Agent";
+              const team = selectedAgentData.team || "N/A";
               const role = selectedAgentData.role ? selectedAgentData.role.charAt(0).toUpperCase() + selectedAgentData.role.slice(1) : "Agent";
               const qualifications = `ARLA Level 3 • ${Math.floor(Math.random() * 10) + 3} years experience`;
-              const stats = getAgentStats(selectedAgentData.id);
+              const stats = getAgentStats(selectedAgentData);
               
               // Mock activity feed
               const activities = [

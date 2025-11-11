@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     applicants, 
+    agents,
     auth, 
     events, 
     kpis, 
@@ -25,6 +26,7 @@ from app.api.v1 import (
 api_router = APIRouter()
 
 api_router.include_router(applicants.router)
+api_router.include_router(agents.router)
 api_router.include_router(auth.router)
 api_router.include_router(events.router)
 api_router.include_router(kpis.router)

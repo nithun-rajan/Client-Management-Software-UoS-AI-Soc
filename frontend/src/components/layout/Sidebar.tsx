@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -10,7 +9,7 @@ import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, MessageSquare, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
-  Calendar, StickyNote, UserCog
+  Calendar, StickyNote, UserCog, Sparkles
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";

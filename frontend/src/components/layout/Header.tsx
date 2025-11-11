@@ -58,8 +58,8 @@ export default function Header({ title }: HeaderProps) {
   const [vendorOpen, setVendorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyType, setPropertyType] = useState<"rent" | "sale">("rent");
-  const [selectedLandlordId, setSelectedLandlordId] = useState<string>("");
-  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+  const [selectedLandlordId, setSelectedLandlordId] = useState<string>("none");
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("none");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: landlords } = useLandlords();
@@ -132,13 +132,13 @@ export default function Header({ title }: HeaderProps) {
       
       if (propertyType === "rent") {
         propertyData.rent = parseFloat(formData.get("price") as string);
-        if (selectedLandlordId) {
+        if (selectedLandlordId && selectedLandlordId !== "none") {
           propertyData.landlord_id = selectedLandlordId;
         }
       } else {
         propertyData.asking_price = parseFloat(formData.get("price") as string);
         propertyData.sales_status = "available";
-        if (selectedVendorId) {
+        if (selectedVendorId && selectedVendorId !== "none") {
           propertyData.vendor_id = selectedVendorId;
         }
       }
@@ -147,8 +147,8 @@ export default function Header({ title }: HeaderProps) {
       toast({ title: "Success", description: "Property added successfully" });
       setPropertyOpen(false);
       setPropertyType("rent");
-      setSelectedLandlordId("");
-      setSelectedVendorId("");
+      setSelectedLandlordId("none");
+      setSelectedVendorId("none");
       window.location.reload();
     } catch (error) {
       toast({
@@ -482,8 +482,8 @@ export default function Header({ title }: HeaderProps) {
         setPropertyOpen(open); 
         if (!open) {
           setPropertyType("rent");
-          setSelectedLandlordId("");
-          setSelectedVendorId("");
+          setSelectedLandlordId("none");
+          setSelectedVendorId("none");
         }
       }}>
         <DialogContent>
@@ -559,7 +559,7 @@ export default function Header({ title }: HeaderProps) {
                       <SelectValue placeholder="Select landlord" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {landlords?.map((landlord) => (
                         <SelectItem key={landlord.id} value={landlord.id}>
                           {landlord.full_name}
@@ -577,7 +577,7 @@ export default function Header({ title }: HeaderProps) {
                       <SelectValue placeholder="Select vendor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {vendors?.map((vendor) => (
                         <SelectItem key={vendor.id} value={vendor.id}>
                           {vendor.first_name} {vendor.last_name}

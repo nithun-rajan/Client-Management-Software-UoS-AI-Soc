@@ -4,7 +4,7 @@ import axios from "axios";
 const API_URL = "http://localhost:8000/api/v1";
 
 export interface Communication {
-  id: number;
+  id: string;
   type: string;
   subject?: string;
   content: string;
@@ -12,9 +12,9 @@ export interface Communication {
   created_by?: string;
   is_important: boolean;
   is_read: boolean;
-  property_id?: number;
-  landlord_id?: number;
-  applicant_id?: number;
+  property_id?: string;
+  landlord_id?: string;
+  applicant_id?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -26,9 +26,9 @@ export interface CommunicationCreate {
   direction?: string;
   created_by?: string;
   is_important?: boolean;
-  property_id?: number;
-  landlord_id?: number;
-  applicant_id?: number;
+  property_id?: string;
+  landlord_id?: string;
+  applicant_id?: string;
 }
 
 export interface CommunicationStats {
@@ -52,7 +52,7 @@ export function useCommunications() {
   const fetchCommunications = async (filters?: {
     type?: string;
     entity_type?: string;
-    entity_id?: number;
+    entity_id?: string;
     is_important?: boolean;
     is_read?: boolean;
   }) => {
@@ -62,7 +62,7 @@ export function useCommunications() {
       const params = new URLSearchParams();
       if (filters?.type) params.append("type", filters.type);
       if (filters?.entity_type) params.append("entity_type", filters.entity_type);
-      if (filters?.entity_id) params.append("entity_id", filters.entity_id.toString());
+      if (filters?.entity_id) params.append("entity_id", filters.entity_id);
       if (filters?.is_important !== undefined)
         params.append("is_important", filters.is_important.toString());
       if (filters?.is_read !== undefined)
@@ -94,14 +94,33 @@ export function useCommunications() {
       await fetchCommunications();
       await fetchStats();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create communication");
+      // Handle validation errors properly
+      let errorMsg = "Failed to create communication";
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          // Pydantic validation errors
+          const errorMessages = detail.map((e: any) => {
+            const field = e.loc ? e.loc.join('.') : 'field';
+            return `${field}: ${e.msg || 'Invalid value'}`;
+          });
+          errorMsg = errorMessages.join('\n');
+        } else if (typeof detail === 'object') {
+          errorMsg = detail.msg || detail.message || JSON.stringify(detail);
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const markAsRead = async (id: number) => {
+  const markAsRead = async (id: string) => {
     try {
       await axios.put(`${API_URL}/messaging/${id}`, { is_read: true });
       await fetchCommunications();
@@ -111,7 +130,7 @@ export function useCommunications() {
     }
   };
 
-  const deleteCommunication = async (id: number) => {
+  const deleteCommunication = async (id: string) => {
     try {
       await axios.delete(`${API_URL}/messaging/${id}`);
       await fetchCommunications();
@@ -121,7 +140,7 @@ export function useCommunications() {
     }
   };
 
-  const getPropertyCommunications = async (propertyId: number) => {
+  const getPropertyCommunications = async (propertyId: string) => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/messaging/property/${propertyId}`);
@@ -133,7 +152,7 @@ export function useCommunications() {
     }
   };
 
-  const getLandlordCommunications = async (landlordId: number) => {
+  const getLandlordCommunications = async (landlordId: string) => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/messaging/landlord/${landlordId}`);
@@ -145,7 +164,7 @@ export function useCommunications() {
     }
   };
 
-  const getApplicantCommunications = async (applicantId: number) => {
+  const getApplicantCommunications = async (applicantId: string) => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/messaging/applicant/${applicantId}`);

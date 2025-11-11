@@ -18,6 +18,8 @@ import {
   Trash2,
   Wrench,
   Handshake,
+  AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,10 +63,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMaintenanceByProperty } from "@/hooks/useMaintenance";
-import { Wrench, AlertTriangle, Plus } from "lucide-react";
 import { MaintenanceIssue } from "@/types";
 import EmptyState from "@/components/shared/EmptyState";
-import { Badge } from "@/components/ui/badge";
 
 export default function PropertyDetails() {
   const { id } = useParams();

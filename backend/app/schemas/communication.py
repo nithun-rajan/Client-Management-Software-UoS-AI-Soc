@@ -54,11 +54,37 @@ class CommunicationCreate(CommunicationBase):
     
     @model_validator(mode='after')
     def validate_entity_link(self) -> 'CommunicationCreate':
-        property_id = self.property_id
-        landlord_id = self.landlord_id
-        applicant_id = self.applicant_id
+        # Normalize and check if at least one entity is linked (handle empty strings)
+        property_id = None
+        landlord_id = None
+        applicant_id = None
+        
+        if self.property_id:
+            property_id = str(self.property_id).strip() if self.property_id else None
+            if property_id == "":
+                property_id = None
+        
+        if self.landlord_id:
+            landlord_id = str(self.landlord_id).strip() if self.landlord_id else None
+            if landlord_id == "":
+                landlord_id = None
+        
+        if self.applicant_id:
+            applicant_id = str(self.applicant_id).strip() if self.applicant_id else None
+            if applicant_id == "":
+                applicant_id = None
+        
         if not any([property_id, landlord_id, applicant_id]):
             raise ValueError("At least one entity (property, landlord, or applicant) must be linked")
+        
+        # Update the model with normalized values (only if they exist)
+        if property_id is not None:
+            self.property_id = property_id
+        if landlord_id is not None:
+            self.landlord_id = landlord_id
+        if applicant_id is not None:
+            self.applicant_id = applicant_id
+        
         return self
 
 class CommunicationUpdate(AppBaseModel):
