@@ -1,7 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
-from app.schemas.model_config import ModelConfig
 
 
 class ComparableSaleBase(BaseModel):
@@ -29,29 +28,28 @@ class ComparableSale(ComparableSaleBase):
     created_at: datetime
     updated_at: datetime
     
-    class Config(ModelConfig):
-        pass
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ValuationBase(BaseModel):
     property_id: str
-    valuation_type: str = Field(..., regex="^(sales|lettings)$")
+    valuation_type: str = Field(..., pattern="^(sales|lettings)$")
     estimated_value: Optional[float] = None
     value_range_min: Optional[float] = None
     value_range_max: Optional[float] = None
-    confidence: Optional[str] = Field(None, regex="^(high|medium|low)$")
+    confidence: Optional[str] = Field(None, pattern="^(high|medium|low)$")
     market_conditions: Optional[str] = None
     comparable_properties: Optional[List[Dict[str, Any]]] = None
     key_factors: Optional[Dict[str, List[str]]] = None
     recommended_price: Optional[float] = None
-    pricing_strategy: Optional[str] = Field(None, regex="^(quick_sale|premium|balanced|aspirational)$")
+    pricing_strategy: Optional[str] = Field(None, pattern="^(quick_sale|premium|balanced|aspirational)$")
     recommendations: Optional[List[str]] = None
     property_advantages: Optional[str] = None
     property_limitations: Optional[str] = None
     location_analysis: Optional[str] = None
     valuation_logic: Optional[str] = None
     location_infrastructure: Optional[str] = None
-    valuation_method: Optional[str] = Field(None, regex="^(ai_analysis|manual|comparison)$")
+    valuation_method: Optional[str] = Field(None, pattern="^(ai_analysis|manual|comparison)$")
     model_used: Optional[str] = None
 
 
@@ -63,9 +61,9 @@ class ValuationUpdate(BaseModel):
     estimated_value: Optional[float] = None
     value_range_min: Optional[float] = None
     value_range_max: Optional[float] = None
-    confidence: Optional[str] = Field(None, regex="^(high|medium|low)$")
-    status: Optional[str] = Field(None, regex="^(active|superseded|draft)$")
-    pricing_strategy: Optional[str] = Field(None, regex="^(quick_sale|premium|balanced|aspirational)$")
+    confidence: Optional[str] = Field(None, pattern="^(high|medium|low)$")
+    status: Optional[str] = Field(None, pattern="^(active|superseded|draft)$")
+    pricing_strategy: Optional[str] = Field(None, pattern="^(quick_sale|premium|balanced|aspirational)$")
 
 
 class Valuation(ValuationBase):
@@ -73,20 +71,19 @@ class Valuation(ValuationBase):
     created_at: datetime
     updated_at: datetime
     valuation_date: datetime
-    status: str = Field(..., regex="^(active|superseded|draft)$")
+    status: str = Field(..., pattern="^(active|superseded|draft)$")
     
     # Relationships
     comparable_sales: List[ComparableSale] = []
     
-    class Config(ModelConfig):
-        pass
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ValuationRequest(BaseModel):
     property_id: str
-    valuation_type: str = Field(..., regex="^(sales|lettings)$")
+    valuation_type: str = Field(..., pattern="^(sales|lettings)$")
     include_comparables: bool = True
-    market_analysis_depth: str = Field(default="comprehensive", regex="^(basic|standard|comprehensive)$")
+    market_analysis_depth: str = Field(default="comprehensive", pattern="^(basic|standard|comprehensive)$")
     radius_km: float = Field(default=5.0, ge=0.1, le=50.0)
     max_comparables: int = Field(default=10, ge=1, le=50)
 

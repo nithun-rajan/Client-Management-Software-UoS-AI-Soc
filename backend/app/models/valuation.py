@@ -48,6 +48,7 @@ class Valuation(BaseModel):
     
     # Relationships
     property = relationship("Property", back_populates="valuations")
+    comparable_sales = relationship("ComparableSale", back_populates="valuation", cascade="all, delete-orphan")
 
 
 class ComparableSale(BaseModel):

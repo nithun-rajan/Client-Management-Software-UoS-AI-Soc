@@ -875,6 +875,75 @@ def main():
         db.commit()
         print("[OK] Linked vendors to properties-for-sale")
 
+        # Assign properties to landlords
+        print("\n[*] Assigning properties to landlords...")
+        for i, property in enumerate(properties_rent):
+            # Assign each property to a random landlord
+            landlord = random.choice(landlords)
+            property.landlord_id = landlord.id
+        
+        db.commit()
+        print("[OK] Properties assigned to landlords")
+
+        # Create test user for login (agent.test@example.com)
+        print("\n" + "="*60)
+        print("[*] Creating test user for login...")
+        print("="*60)
+        
+        try:
+            # Use the same organization that was created for agents (or create it if it doesn't exist)
+            test_org = db.query(Organization).filter(Organization.name == "UoS Scouting Challenge").first()
+            if not test_org:
+                # Fallback to any existing organization
+                test_org = db.query(Organization).first()
+                if not test_org:
+                    test_org = Organization(name="UoS Scouting Challenge")
+                    db.add(test_org)
+                    db.commit()
+                    db.refresh(test_org)
+            
+            # Create or get test agent
+            agent_email = "agent.test@example.com"
+            test_agent = db.query(User).filter(User.email == agent_email).first()
+            if not test_agent:
+                test_agent = User(
+                    email=agent_email,
+                    first_name="John",
+                    last_name="Agent",
+                    role=Role.AGENT,
+                    hashed_password=get_password_hash("testpassword123"),
+                    organization_id=test_org.id,
+                    is_active=True
+                )
+                db.add(test_agent)
+                db.commit()
+                db.refresh(test_agent)
+                print(f"[OK] Created test agent: {test_agent.email}")
+                print(f"     Organization: {test_org.name}")
+                print(f"     Password: testpassword123")
+            else:
+                print(f"[OK] Test agent already exists: {test_agent.email}")
+                print(f"     Organization: {test_org.name}")
+            
+            # Assign some applicants to test agent
+            if tenants:
+                assigned_count = 0
+                for applicant in tenants[:3]:  # Assign first 3
+                    if not applicant.assigned_agent_id:
+                        applicant.assigned_agent_id = test_agent.id
+                        applicant.notes = f"Test assignment to {test_agent.first_name} {test_agent.last_name}"
+                        assigned_count += 1
+                db.commit()
+                if assigned_count > 0:
+                    print(f"[OK] Assigned {assigned_count} applicants to test agent")
+            
+            print("[OK] Test user setup complete")
+        except Exception as e:
+            print(f"[WARNING] Could not create test user: {e}")
+            import traceback
+            traceback.print_exc()
+            print("   You can create it manually by running: python create_test_data.py")
+        
         # Summary
         print("\n" + "="*60)
         print("[OK] SEEDING COMPLETE!")
@@ -890,8 +959,19 @@ def main():
         print(f"   - {len(tickets)} Tickets")
         print(f"   - {len(offers)} Offers")
         print(f"   - {len(agents)} Agents")
+        print("\n" + "="*60)
+        print("🔐 LOGIN CREDENTIALS:")
+        print("="*60)
+        print("Test User (Agent):")
+        print("   Email: agent.test@example.com")
+        print("   Password: testpassword123")
+        print("\nAlternative Agents (from seed):")
+        print("   Email: john.smith@uos-crm.co.uk")
+        print("   Password: password123")
+        print("   (and other agents with same password)")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
+        print("   Frontend: http://localhost:8080")
         print("="*60 + "\n")
 
     except Exception as e:

@@ -117,7 +117,6 @@ class Applicant(BaseModel):
     tenancies = relationship("Tenancy", back_populates="applicant")
     communications = relationship("Communication", back_populates="applicant")
     sales_progression = relationship("SalesProgression", back_populates="buyer")
-    offers = relationship("Offer", back_populates="buyer")
 
 
     # Willingness flags

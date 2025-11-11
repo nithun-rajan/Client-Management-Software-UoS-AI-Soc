@@ -21,11 +21,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("refresh_token");
-      // Only redirect if we're not already on the login page
-      if (window.location.pathname !== "/login") {
+      const currentPath = window.location.pathname;
+      // Don't clear tokens or redirect if we're already on login/register pages
+      // These pages handle their own authentication state
+      if (currentPath !== "/login" && currentPath !== "/register") {
+        // Clear token and redirect to login
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("refresh_token");
+        // Use replace to avoid adding to history
         window.location.href = "/login";
       }
     }

@@ -28,6 +28,7 @@ def list_tasks(
     limit: int = Query(100, ge=1, le=1000), 
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
+    tenancy_id: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """List all tasks with optional filtering"""
@@ -38,10 +39,8 @@ def list_tasks(
         query = query.filter(Task.status == status)
     if priority:
         query = query.filter(Task.priority == priority)
-     # --- ADD THIS BLOCK ---
     if tenancy_id:
         query = query.filter(Task.tenancy_id == tenancy_id)
-    # --- END ADD ---
     
     tasks = query.offset(skip).limit(limit).all()
     return tasks

@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import verify_token
+from app.core.security import verify_token, get_current_user
 from app.models.property import Property
 from app.models.landlord import Landlord
 from app.models.vendor import Vendor
@@ -104,14 +104,19 @@ def list_properties(
     skip: int = Query(0, ge=0), 
     limit: int = Query(100, ge=1, le=1000), 
     landlord_id: Optional[str] = Query(None, description="Filter properties by landlord ID"),
+    managed_by: Optional[str] = Query(None, description="Filter properties by manager user ID"),
     db: Session = Depends(get_db)
 ):
-    """List all properties with landlord information. Optionally filter by landlord_id."""
+    """List all properties with landlord information. Optionally filter by landlord_id or managed_by."""
     query = db.query(Property)
     
     # Filter by landlord_id if provided
     if landlord_id:
         query = query.filter(Property.landlord_id == landlord_id)
+    
+    # Filter by managed_by if provided
+    if managed_by:
+        query = query.filter(Property.managed_by == managed_by)
     
     properties = query.offset(skip).limit(limit).all()
     result = []
@@ -137,6 +142,41 @@ def list_properties(
                     last_name=vendor.last_name,
                     email=vendor.email,
                     primary_phone=vendor.primary_phone
+                )
+        result.append(response)
+    return result
+
+@router.get("/my-properties", response_model=list[PropertyResponse])
+def get_my_properties(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get properties managed by the current authenticated user
+    
+    CRM Feature: "My Properties" - Shows which properties are managed by which user
+    """
+    properties = db.query(Property)\
+        .filter(Property.managed_by == current_user.id)\
+        .order_by(Property.created_at.desc())\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+    
+    result = []
+    for property in properties:
+        response = PropertyResponse.model_validate(property)
+        # Include landlord information if property has a landlord
+        if property.landlord_id:
+            landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+            if landlord:
+                response.landlord = LandlordInfo(
+                    id=landlord.id,
+                    full_name=landlord.full_name,
+                    email=landlord.email,
+                    phone=landlord.phone
                 )
         result.append(response)
     return result

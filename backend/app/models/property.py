@@ -49,6 +49,7 @@ class Property(BaseModel):
     
     # Additional details
     description = Column(Text)
+    notes = Column(Text, nullable=True)  # General notes about the property
     features = Column(Text)  # JSON string: ["parking", "garden", "pets_allowed"]
     council_tax_band = Column(String)
     
