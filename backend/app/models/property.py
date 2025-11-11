@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean, Numeric
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean, Numeric, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.models.base import BaseModel
@@ -22,7 +22,7 @@ class Property(BaseModel):
     furnished = Column(Boolean, default=False)
     
     asking_rent = Column(Float)  # What we listed it for
-    rent = Column(Float)  # Actual achieved rent
+    rent = Column(Float)  # Actual achieved rent    
     deposit = Column(Float)
     
     status = Column(String, default=PropertyStatus.AVAILABLE)
@@ -62,7 +62,7 @@ class Property(BaseModel):
     communications = relationship("Communication", back_populates="property")
     sales_progression = relationship("SalesProgression", back_populates="property", uselist=False)
     offers = relationship("Offer", back_populates="property")    
-
+    valuations = relationship("Valuation", back_populates="property")
 
     # Sales specific fields
     sales_status = Column(String, default=SalesStatus.AVAILABLE, index=True)

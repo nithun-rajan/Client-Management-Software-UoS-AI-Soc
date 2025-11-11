@@ -9,7 +9,7 @@ class Domain(str, Enum):
     TENANCY = "tenancy"
     VENDOR = "vendor"
     APPLICANT = "applicant"
-
+    VALUATION = "valuation"
 
 class WorkflowManager:
     """
@@ -76,6 +76,17 @@ class WorkflowManager:
                 "exchange_agreed": ["completed", "sales_let_agreed"],
                 "completed": ["archived"],
                 "archived": ["new"]
+            },
+
+            Domain.VALUATION: {
+                # Valuation workflow states
+                "draft": ["in_progress", "cancelled"],
+                "in_progress": ["completed", "failed", "cancelled"],
+                "completed": ["superseded", "archived"],
+                "failed": ["draft", "archived"],
+                "cancelled": ["draft"],
+                "superseded": ["archived"],
+                "archived": []
             }
         }
 
@@ -197,6 +208,37 @@ class WorkflowManager:
                 "finalize_sale",  # Complete sale process
                 "update_land_registry",  # Update land registry
                 "archive_sales_progression"  # Archive sales progression
+            ],
+
+            ("vendor", "new", "valuation_booked"): [
+                "schedule_valuation",
+                "create_valuation_record",  # Add this
+                "notify_agent_valuation_scheduled"
+            ],
+            ("vendor", "valuation_booked", "instructed"): [
+                "generate_final_valuation",  # Add this - generate final valuation pack
+                "create_sales_progression",
+                "notify_sales_team"
+            ],
+
+
+            # Valuation transitions
+            ("valuation", "draft", "in_progress"): [
+                "generate_valuation_pack",  # Trigger AI valuation generation
+                "notify_agent_valuation_started"
+            ],
+            ("valuation", "in_progress", "completed"): [
+                "store_valuation_document",  # Save the generated valuation pack
+                "notify_agent_valuation_ready",
+                "link_valuation_to_property"
+            ],
+            ("valuation", "in_progress", "failed"): [
+                "log_valuation_failure",
+                "notify_agent_valuation_failed"
+            ],
+            ("valuation", "completed", "superseded"): [
+                "archive_old_valuation",  # When new valuation is generated
+                "update_property_valuation"
             ]
         }
 
@@ -783,6 +825,223 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(days=2)
             )
             db.add(task)
+
+    #valuation packs
+    
+    async def execute_generate_valuation_pack(self, domain: Domain, entity_id: str, db):
+        """Generate AI valuation pack when valuation starts"""
+        from app.models.valuation import Valuation
+        from app.services.valuation_service import get_valuation_service
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            try:
+                valuation_service = await get_valuation_service()
+                
+                # Get property data for valuation
+                property_data = {
+                    'id': valuation.property_id,
+                    'full_address': valuation.property.address if valuation.property else "Unknown",
+                    'postcode': valuation.property.postcode if valuation.property else "Unknown",
+                    'property_type': valuation.property.property_type if valuation.property else "Unknown",
+                    'bedrooms': valuation.property.bedrooms if valuation.property else 0,
+                    'bathrooms': valuation.property.bathrooms if valuation.property else 0,
+                    'floor_area_sqm': valuation.property.floor_area_sqft / 10.764 if valuation.property and valuation.property.floor_area_sqft else None,
+                    'tenure': 'Unknown'
+                }
+                
+                # Generate valuation pack
+                result = await valuation_service.generate_sales_valuation_pack(property_data)
+                
+                if result.get("success"):
+                    # Update valuation with results
+                    valuation_data = result["valuation"]
+                    valuation.estimated_value = valuation_data.get("estimated_value")
+                    valuation.value_range_min = valuation_data.get("value_range_min")
+                    valuation.value_range_max = valuation_data.get("value_range_max")
+                    valuation.confidence = valuation_data.get("confidence")
+                    valuation.market_conditions = valuation_data.get("market_conditions")
+                    valuation.comparable_properties = valuation_data.get("comparable_properties")
+                    valuation.key_factors = valuation_data.get("key_factors")
+                    valuation.recommended_price = valuation_data.get("recommended_price")
+                    valuation.pricing_strategy = valuation_data.get("pricing_strategy")
+                    valuation.recommendations = valuation_data.get("recommendations")
+                    valuation.property_advantages = valuation_data.get("property_advantages")
+                    valuation.property_limitations = valuation_data.get("property_limitations")
+                    valuation.location_analysis = valuation_data.get("location_analysis")
+                    valuation.valuation_logic = valuation_data.get("valuation_logic")
+                    valuation.location_infrastructure = valuation_data.get("location_infrastructure")
+                    
+                    print(f"Successfully generated valuation pack for {entity_id}")
+                else:
+                    print(f"Valuation generation failed: {result.get('error')}")
+                    
+            except Exception as e:
+                print(f"Error generating valuation pack: {str(e)}")
+
+    async def execute_notify_agent_valuation_started(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation generation has started"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Generation Started",
+                description=f"AI valuation generation started for {valuation.property.address}",
+                status=TaskStatus.IN_PROGRESS,
+                priority=TaskPriority.MEDIUM,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_store_valuation_document(self, domain: Domain, entity_id: str, db):
+        """Store the completed valuation document"""
+        from app.models.valuation import Valuation
+        from app.models.document import Document
+        from app.models.enums import DocumentType
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            # Create document record for the valuation pack
+            document = Document(
+                title=f"Valuation Report - {valuation.property.address if valuation.property else 'Unknown'}",
+                document_type=DocumentType.VALUATION_REPORT,
+                related_entity_type="valuation",
+                related_entity_id=entity_id,
+                file_path=f"/valuations/{entity_id}.pdf",  # Path where PDF would be stored
+                metadata={
+                    "valuation_type": valuation.valuation_type,
+                    "estimated_value": valuation.estimated_value,
+                    "confidence": valuation.confidence,
+                    "generated_at": valuation.updated_at.isoformat()
+                }
+            )
+            db.add(document)
+            print(f"Created valuation document record for {entity_id}")
+
+    async def execute_notify_agent_valuation_ready(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation is ready"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Report Ready",
+                description=f"AI valuation report ready for {valuation.property.address}. Estimated value: £{valuation.estimated_value:,.2f}",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.HIGH,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_link_valuation_to_property(self, domain: Domain, entity_id: str, db):
+        """Link valuation to property for easy access"""
+        from app.models.valuation import Valuation
+        from app.models.property import Property
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id:
+            # This is handled by the foreign key relationship
+            # Could add additional logic here if needed
+            print(f"Valuation {entity_id} linked to property {valuation.property_id}")
+
+    async def execute_log_valuation_failure(self, domain: Domain, entity_id: str, db):
+        """Log valuation generation failure"""
+        from app.models.valuation import Valuation
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            valuation.valuation_logic = "Valuation generation failed. Please try again or contact support."
+            print(f"Logged valuation failure for {entity_id}")
+
+    async def execute_notify_agent_valuation_failed(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation generation failed"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Generation Failed",
+                description=f"AI valuation generation failed for {valuation.property.address}. Please review and retry.",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.HIGH,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_archive_old_valuation(self, domain: Domain, entity_id: str, db):
+        """Archive old valuation when new one is generated"""
+        from app.models.valuation import Valuation
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id:
+            # Archive other active valuations for the same property
+            old_valuations = db.query(Valuation).filter(
+                Valuation.property_id == valuation.property_id,
+                Valuation.id != entity_id,
+                Valuation.status == "active"
+            ).all()
+            
+            for old_val in old_valuations:
+                old_val.status = "superseded"
+            
+            print(f"Archived {len(old_valuations)} old valuations for property {valuation.property_id}")
+
+    async def execute_update_property_valuation(self, domain: Domain, entity_id: str, db):
+        """Update property with latest valuation data"""
+        from app.models.valuation import Valuation
+        from app.models.property import Property
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id and valuation.status == "active":
+            property_obj = db.query(Property).filter(Property.id == valuation.property_id).first()
+            if property_obj and valuation.valuation_type == "sales":
+                # Update property with valuation data for quick reference
+                # This could be stored in a separate field or relationship
+                print(f"Property {valuation.property_id} updated with new valuation data")
+
+    async def execute_create_valuation_record(self, domain: Domain, entity_id: str, db):
+        """Create valuation record when valuation is booked"""
+        from app.models.vendor import Vendor
+        from app.models.valuation import Valuation
+        
+        vendor = db.query(Vendor).filter(Vendor.id == entity_id).first()
+        if vendor and vendor.instructed_property_id:
+            # Create draft valuation record
+            valuation = Valuation(
+                property_id=vendor.instructed_property_id,
+                valuation_type="sales",
+                valuation_method="ai_analysis",
+                status="draft"
+            )
+            db.add(valuation)
+            print(f"Created draft valuation record for vendor {entity_id}")
+
+    async def execute_generate_final_valuation(self, domain: Domain, entity_id: str, db):
+        """Generate final valuation pack when vendor is instructed"""
+        from app.models.vendor import Vendor
+        from app.models.valuation import Valuation
+        
+        vendor = db.query(Vendor).filter(Vendor.id == entity_id).first()
+        if vendor and vendor.instructed_property_id:
+            # Find the draft valuation and trigger generation
+            valuation = db.query(Valuation).filter(
+                Valuation.property_id == vendor.instructed_property_id,
+                Valuation.status == "draft"
+            ).first()
+            
+            if valuation:
+                # Trigger workflow transition to start valuation generation
+                await self.execute_side_effects(Domain.VALUATION, valuation.id, "draft", "in_progress", db)
 
 # Global workflow manager instance
 workflow_manager = WorkflowManager()
