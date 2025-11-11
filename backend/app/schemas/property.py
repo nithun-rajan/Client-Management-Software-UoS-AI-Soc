@@ -53,6 +53,18 @@ class VendorInfo(AppBaseModel):
     email: str
     primary_phone: str | None = None
 
+class AgentInfo(AppBaseModel):
+    """Basic agent information for property responses"""
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    
+    @property
+    def full_name(self) -> str:
+        """Computed field combining first_name and last_name"""
+        return f"{self.first_name} {self.last_name}"
+
 class PropertyResponse(PropertyBase):
     id: str
     status: PropertyStatus
@@ -68,5 +80,6 @@ class PropertyResponse(PropertyBase):
     price_qualifier: str | None = None
     has_valuation_pack: bool | None = None
     managed_by: str | None = None
+    managed_agent: AgentInfo | None = None
     management_type: str | None = None
     management_notes: str | None = None

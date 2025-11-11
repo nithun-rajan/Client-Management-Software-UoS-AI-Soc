@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 from app.core.database import get_db
 from app.models.vendor import Vendor
-from app.schemas.vendor import VendorCreate, VendorResponse, VendorUpdate
+from app.schemas.vendor import VendorCreate, VendorResponse, VendorUpdate, AgentInfo
 from app.services.notification_service import notify
 from fastapi.security import OAuth2PasswordBearer
 from app.core.security import verify_token
@@ -17,6 +17,19 @@ router = APIRouter(prefix="/vendors", tags=["vendors"])
 
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def add_agent_info_to_vendor_response(vendor: Vendor, response: VendorResponse, db: Session) -> VendorResponse:
+    """Helper function to add agent information to vendor response"""
+    if vendor.managed_by:
+        agent = db.query(User).filter(User.id == vendor.managed_by).first()
+        if agent:
+            response.managed_agent = AgentInfo(
+                id=agent.id,
+                first_name=agent.first_name,
+                last_name=agent.last_name,
+                email=agent.email
+            )
+    return response
 
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
@@ -77,7 +90,8 @@ def create_vendor(
         except Exception:
             pass
     
-    return db_vendor
+    response = VendorResponse.model_validate(db_vendor)
+    return add_agent_info_to_vendor_response(db_vendor, response, db)
 
 @router.get("/", response_model=list[VendorResponse])
 def list_vendors(
@@ -97,20 +111,32 @@ def list_vendors(
         query = query.filter(Vendor.aml_status == aml_status)
     
     vendors = query.offset(skip).limit(limit).all()
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 # Specific GET routes must come before generic /{vendor_id} route
 @router.get("/status/{status}", response_model=list[VendorResponse])
 def get_vendors_by_status(status: str, db: Session = Depends(get_db)):
     """Get all vendors with a specific status"""
     vendors = db.query(Vendor).filter(Vendor.status == status).all()
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/aml/{aml_status}", response_model=list[VendorResponse])
 def get_vendors_by_aml_status(aml_status: str, db: Session = Depends(get_db)):
     """Get all vendors with a specific AML status"""
     vendors = db.query(Vendor).filter(Vendor.aml_status == aml_status).all()
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/aml/expiring-soon", response_model=list[VendorResponse])
 def get_vendors_with_aml_expiring_soon(
@@ -128,7 +154,11 @@ def get_vendors_with_aml_expiring_soon(
         Vendor.aml_status == "verified"
     ).all()
     
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/search/instruction-type", response_model=list[VendorResponse])
 def get_vendors_by_instruction_type(
@@ -146,7 +176,11 @@ def get_vendors_by_instruction_type(
         )
     
     vendors = db.query(Vendor).filter(Vendor.instruction_type == instruction_type).all()
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/contracts/expiring-soon", response_model=list[VendorResponse])
 def get_vendors_with_contracts_expiring_soon(
@@ -165,7 +199,11 @@ def get_vendors_with_contracts_expiring_soon(
         Vendor.status == "instructed"  # Only active instructions
     ).all()
     
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/source/{lead_source}", response_model=list[VendorResponse])
 def get_vendors_by_lead_source(
@@ -184,7 +222,11 @@ def get_vendors_by_lead_source(
         )
     
     vendors = db.query(Vendor).filter(Vendor.source_of_lead == lead_source).all()
-    return vendors
+    result = []
+    for vendor in vendors:
+        response = VendorResponse.model_validate(vendor)
+        result.append(add_agent_info_to_vendor_response(vendor, response, db))
+    return result
 
 @router.get("/{vendor_id}", response_model=VendorResponse)
 def get_vendor(vendor_id: str, db: Session = Depends(get_db)):
@@ -192,7 +234,9 @@ def get_vendor(vendor_id: str, db: Session = Depends(get_db)):
     vendor = db.query(Vendor).filter(Vendor.id == vendor_id).first()
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
-    return vendor
+    
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 @router.put("/{vendor_id}/verify-aml", response_model=VendorResponse)
 def verify_vendor_aml(vendor_id: str, db: Session = Depends(get_db)):
@@ -204,7 +248,8 @@ def verify_vendor_aml(vendor_id: str, db: Session = Depends(get_db)):
     vendor.aml_status = "verified"
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.put("/{vendor_id}/sales-instruction", response_model=VendorResponse)
@@ -242,7 +287,8 @@ def update_sales_instruction(
     
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.put("/{vendor_id}/aml-comprehensive", response_model=VendorResponse)
@@ -278,7 +324,8 @@ def update_vendor_aml_comprehensive(
     
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.put("/{vendor_id}/conveyancer", response_model=VendorResponse)
@@ -303,7 +350,8 @@ def update_vendor_conveyancer(
     
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.put("/{vendor_id}/marketing-consent", response_model=VendorResponse)
@@ -323,7 +371,8 @@ def update_vendor_marketing_consent(
     vendor.marketing_consent = consent
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.put("/{vendor_id}", response_model=VendorResponse)
@@ -349,7 +398,8 @@ def update_vendor(
 
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 @router.patch("/{vendor_id}", response_model=VendorResponse)
 def patch_vendor(
@@ -374,7 +424,8 @@ def patch_vendor(
 
     db.commit()
     db.refresh(vendor)
-    return vendor
+    response = VendorResponse.model_validate(vendor)
+    return add_agent_info_to_vendor_response(vendor, response, db)
 
 
 @router.delete("/{vendor_id}", status_code=status.HTTP_204_NO_CONTENT)

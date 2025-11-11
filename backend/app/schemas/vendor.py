@@ -3,6 +3,19 @@ from datetime import datetime, date
 from typing import Optional
 
 
+class AgentInfo(AppBaseModel):
+    """Basic agent information for vendor/landlord responses"""
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    
+    @property
+    def full_name(self) -> str:
+        """Computed field combining first_name and last_name"""
+        return f"{self.first_name} {self.last_name}"
+
+
 class VendorBase(AppBaseModel):
     first_name: str
     last_name: str
@@ -38,6 +51,7 @@ class VendorUpdate(AppBaseModel):
     minimum_fee: Optional[str] = None
     vendor_complete_info: Optional[bool] = None
     last_contacted_at: Optional[datetime] = None
+    managed_by: Optional[str] = None
 
 
 class VendorResponse(VendorBase):
@@ -45,6 +59,8 @@ class VendorResponse(VendorBase):
     instructed_property_id: Optional[str] = None
     vendor_complete_info: bool = False
     last_contacted_at: Optional[datetime] = None
+    managed_by: Optional[str] = None
+    managed_agent: Optional[AgentInfo] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     

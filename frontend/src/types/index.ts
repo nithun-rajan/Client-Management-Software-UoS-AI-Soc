@@ -13,6 +13,14 @@ export interface VendorInfo {
   primary_phone?: string;
 }
 
+export interface AgentInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  full_name?: string;
+}
+
 export interface Property {
   id: string;
   address_line1?: string;
@@ -47,6 +55,7 @@ export interface Property {
   has_valuation_pack?: boolean;
   // Property management fields
   managed_by?: string;
+  managed_agent?: AgentInfo;
   management_type?: string;
   management_notes?: string;
   created_at: string;
@@ -68,6 +77,9 @@ export interface Landlord {
   notes?: string;
   last_contacted_at?: string;
   landlord_complete_info?: boolean;
+  managed_by?: string;
+  managed_agent?: AgentInfo;
+  properties_count?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -99,6 +111,8 @@ export interface Vendor {
   instructed_property_id?: string;
   vendor_complete_info?: boolean;
   last_contacted_at?: string;
+  managed_by?: string;
+  managed_agent?: AgentInfo;
   // Optional fields that may not be in model yet
   id_document_type?: string;
   proof_of_address_type?: string;
@@ -139,7 +153,10 @@ export interface Applicant {
   willing_to_buy?: boolean;
   buyer_questions_answered?: boolean;
   tenant_questions_answered?: boolean;
+  assigned_agent_id?: string;
+  assigned_agent?: AgentInfo;
   last_contacted_at?: string;
+  notes?: string;
   created_at: string;
   updated_at?: string;
 }

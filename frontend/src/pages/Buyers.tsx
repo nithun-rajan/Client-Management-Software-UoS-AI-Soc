@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Search,
   X,
+  User,
 } from "lucide-react";
 import {
   Card,
@@ -183,6 +184,12 @@ export default function Buyers() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4 shrink-0" />
                     <span className="truncate">{buyer.preferred_locations}</span>
+                  </div>
+                )}
+                {buyer.assigned_agent && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1 border-t">
+                    <User className="h-4 w-4 shrink-0" />
+                    <span>Managed by: {buyer.assigned_agent.first_name} {buyer.assigned_agent.last_name}</span>
                   </div>
                 )}
               </CardContent>

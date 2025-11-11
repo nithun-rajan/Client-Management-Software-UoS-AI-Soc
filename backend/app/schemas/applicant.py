@@ -57,10 +57,24 @@ class ApplicantUpdate(AppBaseModel):
     notes: str | None = None
 
 
+class AgentInfo(AppBaseModel):
+    """Basic agent information for applicant responses"""
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    
+    @property
+    def full_name(self) -> str:
+        """Computed field combining first_name and last_name"""
+        return f"{self.first_name} {self.last_name}"
+
+
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
     assigned_agent_id: str | None = None
+    assigned_agent: AgentInfo | None = None
     last_contacted_at: datetime | None = None
     notes: str | None = None
 

@@ -9,7 +9,7 @@ from app.core.security import verify_token
 from app.models.landlord import Landlord
 from app.models.property import Property
 from app.models.user import User
-from app.schemas.landlord import LandlordCreate, LandlordResponse, LandlordUpdate
+from app.schemas.landlord import LandlordCreate, LandlordResponse, LandlordUpdate, AgentInfo
 from app.services.notification_service import notify
 
 
@@ -17,6 +17,19 @@ router = APIRouter(prefix="/landlords", tags=["landlords"])
 
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def add_agent_info_to_landlord_response(landlord: Landlord, response: LandlordResponse, db: Session) -> LandlordResponse:
+    """Helper function to add agent information to landlord response"""
+    if landlord.managed_by:
+        agent = db.query(User).filter(User.id == landlord.managed_by).first()
+        if agent:
+            response.managed_agent = AgentInfo(
+                id=agent.id,
+                first_name=agent.first_name,
+                last_name=agent.last_name,
+                email=agent.email
+            )
+    return response
 
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
@@ -72,7 +85,7 @@ def create_landlord(
     properties_count = db.query(Property).filter(Property.landlord_id == db_landlord.id).count()
     response = LandlordResponse.model_validate(db_landlord)
     response.properties_count = properties_count
-    return response
+    return add_agent_info_to_landlord_response(db_landlord, response, db)
 
 @router.get("/", response_model=list[LandlordResponse])
 def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -83,7 +96,7 @@ def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
         properties_count = db.query(Property).filter(Property.landlord_id == landlord.id).count()
         response = LandlordResponse.model_validate(landlord)
         response.properties_count = properties_count
-        result.append(response)
+        result.append(add_agent_info_to_landlord_response(landlord, response, db))
     return result
 
 @router.get("/{landlord_id}", response_model=LandlordResponse)
@@ -97,7 +110,7 @@ def get_landlord(landlord_id: str, db: Session = Depends(get_db)):
     properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
     response = LandlordResponse.model_validate(landlord)
     response.properties_count = properties_count
-    return response
+    return add_agent_info_to_landlord_response(landlord, response, db)
 
 @router.put("/{landlord_id}", response_model=LandlordResponse)
 def update_landlord(
@@ -120,7 +133,7 @@ def update_landlord(
     properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
     response = LandlordResponse.model_validate(landlord)
     response.properties_count = properties_count
-    return response
+    return add_agent_info_to_landlord_response(landlord, response, db)
 
 @router.delete("/{landlord_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_landlord(landlord_id: str, db: Session = Depends(get_db)):

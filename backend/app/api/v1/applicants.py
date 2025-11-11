@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user, verify_token
 from app.models.applicant import Applicant
 from app.models.user import User
-from app.schemas.applicant import ApplicantCreate, ApplicantResponse, ApplicantUpdate
+from app.schemas.applicant import ApplicantCreate, ApplicantResponse, ApplicantUpdate, AgentInfo
 from app.schemas.user import Role
 from app.services.notification_service import notify
 
@@ -17,6 +17,19 @@ router = APIRouter(prefix="/applicants", tags=["applicants"])
 
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def add_agent_info_to_applicant_response(applicant: Applicant, response: ApplicantResponse, db: Session) -> ApplicantResponse:
+    """Helper function to add agent information to applicant response"""
+    if applicant.assigned_agent_id:
+        agent = db.query(User).filter(User.id == applicant.assigned_agent_id).first()
+        if agent:
+            response.assigned_agent = AgentInfo(
+                id=agent.id,
+                first_name=agent.first_name,
+                last_name=agent.last_name,
+                email=agent.email
+            )
+    return response
 
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
@@ -72,7 +85,8 @@ def create_applicant(
             # Don't fail the request if notification fails
             pass
     
-    return db_applicant
+    response = ApplicantResponse.model_validate(db_applicant)
+    return add_agent_info_to_applicant_response(db_applicant, response, db)
 
 @router.get("/", response_model=List[ApplicantResponse])
 def list_applicants(
@@ -89,7 +103,11 @@ def list_applicants(
         query = query.filter(Applicant.assigned_agent_id == assigned_agent_id)
     
     applicants = query.order_by(Applicant.last_contacted_at.desc().nulls_last(), Applicant.created_at.desc()).offset(skip).limit(limit).all()
-    return applicants
+    result = []
+    for applicant in applicants:
+        response = ApplicantResponse.model_validate(applicant)
+        result.append(add_agent_info_to_applicant_response(applicant, response, db))
+    return result
 
 @router.get("/my-applicants", response_model=List[ApplicantResponse])
 def get_my_applicants(
@@ -114,7 +132,11 @@ def get_my_applicants(
         .limit(limit)\
         .all()
     
-    return applicants
+    result = []
+    for applicant in applicants:
+        response = ApplicantResponse.model_validate(applicant)
+        result.append(add_agent_info_to_applicant_response(applicant, response, db))
+    return result
 
 @router.get("/{applicant_id}", response_model=ApplicantResponse)
 def get_applicant(applicant_id: str, db: Session = Depends(get_db)):
@@ -122,7 +144,8 @@ def get_applicant(applicant_id: str, db: Session = Depends(get_db)):
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
     if not applicant:
         raise HTTPException(status_code=404, detail="Applicant not found")
-    return applicant
+    response = ApplicantResponse.model_validate(applicant)
+    return add_agent_info_to_applicant_response(applicant, response, db)
 
 @router.put("/{applicant_id}", response_model=ApplicantResponse)
 def update_applicant(
@@ -140,7 +163,8 @@ def update_applicant(
 
     db.commit()
     db.refresh(applicant)
-    return applicant
+    response = ApplicantResponse.model_validate(applicant)
+    return add_agent_info_to_applicant_response(applicant, response, db)
 
 @router.delete("/{applicant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_applicant(applicant_id: str, db: Session = Depends(get_db)):

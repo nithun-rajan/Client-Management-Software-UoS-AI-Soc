@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Search,
   X,
+  User,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,6 +198,12 @@ export default function Landlords() {
                   <Building2 className="h-4 w-4" />
                   <span>Properties owned: {landlord.properties_count ?? 0}</span>
                 </div>
+                {landlord.managed_agent && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
+                    <User className="h-4 w-4" />
+                    <span>Managed by: {landlord.managed_agent.first_name} {landlord.managed_agent.last_name}</span>
+                  </div>
+                )}
               </CardContent>
               <CardFooter>
                 <Button variant="outline" size="sm" className="w-full" asChild>

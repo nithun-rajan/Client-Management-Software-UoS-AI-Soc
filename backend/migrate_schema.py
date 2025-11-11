@@ -57,9 +57,11 @@ def migrate_database():
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),
             ("landlords", "landlord_complete_info", "INTEGER DEFAULT 0"),
+            ("landlords", "managed_by", "VARCHAR"),
             
-            # Vendor table - Contact tracking
+            # Vendor table - Contact tracking and managed_by
             ("vendors", "last_contacted_at", "DATETIME"),
+            ("vendors", "managed_by", "VARCHAR"),
             
             # User table - Team assignment
             ("users", "team", "VARCHAR"),
@@ -70,14 +72,33 @@ def migrate_database():
         
         for table, column, column_type in all_migrations:
             try:
-                # Check if column exists (SQLite doesn't have a direct way, so we'll try to add it)
-                # SQLite will raise an error if column already exists, which we'll catch
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
-                conn.commit()
-                print(f"[OK] Added column {table}.{column}")
-            except Exception as e:
-                if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+                # Check if column exists by querying table info (SQLite-specific)
+                # Get table info to check existing columns
+                table_info = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+                existing_columns = [row[1] for row in table_info]  # Column name is at index 1
+                
+                if column in existing_columns:
                     print(f"[SKIP] Column {table}.{column} already exists, skipping...")
+                else:
+                    # SQLite will raise an error if column already exists, which we'll catch
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
+                    conn.commit()
+                    print(f"[OK] Added column {table}.{column}")
+            except Exception as e:
+                # Check for SQLite specific error messages
+                error_msg = str(e).lower()
+                if "duplicate column" in error_msg or "already exists" in error_msg or "no such column" not in error_msg:
+                    # If it's not a "no such column" error, the column might already exist
+                    # Try to verify by checking table info
+                    try:
+                        table_info = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+                        existing_columns = [row[1] for row in table_info]
+                        if column in existing_columns:
+                            print(f"[SKIP] Column {table}.{column} already exists, skipping...")
+                        else:
+                            print(f"[WARN] Error adding {table}.{column}: {e}")
+                    except:
+                        print(f"[WARN] Error adding {table}.{column}: {e}")
                 else:
                     print(f"[WARN] Error adding {table}.{column}: {e}")
         

@@ -18,6 +18,7 @@ import {
   Trash2,
   Wrench,
   Handshake,
+  User,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -282,6 +283,17 @@ export default function PropertyDetails() {
                           {property.vendor.first_name} {property.vendor.last_name}
                         </Link>
                       ) : null}
+                    </span>
+                  </div>
+                )}
+                {property.managed_agent && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Managed by:{" "}
+                      <span className="font-medium text-foreground">
+                        {property.managed_agent.first_name} {property.managed_agent.last_name}
+                      </span>
                     </span>
                   </div>
                 )}

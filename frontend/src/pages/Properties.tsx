@@ -14,6 +14,7 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  User,
 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -314,6 +315,12 @@ export default function Properties() {
                     {(property.landlord || property.vendor) && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Owner: {property.landlord?.full_name || `${property.vendor?.first_name} ${property.vendor?.last_name}`}
+                      </p>
+                    )}
+                    {property.managed_agent && (
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        Managed by: {property.managed_agent.first_name} {property.managed_agent.last_name}
                       </p>
                     )}
                   </div>

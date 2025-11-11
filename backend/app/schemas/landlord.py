@@ -4,6 +4,19 @@ from pydantic import ConfigDict, EmailStr
 from app.schemas.model_config import AppBaseModel
 
 
+class AgentInfo(AppBaseModel):
+    """Basic agent information for landlord responses"""
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    
+    @property
+    def full_name(self) -> str:
+        """Computed field combining first_name and last_name"""
+        return f"{self.first_name} {self.last_name}"
+
+
 class LandlordBase(AppBaseModel):
     full_name: str
     email: EmailStr
@@ -30,6 +43,7 @@ class LandlordUpdate(AppBaseModel):
     notes: str | None = None
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool | None = None
+    managed_by: str | None = None
 
 class LandlordResponse(LandlordBase):
     id: str
@@ -39,4 +53,6 @@ class LandlordResponse(LandlordBase):
     properties_count: int = 0  # Number of properties owned by this landlord
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool = False
+    managed_by: str | None = None
+    managed_agent: AgentInfo | None = None
 
