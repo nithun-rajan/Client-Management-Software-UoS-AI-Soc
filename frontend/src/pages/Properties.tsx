@@ -199,8 +199,13 @@ export default function Properties() {
     toast({ title: "Success", description: "Properties exported to CSV" });
   };
 
+  // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
+  const propertiesForLetting = properties?.filter(
+    (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+  ) || [];
+
   // Filter properties based on search query
-  const filteredProperties = properties?.filter((property) => {
+  const filteredProperties = propertiesForLetting.filter((property) => {
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -279,11 +284,15 @@ export default function Properties() {
                     />
                   ) : (
                     <>
-                      <Building2 className="h-16 w-16 text-muted-foreground" />
+                      <img
+                        src={`https://picsum.photos/seed/building${property.id}/800/450`}
+                        alt={property.address_line1 || property.city}
+                        className="h-full w-full object-cover"
+                      />
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute bottom-2 right-2"
+                        className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-white"
                         onClick={() => handleRequestPhoto(property)}
                       >
                         <Upload className="mr-2 h-4 w-4" />
@@ -302,6 +311,11 @@ export default function Properties() {
                     <p className="text-sm text-muted-foreground">
                       {property.city}, {property.postcode}
                     </p>
+                    {(property.landlord || property.vendor) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Owner: {property.landlord?.full_name || `${property.vendor?.first_name} ${property.vendor?.last_name}`}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                     {property.property_type}

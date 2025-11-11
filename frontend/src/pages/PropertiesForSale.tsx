@@ -89,9 +89,9 @@ export default function PropertiesForSale() {
     );
   }
 
-  // Filter properties that are for sale (have sales_status set, including "available")
+  // Filter properties that are for sale (have sales_status set and vendor_id, no landlord_id)
   const propertiesForSale = properties?.filter(
-    (p) => p.sales_status && p.sales_status.trim() !== ""
+    (p) => p.sales_status && p.sales_status.trim() !== "" && p.vendor_id && !p.landlord_id
   ) || [];
 
   // Apply search
@@ -169,7 +169,7 @@ export default function PropertiesForSale() {
                     <StatusBadge status={property.sales_status} />
                   )}
                 </div>
-                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden">
+                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden relative">
                   {property.main_photo_url ? (
                     <img
                       src={property.main_photo_url}
@@ -178,18 +178,20 @@ export default function PropertiesForSale() {
                     />
                   ) : (
                     <>
-                      <Building2 className="h-16 w-16 text-muted-foreground" />
-                      {!property.main_photo_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute bottom-2 right-2"
-                          onClick={() => handleRequestPhoto(property)}
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          Request Photo
-                        </Button>
-                      )}
+                      <img
+                        src={`https://picsum.photos/seed/building${property.id}/800/450`}
+                        alt={property.address_line1 || property.city}
+                        className="h-full w-full object-cover"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-white"
+                        onClick={() => handleRequestPhoto(property)}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Request Photo
+                      </Button>
                     </>
                   )}
                 </div>
@@ -211,6 +213,11 @@ export default function PropertiesForSale() {
                     <p className="text-sm text-muted-foreground">
                       {property.city}, {property.postcode}
                     </p>
+                    {property.vendor && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Owner: {property.vendor.first_name} {property.vendor.last_name}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                     {property.property_type}
