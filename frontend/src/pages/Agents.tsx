@@ -14,9 +14,11 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-// Generate agent ID (4-digit) from agent ID
-const getAgentId = (id: string): string => {
-  // Use a hash of the ID to generate a consistent 4-digit number
+// Format agent ID for display (convert UUID to 4-digit number)
+const formatAgentId = (id: string): string => {
+  if (!id) return "N/A";
+  // Convert UUID to a consistent 4-digit number
+  // Use a simple hash of the UUID to get a deterministic 4-digit number
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash) + id.charCodeAt(i);
@@ -190,7 +192,7 @@ export default function Agents() {
                 .join("")
                 .toUpperCase()
                 .slice(0, 2);
-              const agentId = getAgentId(agent.id);
+              const agentId = formatAgentId(agent.id);
               const isOnline = agent.online_status;
               const photoUrl = getAgentPhotoUrl(agent.first_name || "", agent.last_name || "");
               const phone = agent.phone || "N/A";
@@ -222,7 +224,13 @@ export default function Agents() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg font-semibold truncate">{fullName}</CardTitle>
-                          <Badge variant="outline" className="text-xs font-mono">{agentId}</Badge>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs font-mono"
+                            title={`Full ID: ${agent.id}`}
+                          >
+                            {agentId}
+                          </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
                           {position}: <span className={team === currentUserTeam ? "text-primary font-medium" : "text-muted-foreground font-medium"}>{team}</span>
@@ -258,7 +266,7 @@ export default function Agents() {
             {selectedAgentData && (() => {
               const fullName = `${selectedAgentData.first_name || ""} ${selectedAgentData.last_name || ""}`.trim() || "Unknown";
               const initials = fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-              const agentId = getAgentId(selectedAgentData.id);
+              const agentId = formatAgentId(selectedAgentData.id);
               const isOnline = selectedAgentData.online_status;
               const photoUrl = getAgentPhotoUrl(selectedAgentData.first_name || "", selectedAgentData.last_name || "");
               const phone = selectedAgentData.phone || "N/A";
@@ -296,7 +304,13 @@ export default function Agents() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <DialogTitle className="text-xl">{fullName}</DialogTitle>
-                          <Badge variant="outline" className="text-xs font-mono">{agentId}</Badge>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs font-mono"
+                            title={`Full ID: ${selectedAgentData.id}`}
+                          >
+                            {agentId}
+                          </Badge>
                         </div>
                         <p className="text-sm font-semibold text-primary mt-1">{role}</p>
                         <p className="text-sm text-muted-foreground">
