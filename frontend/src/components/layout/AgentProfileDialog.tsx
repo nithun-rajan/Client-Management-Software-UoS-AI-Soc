@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -68,17 +67,30 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={agent.avatarUrl} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                {agent.name.split(" ").map(n => n[0]).join("")}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <DialogTitle className="text-xl">{agent.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground">{agent.title}</p>
-              <p className="text-xs text-muted-foreground mt-1">{agent.qualifications}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={agent.avatarUrl} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                  {agent.name.split(" ").map(n => n[0]).join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <DialogTitle className="text-xl">{agent.name}</DialogTitle>
+                <p className="text-sm text-muted-foreground">{agent.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{agent.qualifications}</p>
+              </div>
+            </div>
+            <div className="text-right space-y-2">
+              <p className="text-sm font-medium">Contact {agent.name.split(" ")[0]}</p>
+              <div className="flex flex-col gap-2 text-sm">
+                <a href={`mailto:${agent.email}`} className="flex items-center justify-end gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <Mail className="h-4 w-4" /> {agent.email}
+                </a>
+                <span className="flex items-center justify-end gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" /> {agent.phone}
+                </span>
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -196,26 +208,6 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
             </div>
           </TabsContent>
         </Tabs>
-
-        {/* CONTACT BAR */}
-        <div className="mt-6 border-t pt-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Contact {agent.name.split(" ")[0]}</p>
-              <div className="flex flex-col gap-2 text-sm sm:flex-row">
-                <a href={`mailto:${agent.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                  <Mail className="h-4 w-4" /> {agent.email}
-                </a>
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" /> {agent.phone}
-                </span>
-              </div>
-            </div>
-            <Button onClick={() => onOpenChange(false)} variant="outline">
-              Close
-            </Button>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   UserCheck,
   Mail,
@@ -158,7 +159,10 @@ export default function LandlordDetails() {
     if (!landlord?.last_contacted_at) return null;
     const lastContacted = new Date(landlord.last_contacted_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    // Normalize both dates to midnight to compare only dates, not times
+    const lastContactedDate = new Date(lastContacted.getFullYear(), lastContacted.getMonth(), lastContacted.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = todayDate.getTime() - lastContactedDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -330,7 +334,7 @@ export default function LandlordDetails() {
                             {landlord.last_contacted_at ? (
                               <>
                                 <div className="font-medium">
-                                  {new Date(landlord.last_contacted_at).toLocaleDateString()}
+                                  {format(new Date(landlord.last_contacted_at), "dd/MM/yyyy")}
                                 </div>
                                 {daysSinceLastContacted !== null && (
                                   <div className="text-sm">
@@ -435,7 +439,7 @@ export default function LandlordDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Verification Date</div>
                               <div className="font-medium">
-                                {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                                {format(new Date(landlord.aml_verification_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -590,7 +594,7 @@ export default function LandlordDetails() {
                       <p className="text-sm font-medium">Landlord Created</p>
                       <p className="text-sm text-muted-foreground">
                         {landlord.created_at
-                          ? new Date(landlord.created_at).toLocaleDateString()
+                          ? format(new Date(landlord.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -604,7 +608,7 @@ export default function LandlordDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Information Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(landlord.updated_at).toLocaleDateString()}
+                            {format(new Date(landlord.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>

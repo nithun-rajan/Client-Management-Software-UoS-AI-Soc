@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   Store,
   Mail,
@@ -98,7 +99,10 @@ export default function VendorDetails() {
     if (!vendor?.last_contacted_at) return null;
     const lastContacted = new Date(vendor.last_contacted_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    // Normalize both dates to midnight to compare only dates, not times
+    const lastContactedDate = new Date(lastContacted.getFullYear(), lastContacted.getMonth(), lastContacted.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = todayDate.getTime() - lastContactedDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -357,7 +361,7 @@ export default function VendorDetails() {
                             {vendor.last_contacted_at ? (
                               <>
                                 <div className="font-medium">
-                                  {new Date(vendor.last_contacted_at).toLocaleDateString()}
+                                  {format(new Date(vendor.last_contacted_at), "dd/MM/yyyy")}
                                 </div>
                                 {daysSinceLastContacted !== null && (
                                   <div className="text-sm">
@@ -457,7 +461,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Completed Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.aml_verification_date).toLocaleDateString()}
+                                {format(new Date(vendor.aml_verification_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -465,7 +469,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Expiry Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.aml_verification_expiry).toLocaleDateString()}
+                                {format(new Date(vendor.aml_verification_expiry), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -495,7 +499,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">Instruction Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.instruction_date).toLocaleDateString()}
+                                {format(new Date(vendor.instruction_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -503,7 +507,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">Contract Expiry Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.contract_expiry_date).toLocaleDateString()}
+                                {format(new Date(vendor.contract_expiry_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -585,7 +589,7 @@ export default function VendorDetails() {
                           <div className="flex-1">
                             <div className="text-sm text-muted-foreground">Date of Birth</div>
                             <div className="font-medium">
-                              {new Date(vendor.date_of_birth).toLocaleDateString()}
+                              {format(new Date(vendor.date_of_birth), "dd/MM/yyyy")}
                             </div>
                           </div>
                         </div>
@@ -742,7 +746,7 @@ export default function VendorDetails() {
                       <p className="text-sm font-medium">Vendor Created</p>
                       <p className="text-sm text-muted-foreground">
                         {vendor.created_at
-                          ? new Date(vendor.created_at).toLocaleDateString()
+                          ? format(new Date(vendor.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -756,7 +760,7 @@ export default function VendorDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Information Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(vendor.updated_at).toLocaleDateString()}
+                            {format(new Date(vendor.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>
