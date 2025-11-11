@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   UserCheck,
   Mail,
@@ -29,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
+import { useProperties } from "@/hooks/useProperties";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +77,14 @@ export default function LandlordDetails() {
   // Filter tasks assigned to this landlord (landlords use full_name)
   const assignedTasks = allTasks?.filter(
     (task) => task.assigned_to === landlord?.full_name
+  ) || [];
+
+  // Get all properties to filter by landlord_id
+  const { data: allProperties } = useProperties();
+  
+  // Filter properties owned by this landlord
+  const landlordProperties = allProperties?.filter(
+    (property) => property.landlord_id === landlord?.id
   ) || [];
 
   const handleDelete = async () => {
@@ -158,7 +169,10 @@ export default function LandlordDetails() {
     if (!landlord?.last_contacted_at) return null;
     const lastContacted = new Date(landlord.last_contacted_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    // Normalize both dates to midnight to compare only dates, not times
+    const lastContactedDate = new Date(lastContacted.getFullYear(), lastContacted.getMonth(), lastContacted.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = todayDate.getTime() - lastContactedDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -330,7 +344,7 @@ export default function LandlordDetails() {
                             {landlord.last_contacted_at ? (
                               <>
                                 <div className="font-medium">
-                                  {new Date(landlord.last_contacted_at).toLocaleDateString()}
+                                  {format(new Date(landlord.last_contacted_at), "dd/MM/yyyy")}
                                 </div>
                                 {daysSinceLastContacted !== null && (
                                   <div className="text-sm">
@@ -435,7 +449,7 @@ export default function LandlordDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Verification Date</div>
                               <div className="font-medium">
-                                {new Date(landlord.aml_verification_date).toLocaleDateString()}
+                                {format(new Date(landlord.aml_verification_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -551,6 +565,47 @@ export default function LandlordDetails() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Properties Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Properties
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {landlordProperties.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No properties</p>
+                ) : (
+                  <div className="space-y-2">
+                    {landlordProperties.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/properties/${property.id}`}
+                        className="block w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">
+                              {property.address_line1 || property.address || property.city}
+                            </span>
+                            {property.postcode && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {property.city}, {property.postcode}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {property.status}
+                          </Badge>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Properties Tab */}
@@ -590,7 +645,7 @@ export default function LandlordDetails() {
                       <p className="text-sm font-medium">Landlord Created</p>
                       <p className="text-sm text-muted-foreground">
                         {landlord.created_at
-                          ? new Date(landlord.created_at).toLocaleDateString()
+                          ? format(new Date(landlord.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -604,7 +659,7 @@ export default function LandlordDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Information Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(landlord.updated_at).toLocaleDateString()}
+                            {format(new Date(landlord.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>

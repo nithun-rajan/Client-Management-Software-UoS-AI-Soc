@@ -31,6 +31,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { useNotifications, useMarkAllNotificationsRead, useDeleteAllNotifications, useMarkNotificationRead } from "@/hooks/useNotifications";
+import { useLandlords } from "@/hooks/useLandlords";
+import { useVendors } from "@/hooks/useVendors";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import {
@@ -56,8 +58,12 @@ export default function Header({ title }: HeaderProps) {
   const [vendorOpen, setVendorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyType, setPropertyType] = useState<"rent" | "sale">("rent");
+  const [selectedLandlordId, setSelectedLandlordId] = useState<string>("");
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: landlords } = useLandlords();
+  const { data: vendors } = useVendors();
   const { user, logout } = useAuth();
   const { data: notifications = [] } = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
@@ -126,15 +132,23 @@ export default function Header({ title }: HeaderProps) {
       
       if (propertyType === "rent") {
         propertyData.rent = parseFloat(formData.get("price") as string);
+        if (selectedLandlordId) {
+          propertyData.landlord_id = selectedLandlordId;
+        }
       } else {
         propertyData.asking_price = parseFloat(formData.get("price") as string);
         propertyData.sales_status = "available";
+        if (selectedVendorId) {
+          propertyData.vendor_id = selectedVendorId;
+        }
       }
       
       await api.post("/api/v1/properties/", propertyData);
       toast({ title: "Success", description: "Property added successfully" });
       setPropertyOpen(false);
       setPropertyType("rent");
+      setSelectedLandlordId("");
+      setSelectedVendorId("");
       window.location.reload();
     } catch (error) {
       toast({
@@ -464,7 +478,14 @@ export default function Header({ title }: HeaderProps) {
       </header>
 
       {/* Property Dialog */}
-      <Dialog open={propertyOpen} onOpenChange={(open) => { setPropertyOpen(open); if (!open) setPropertyType("rent"); }}>
+      <Dialog open={propertyOpen} onOpenChange={(open) => { 
+        setPropertyOpen(open); 
+        if (!open) {
+          setPropertyType("rent");
+          setSelectedLandlordId("");
+          setSelectedVendorId("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Property</DialogTitle>
@@ -530,6 +551,42 @@ export default function Header({ title }: HeaderProps) {
                   </p>
                 )}
               </div>
+              {propertyType === "rent" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="landlord">Landlord (Optional)</Label>
+                  <Select value={selectedLandlordId} onValueChange={setSelectedLandlordId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select landlord" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {landlords?.map((landlord) => (
+                        <SelectItem key={landlord.id} value={landlord.id}>
+                          {landlord.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {propertyType === "sale" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="vendor">Vendor (Optional)</Label>
+                  <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {vendors?.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.first_name} {vendor.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="submit">Add Property</Button>

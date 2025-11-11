@@ -8,8 +8,9 @@ from app.core.database import get_db
 from app.core.security import verify_token
 from app.models.property import Property
 from app.models.landlord import Landlord
+from app.models.vendor import Vendor
 from app.models.user import User
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo
+from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo, VendorInfo
 from app.services.notification_service import notify
 
 
@@ -75,7 +76,7 @@ def create_property(
         except Exception:
             pass
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(db_property)
     if db_property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == db_property.landlord_id).first()
@@ -85,6 +86,16 @@ def create_property(
                 full_name=landlord.full_name,
                 email=landlord.email,
                 phone=landlord.phone
+            )
+    if db_property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == db_property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
             )
     return response
 
@@ -116,6 +127,17 @@ def list_properties(
                     email=landlord.email,
                     phone=landlord.phone
                 )
+        # Include vendor information if property has a vendor
+        if property.vendor_id:
+            vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+            if vendor:
+                response.vendor = VendorInfo(
+                    id=vendor.id,
+                    first_name=vendor.first_name,
+                    last_name=vendor.last_name,
+                    email=vendor.email,
+                    primary_phone=vendor.primary_phone
+                )
         result.append(response)
     return result
 
@@ -137,6 +159,17 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
                 email=landlord.email,
                 phone=landlord.phone
             )
+    # Include vendor information if property has a vendor
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
+            )
     return response
 
 @router.put("/{property_id}", response_model=PropertyResponse)
@@ -156,7 +189,7 @@ def update_property(
     db.commit()
     db.refresh(property)
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(property)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -166,6 +199,16 @@ def update_property(
                 full_name=landlord.full_name,
                 email=landlord.email,
                 phone=landlord.phone
+            )
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
             )
     return response
 
@@ -186,7 +229,7 @@ def patch_property(
     db.commit()
     db.refresh(property)
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(property)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -196,6 +239,16 @@ def patch_property(
                 full_name=landlord.full_name,
                 email=landlord.email,
                 phone=landlord.phone
+            )
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
             )
     return response
 

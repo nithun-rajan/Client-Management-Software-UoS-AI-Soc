@@ -128,10 +128,21 @@ export default function Notes() {
 
   // Check if a note was edited today
   const isEditedToday = (note: NoteEntry) => {
+    if (!note.lastEdited) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    today.setMinutes(0, 0, 0);
+    today.setSeconds(0, 0);
+    today.setMilliseconds(0);
+    
     const noteDate = new Date(note.lastEdited);
+    // Check if date is valid
+    if (isNaN(noteDate.getTime())) return false;
     noteDate.setHours(0, 0, 0, 0);
+    noteDate.setMinutes(0, 0, 0);
+    noteDate.setSeconds(0, 0);
+    noteDate.setMilliseconds(0);
+    
     return noteDate.getTime() === today.getTime();
   };
 
@@ -226,7 +237,7 @@ export default function Notes() {
 
   // Render note content with highlighted new portions
   const renderHighlightedContent = (note: NoteEntry) => {
-    // Only highlight if note was edited today AND has previous content
+    // Only highlight if note was edited today
     if (!isEditedToday(note)) {
       // Not edited today - render normally
       return (
@@ -236,12 +247,29 @@ export default function Notes() {
       );
     }
 
-    // Note was edited today
-    if (!note.previousContent || note.previousContent.trim() === "") {
-      // No previous content - render normally (can't highlight what was added)
+    // Note was edited today - check if there's meaningful previous content
+    const hasPreviousContent = note.previousContent && note.previousContent.trim().length > 0;
+    
+    if (!hasPreviousContent) {
+      // No previous content or empty - highlight everything since it's all new
+      if (!note.content || note.content.trim().length === 0) {
+        // Empty content - render normally
+        return (
+          <div className="text-sm text-muted-foreground line-clamp-4">
+            {note.content}
+          </div>
+        );
+      }
+      // Highlight all content with accent color
       return (
         <div className="text-sm text-muted-foreground line-clamp-4">
-          {note.content}
+          <span
+            style={{
+              color: `hsl(var(--accent))`,
+            }}
+          >
+            {note.content}
+          </span>
         </div>
       );
     }
@@ -258,23 +286,41 @@ export default function Notes() {
       );
     }
 
+    // If previous content is very short (1-3 chars) and current is much longer,
+    // treat it as a new note being typed - highlight everything
+    if (previous.length <= 3 && current.length > previous.length * 2) {
+      return (
+        <div className="text-sm text-muted-foreground line-clamp-4">
+          <span
+            style={{
+              color: `hsl(var(--accent))`,
+            }}
+          >
+            {note.content}
+          </span>
+        </div>
+      );
+    }
+
     // If current content starts with previous content, highlight only the new part
     if (current.startsWith(previous)) {
-      const newContent = current.slice(previous.length).trim();
+      const newContent = current.slice(previous.length);
       if (newContent) {
+        // Check if new content starts with a space - if so, trim it for display
+        // Otherwise preserve the first character
+        const startsWithSpace = newContent.startsWith(' ');
+        const displayContent = startsWithSpace ? newContent.trimStart() : newContent;
+        const leadingSpace = startsWithSpace ? ' ' : '';
+        
         return (
           <div className="text-sm text-muted-foreground line-clamp-4">
-            <span>{previous}</span>
+            <span>{previous}{leadingSpace}</span>
             <span
-              className="p-1 rounded inline-block"
               style={{
-                backgroundColor: `hsl(var(--accent) / 0.25)`,
-                borderLeft: `3px solid hsl(var(--accent))`,
-                paddingLeft: "0.5rem",
-                marginLeft: "0.25rem",
+                color: `hsl(var(--accent))`,
               }}
             >
-              {newContent}
+              {displayContent}
             </span>
           </div>
         );
@@ -308,11 +354,8 @@ export default function Notes() {
               ))}
               {oldLines.length > 0 && '\n'}
               <span
-                className="p-1 rounded block"
                 style={{
-                  backgroundColor: `hsl(var(--accent) / 0.25)`,
-                  borderLeft: `3px solid hsl(var(--accent))`,
-                  paddingLeft: "0.5rem",
+                  color: `hsl(var(--accent))`,
                 }}
               >
                 {newLines.join('\n')}
@@ -349,11 +392,8 @@ export default function Notes() {
         ))}
         {oldLines.length > 0 && '\n'}
         <span
-          className="p-1 rounded block"
           style={{
-            backgroundColor: `hsl(var(--accent) / 0.25)`,
-            borderLeft: `3px solid hsl(var(--accent))`,
-            paddingLeft: "0.5rem",
+            color: `hsl(var(--accent))`,
           }}
         >
           {newLines.join('\n')}
@@ -494,7 +534,7 @@ export default function Notes() {
         ) : (
           <div className="space-y-6">
             {/* Notes Edited Today */}
-            {showEditedToday && filteredNotesToday.length > 0 && (
+            {filteredNotesToday.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-semibold">
@@ -530,7 +570,7 @@ export default function Notes() {
                         {renderHighlightedContent(note)}
                         <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                           <Calendar className="h-3 w-3" />
-                          <span>Last edited: {format(note.lastEdited, "MMM d, yyyy 'at' h:mm a")}</span>
+                          <span>Last edited: {format(note.lastEdited, "dd/MM/yyyy 'at' HH:mm")}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -540,13 +580,16 @@ export default function Notes() {
             )}
 
             {/* Separator */}
-            {showEditedToday && filteredNotesToday.length > 0 && filteredNotesOther.length > 0 && (
+            {!showEditedToday && filteredNotesToday.length > 0 && filteredNotesOther.length > 0 && (
               <div className="border-t my-6" />
             )}
 
             {/* Other Notes */}
-            {filteredNotesOther.length > 0 && (
+            {!showEditedToday && filteredNotesOther.length > 0 && (
               <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold">Other notes</h2>
+                </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {filteredNotesOther.map((note) => (
                     <Card key={`${note.entityType}_${note.entityId}`} className="hover:shadow-lg transition-shadow">
@@ -578,7 +621,7 @@ export default function Notes() {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                           <Calendar className="h-3 w-3" />
-                          <span>Last edited: {format(note.lastEdited, "MMM d, yyyy 'at' h:mm a")}</span>
+                          <span>Last edited: {format(note.lastEdited, "dd/MM/yyyy 'at' HH:mm")}</span>
                         </div>
                       </CardContent>
                     </Card>

@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { format } from "date-fns";
 import {
   Building2,
   Bed,
@@ -85,7 +86,10 @@ export default function PropertyDetails() {
     try {
       await api.delete(`/api/v1/properties/${id}/`);
       toast({ title: "Success", description: "Property deleted successfully" });
-      navigate("/properties");
+      const backRoute = property?.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id
+        ? "/properties-for-sale"
+        : "/properties";
+      navigate(backRoute);
     } catch (error) {
       toast({
         title: "Error",
@@ -218,9 +222,17 @@ export default function PropertyDetails() {
       <div className="space-y-6 p-6">
         {/* Header Bar */}
         <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => navigate("/properties")}>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const isForSale = property.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id;
+              navigate(isForSale ? "/properties-for-sale" : "/properties");
+            }}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Properties
+            {property.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id
+              ? "Back to Properties for Sale"
+              : "Back to Properties for Letting"}
           </Button>
           <div className="flex items-center gap-2">
             <StatusBadge status={property.status} />
@@ -250,17 +262,26 @@ export default function PropertyDetails() {
                     {property.city}, {property.postcode}
                   </span>
                 </div>
-                {property.landlord && (
+                {(property.landlord || property.vendor) && (
                   <div className="mt-3 flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       Owner:{" "}
-                      <Link 
-                        to={`/landlords/${property.landlord.id}`}
-                        className="font-medium text-foreground hover:underline"
-                      >
-                        {property.landlord.full_name}
-                      </Link>
+                      {property.landlord ? (
+                        <Link 
+                          to={`/landlords/${property.landlord.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {property.landlord.full_name}
+                        </Link>
+                      ) : property.vendor ? (
+                        <Link 
+                          to={`/vendors/${property.vendor.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {property.vendor.first_name} {property.vendor.last_name}
+                        </Link>
+                      ) : null}
                     </span>
                   </div>
                 )}
@@ -351,6 +372,18 @@ export default function PropertyDetails() {
                             className="font-medium text-primary hover:underline flex items-center gap-1"
                           >
                             {property.landlord.full_name}
+                            <Eye className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
+                      {property.vendor && (
+                        <div className="flex justify-between items-center pb-3 border-b">
+                          <span className="text-muted-foreground">Vendor</span>
+                          <Link 
+                            to={`/vendors/${property.vendor.id}`}
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {property.vendor.first_name} {property.vendor.last_name}
                             <Eye className="h-3 w-3" />
                           </Link>
                         </div>
@@ -464,15 +497,15 @@ export default function PropertyDetails() {
                               {offer.applicant_id && (
                                 <span className="text-xs text-muted-foreground">
                                   by{" "}
-                                  <button
+                                  <span
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigate(`/applicants/${offer.applicant_id}`);
                                     }}
-                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
                                   >
                                     {offer.applicant?.name || "Unknown"}
-                                  </button>
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -523,7 +556,7 @@ export default function PropertyDetails() {
                       <p className="text-sm font-medium">Property Created</p>
                       <p className="text-sm text-muted-foreground">
                         {property.created_at
-                          ? new Date(property.created_at).toLocaleDateString()
+                          ? format(new Date(property.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -537,7 +570,7 @@ export default function PropertyDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Property Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(property.updated_at).toLocaleDateString()}
+                            {format(new Date(property.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>

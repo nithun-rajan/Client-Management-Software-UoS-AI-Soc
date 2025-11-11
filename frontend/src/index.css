@@ -17,8 +17,8 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 20% 8%;
 
-    /* Vibrant purple-pink primary */
-    --primary: 280 75% 60%;
+    /* Light blue primary */
+    --primary: 200 75% 65%;
     --primary-foreground: 0 0% 100%;
 
     /* Bright blue secondary */
@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --secondary-foreground: 0 0% 100%;
 
     /* Soft pastel muted background */
-    --muted: 280 30% 97%;
+    --muted: 200 30% 97%;
     --muted-foreground: 240 15% 45%;
 
     /* Vibrant teal accent */
@@ -37,10 +37,10 @@ All colors MUST be HSL.
     --destructive: 0 85% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Soft purple borders */
-    --border: 280 25% 88%;
-    --input: 280 25% 88%;
-    --ring: 280 75% 60%;
+    /* Soft light blue borders */
+    --border: 200 25% 88%;
+    --input: 200 25% 88%;
+    --ring: 200 75% 65%;
 
     --radius: 0.75rem;
 
@@ -52,7 +52,7 @@ All colors MUST be HSL.
     --status-inactive: 240 15% 60%;
 
     /* Vibrant gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280 75% 60%), hsl(300 70% 65%));
+    --gradient-primary: linear-gradient(135deg, hsl(200 75% 65%), hsl(210 70% 70%));
     --gradient-secondary: linear-gradient(135deg, hsl(210 90% 55%), hsl(240 80% 60%));
     --gradient-success: linear-gradient(135deg, hsl(150 70% 45%), hsl(170 70% 50%));
     --gradient-warning: linear-gradient(135deg, hsl(45 95% 55%), hsl(30 95% 60%));
@@ -61,38 +61,38 @@ All colors MUST be HSL.
     --shadow-elevated:
       0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
-    /* Vibrant gradient sidebar */
-    --sidebar-background: 280 75% 60%;
+    /* Light blue gradient sidebar */
+    --sidebar-background: 200 75% 65%;
 
     --sidebar-foreground: 0 0% 100%;
 
     --sidebar-primary: 0 0% 100%;
 
-    --sidebar-primary-foreground: 280 75% 60%;
+    --sidebar-primary-foreground: 200 75% 65%;
 
-    --sidebar-accent: 280 70% 65%;
+    --sidebar-accent: 200 70% 70%;
 
     --sidebar-accent-foreground: 0 0% 100%;
 
-    --sidebar-border: 280 65% 70%;
+    --sidebar-border: 200 65% 75%;
 
     --sidebar-ring: 210 90% 55%;
   }
 
   .dark {
-    --background: 270 30% 8%; /* Dark midnight purple background */
+    --background: 220 30% 8%; /* Dark navy blue background */
     --foreground: 210 40% 98%;
 
-    --card: 270 25% 12%; /* Slightly lighter midnight purple for cards */
+    --card: 220 25% 12%; /* Slightly lighter navy blue for cards */
     --card-foreground: 210 40% 98%;
 
-    --popover: 270 25% 12%;
+    --popover: 220 25% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 270 50% 45%; /* Midnight Purple */
+    --primary: 220 50% 40%; /* Navy blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 268 45% 54%;
+    --secondary: 230 45% 50%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -106,7 +106,7 @@ All colors MUST be HSL.
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 270 50% 45%; /* Midnight Purple ring */
+    --ring: 220 50% 40%; /* Navy blue ring */
     
     --status-available: 158 64% 52%;
     --status-pending: 38 92% 50%;
@@ -114,19 +114,19 @@ All colors MUST be HSL.
     --status-active: 217 91% 60%;
     --status-inactive: 215 16.3% 46.9%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(270 50% 45%), hsl(268 45% 54%)); /* Midnight purple gradient */
-    --gradient-secondary: linear-gradient(135deg, hsl(280 55% 48%), hsl(270 50% 45%)); /* Vibrant purple-pink gradient for dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(220 50% 40%), hsl(230 45% 45%)); /* Navy blue gradient */
+    --gradient-secondary: linear-gradient(135deg, hsl(220 55% 45%), hsl(220 50% 40%)); /* Navy blue gradient for dark mode */
     --gradient-success: linear-gradient(135deg, hsl(158 64% 52%), hsl(172 66% 50%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(25 95% 53%));
     
-    --sidebar-background: 270 35% 10%; /* Midnight purple sidebar */
+    --sidebar-background: 220 35% 10%; /* Navy blue sidebar */
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 270 50% 45%;
+    --sidebar-primary: 220 50% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 30% 15%;
+    --sidebar-accent: 220 30% 15%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 270 30% 15%;
-    --sidebar-ring: 270 50% 45%;
+    --sidebar-border: 220 30% 15%;
+    --sidebar-ring: 220 50% 40%;
   }
 
   /* Strict Theme - Pure black and white, no gradients, minimalistic */
@@ -192,7 +192,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 20% 10%;
 
-    --primary: 340 75% 55%;
+    --primary: 200 75% 65%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 200 90% 50%;
@@ -209,7 +209,7 @@ All colors MUST be HSL.
 
     --border: 45 100% 85%;
     --input: 45 100% 85%;
-    --ring: 340 75% 55%;
+    --ring: 200 75% 65%;
 
     --status-available: 120 60% 50%;
     --status-pending: 45 100% 50%;
@@ -217,18 +217,18 @@ All colors MUST be HSL.
     --status-active: 200 90% 50%;
     --status-inactive: 240 10% 60%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(340 75% 55%), hsl(280 70% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(200 75% 65%), hsl(210 70% 70%));
     --gradient-secondary: linear-gradient(135deg, hsl(200 90% 50%), hsl(120 60% 50%));
     --gradient-success: linear-gradient(135deg, hsl(120 60% 50%), hsl(150 70% 55%));
     --gradient-warning: linear-gradient(135deg, hsl(45 100% 50%), hsl(30 100% 55%));
 
-    --sidebar-background: 340 75% 55%;
+    --sidebar-background: 200 75% 65%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 340 75% 55%;
-    --sidebar-accent: 340 80% 60%;
+    --sidebar-primary-foreground: 200 75% 65%;
+    --sidebar-accent: 200 80% 70%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 340 70% 65%;
+    --sidebar-border: 200 70% 75%;
     --sidebar-ring: 200 90% 50%;
   }
 }

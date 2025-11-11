@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   Store,
   Mail,
@@ -36,6 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { useVerifyVendorAML } from "@/hooks/useVendors";
 import { useTasks } from "@/hooks/useTasks";
+import { useProperties } from "@/hooks/useProperties";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,7 +101,10 @@ export default function VendorDetails() {
     if (!vendor?.last_contacted_at) return null;
     const lastContacted = new Date(vendor.last_contacted_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    // Normalize both dates to midnight to compare only dates, not times
+    const lastContactedDate = new Date(lastContacted.getFullYear(), lastContacted.getMonth(), lastContacted.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = todayDate.getTime() - lastContactedDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -117,6 +123,14 @@ export default function VendorDetails() {
   // Filter tasks assigned to this vendor
   const assignedTasks = allTasks?.filter(
     (task) => task.assigned_to === getVendorFullName()
+  ) || [];
+
+  // Get all properties to filter by vendor_id
+  const { data: allProperties } = useProperties();
+  
+  // Filter properties owned by this vendor
+  const vendorProperties = allProperties?.filter(
+    (property) => property.vendor_id === vendor?.id
   ) || [];
 
   const handleDelete = async () => {
@@ -357,7 +371,7 @@ export default function VendorDetails() {
                             {vendor.last_contacted_at ? (
                               <>
                                 <div className="font-medium">
-                                  {new Date(vendor.last_contacted_at).toLocaleDateString()}
+                                  {format(new Date(vendor.last_contacted_at), "dd/MM/yyyy")}
                                 </div>
                                 {daysSinceLastContacted !== null && (
                                   <div className="text-sm">
@@ -457,7 +471,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Completed Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.aml_verification_date).toLocaleDateString()}
+                                {format(new Date(vendor.aml_verification_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -465,7 +479,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">AML Expiry Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.aml_verification_expiry).toLocaleDateString()}
+                                {format(new Date(vendor.aml_verification_expiry), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -495,7 +509,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">Instruction Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.instruction_date).toLocaleDateString()}
+                                {format(new Date(vendor.instruction_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -503,7 +517,7 @@ export default function VendorDetails() {
                             <div>
                               <div className="text-sm text-muted-foreground">Contract Expiry Date</div>
                               <div className="font-medium">
-                                {new Date(vendor.contract_expiry_date).toLocaleDateString()}
+                                {format(new Date(vendor.contract_expiry_date), "dd/MM/yyyy")}
                               </div>
                             </div>
                           )}
@@ -585,7 +599,7 @@ export default function VendorDetails() {
                           <div className="flex-1">
                             <div className="text-sm text-muted-foreground">Date of Birth</div>
                             <div className="font-medium">
-                              {new Date(vendor.date_of_birth).toLocaleDateString()}
+                              {format(new Date(vendor.date_of_birth), "dd/MM/yyyy")}
                             </div>
                           </div>
                         </div>
@@ -665,6 +679,47 @@ export default function VendorDetails() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Properties Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Properties
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vendorProperties.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No properties</p>
+                ) : (
+                  <div className="space-y-2">
+                    {vendorProperties.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/properties/${property.id}`}
+                        className="block w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">
+                              {property.address_line1 || property.address || property.city}
+                            </span>
+                            {property.postcode && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {property.city}, {property.postcode}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {property.sales_status || property.status}
+                          </Badge>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Sales Tab */}
@@ -708,16 +763,47 @@ export default function VendorDetails() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Properties for Sale</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Properties
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="py-12 text-center">
-                    <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                    <h3 className="mb-2 text-lg font-semibold">No properties yet</h3>
-                    <p className="text-muted-foreground">
-                      Properties listed for sale by this vendor will appear here
-                    </p>
-                  </div>
+                  {vendorProperties.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <Building2 className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                      <h3 className="mb-2 text-lg font-semibold">No properties yet</h3>
+                      <p className="text-muted-foreground">
+                        Properties listed for sale by this vendor will appear here
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {vendorProperties.map((property) => (
+                        <Link
+                          key={property.id}
+                          to={`/properties/${property.id}`}
+                          className="block w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">
+                                {property.address_line1 || property.address || property.city}
+                              </span>
+                              {property.postcode && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {property.city}, {property.postcode}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {property.sales_status || property.status}
+                            </Badge>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -742,7 +828,7 @@ export default function VendorDetails() {
                       <p className="text-sm font-medium">Vendor Created</p>
                       <p className="text-sm text-muted-foreground">
                         {vendor.created_at
-                          ? new Date(vendor.created_at).toLocaleDateString()
+                          ? format(new Date(vendor.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -756,7 +842,7 @@ export default function VendorDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Information Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(vendor.updated_at).toLocaleDateString()}
+                            {format(new Date(vendor.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>

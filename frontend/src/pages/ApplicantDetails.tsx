@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { format } from "date-fns";
 import {
   Users,
   Mail,
@@ -190,7 +191,10 @@ export default function ApplicantDetails() {
     if (!applicant?.last_contacted_at) return null;
     const lastContacted = new Date(applicant.last_contacted_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastContacted.getTime());
+    // Normalize both dates to midnight to compare only dates, not times
+    const lastContactedDate = new Date(lastContacted.getFullYear(), lastContacted.getMonth(), lastContacted.getDate());
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffTime = todayDate.getTime() - lastContactedDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
@@ -335,7 +339,7 @@ export default function ApplicantDetails() {
                           <div className="font-medium">
                             {(() => {
                               try {
-                                return new Date(applicant.date_of_birth).toLocaleDateString();
+                                return format(new Date(applicant.date_of_birth), "dd/MM/yyyy");
                               } catch {
                                 return applicant.date_of_birth;
                               }
@@ -369,7 +373,7 @@ export default function ApplicantDetails() {
                           {applicant.last_contacted_at ? (
                             <>
                               <div className="font-medium">
-                                {new Date(applicant.last_contacted_at).toLocaleDateString()}
+                                {format(new Date(applicant.last_contacted_at), "dd/MM/yyyy")}
                               </div>
                               {daysSinceLastContacted !== null && (
                                 <div className="text-sm">
@@ -412,7 +416,7 @@ export default function ApplicantDetails() {
                         <div className="font-medium">
                           {(() => {
                             try {
-                              return new Date(applicant.move_in_date).toLocaleDateString();
+                              return format(new Date(applicant.move_in_date), "dd/MM/yyyy");
                             } catch {
                               return applicant.move_in_date;
                             }
@@ -464,7 +468,7 @@ export default function ApplicantDetails() {
                                 <div className="text-muted-foreground">
                                   {(() => {
                                     try {
-                                      return new Date(applicant.move_in_date).toLocaleDateString();
+                                      return format(new Date(applicant.move_in_date), "dd/MM/yyyy");
                                     } catch {
                                       return applicant.move_in_date;
                                     }
@@ -572,7 +576,7 @@ export default function ApplicantDetails() {
                                 <div className="text-muted-foreground">
                                   {(() => {
                                     try {
-                                      return new Date(applicant.move_in_date).toLocaleDateString();
+                                      return format(new Date(applicant.move_in_date), "dd/MM/yyyy");
                                     } catch {
                                       return applicant.move_in_date;
                                     }
@@ -749,47 +753,47 @@ export default function ApplicantDetails() {
                     <p className="text-sm text-muted-foreground">No offers</p>
                   ) : (
                     <div className="space-y-2">
-                      {applicantOffers.map((offer) => (
-                        <button
-                          key={offer.id}
-                          onClick={() => navigate("/offers")}
-                          className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
-                                {offer.property_id && (
-                                  <span className="text-xs text-muted-foreground">
-                                    for{" "}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/properties/${offer.property_id}`);
-                                      }}
-                                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
-                                    >
-                                      {offer.property?.address || "Unknown Property"}
-                                    </button>
+                    {applicantOffers.map((offer) => (
+                      <div
+                        key={offer.id}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                        onClick={() => navigate("/offers")}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                              {offer.property_id && (
+                                <span className="text-xs text-muted-foreground">
+                                  for{" "}
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/properties/${offer.property_id}`);
+                                    }}
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                                  >
+                                    {offer.property?.address || "Unknown Property"}
                                   </span>
-                                )}
-                              </div>
-                              {offer.proposed_term_months && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Term: {offer.proposed_term_months} months
-                                </p>
+                                </span>
                               )}
                             </div>
-                            <Badge variant="outline" className="text-xs">
-                              {offer.status}
-                            </Badge>
+                            {offer.proposed_term_months && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Term: {offer.proposed_term_months} months
+                              </p>
+                            )}
                           </div>
-                          {offer.special_conditions && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                              {offer.special_conditions}
-                            </p>
-                          )}
-                        </button>
+                          <Badge variant="outline" className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                        {offer.special_conditions && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {offer.special_conditions}
+                          </p>
+                        )}
+                      </div>
                       ))}
                     </div>
                   )}

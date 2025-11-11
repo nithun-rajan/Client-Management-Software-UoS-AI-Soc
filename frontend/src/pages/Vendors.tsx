@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useVendors, useDeleteVendor, useUpdateVendor } from "@/hooks/useVendors";
+import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import EmptyState from "@/components/shared/EmptyState";
@@ -34,6 +35,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 
 export default function Vendors() {
   const { data: vendors, isLoading } = useVendors();
+  const { data: properties } = useProperties();
   const deleteVendor = useDeleteVendor();
   const updateVendor = useUpdateVendor();
   const [editOpen, setEditOpen] = useState(false);
@@ -208,12 +210,12 @@ export default function Vendors() {
                   <Phone className="h-4 w-4" />
                   <span>{vendor.primary_phone}</span>
                 </div>
-                {vendor.instruction_type && (
-                  <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground">
-                    <Building2 className="h-4 w-4" />
-                    <span>Instruction: {vendor.instruction_type.replace("_", " ")}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 pt-2 text-sm text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  <span>
+                    Properties owned: {properties?.filter((p) => p.vendor_id === vendor.id).length || 0}
+                  </span>
+                </div>
               </CardContent>
               <CardFooter>
                 <Button variant="outline" size="sm" className="w-full" asChild>

@@ -50,8 +50,9 @@ def migrate_database():
             ("applicants", "notes", "TEXT"),
             ("applicants", "tenant_questions_answered", "INTEGER DEFAULT 0"),
             
-            # Property table - Management notes
+            # Property table - Management notes and vendor_id
             ("properties", "management_notes", "TEXT"),
+            ("properties", "vendor_id", "VARCHAR"),
             
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),
