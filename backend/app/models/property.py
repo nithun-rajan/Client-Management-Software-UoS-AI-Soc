@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean, Numeric
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, Text, DateTime, Date, Boolean, Numeric, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.models.base import BaseModel
@@ -22,7 +22,7 @@ class Property(BaseModel):
     furnished = Column(Boolean, default=False)
     
     asking_rent = Column(Float)  # What we listed it for
-    rent = Column(Float)  # Actual achieved rent
+    rent = Column(Float)  # Actual achieved rent    
     deposit = Column(Float)
     
     status = Column(String, default=PropertyStatus.AVAILABLE)
@@ -49,6 +49,7 @@ class Property(BaseModel):
     
     # Additional details
     description = Column(Text)
+    notes = Column(Text, nullable=True)  # General notes about the property
     features = Column(Text)  # JSON string: ["parking", "garden", "pets_allowed"]
     council_tax_band = Column(String)
     
@@ -60,6 +61,7 @@ class Property(BaseModel):
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)
     landlord_id = Column(String, ForeignKey('landlords.id'))
+    vendor_id = Column(String, ForeignKey('vendors.id'), nullable=True)  # For sales properties
     
     # Property management
     managed_by = Column(String, ForeignKey('users.id'), nullable=True)  # Property manager user_id
@@ -73,12 +75,15 @@ class Property(BaseModel):
 
     # Relationships
     landlord = relationship("Landlord", back_populates="properties")
+    vendor = relationship("Vendor", foreign_keys=[vendor_id])
     tenancies = relationship("Tenancy", back_populates="property")
     communications = relationship("Communication", back_populates="property")
     maintenance_issues = relationship("MaintenanceIssue", back_populates="property", cascade="all, delete-orphan")
     sales_progression = relationship("SalesProgression", back_populates="property", uselist=False)
+    valuations = relationship("Valuation", back_populates="property")
     offers = relationship("Offer", back_populates="property")  # Lettings offers
-    sales_offers = relationship("SalesOffer", back_populates="property")  # Sales offers    
+    sales_offers = relationship("SalesOffer", back_populates="property")  # Sales offers
+    tickets = relationship("Ticket", back_populates="property", cascade="all, delete-orphan")    
 
 
     # Sales specific fields

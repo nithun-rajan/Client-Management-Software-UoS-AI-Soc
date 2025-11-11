@@ -3,13 +3,12 @@ import { useState, useEffect } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Home, UserCheck, Users, BarChart3, FileText,
+  Home, UserCheck, Users, BarChart3,
   TrendingUp, Clock, PoundSterling, Star, Mail, Phone,
 } from "lucide-react";
 
@@ -68,26 +67,39 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={agent.avatarUrl} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                {agent.name.split(" ").map(n => n[0]).join("")}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <DialogTitle className="text-xl">{agent.name}</DialogTitle>
-              <p className="text-sm text-muted-foreground">{agent.title}</p>
-              <p className="text-xs text-muted-foreground mt-1">{agent.qualifications}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={agent.avatarUrl} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                  {agent.name.split(" ").map(n => n[0]).join("")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <DialogTitle className="text-xl">{agent.name}</DialogTitle>
+                <p className="text-sm text-muted-foreground">{agent.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{agent.qualifications}</p>
+              </div>
+            </div>
+            <div className="text-right space-y-2">
+              <p className="text-sm font-medium">Contact {agent.name.split(" ")[0]}</p>
+              <div className="flex flex-col gap-2 text-sm">
+                <a href={`mailto:${agent.email}`} className="flex items-center justify-end gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <Mail className="h-4 w-4" /> {agent.email}
+                </a>
+                <span className="flex items-center justify-end gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" /> {agent.phone}
+                </span>
+              </div>
             </div>
           </div>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-5">
-            {["properties", "landlords", "applicants", "kpis", "valuation"].map(t => (
+          <TabsList className="grid w-full grid-cols-4">
+            {["properties", "landlords", "applicants", "kpis"].map(t => (
               <TabsTrigger key={t} value={t} className="text-xs sm:text-sm">
-                {t === "kpis" ? "KPIs" : t}
+                {t === "kpis" ? "KPIs" : t.charAt(0).toUpperCase() + t.slice(1)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -195,56 +207,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
               </Card>
             </div>
           </TabsContent>
-
-          {/* VALUATION */}
-          <TabsContent value="valuation" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5" />
-                  AI Valuation Pack – Court Road, SO15
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Guide Price</p>
-                    <p className="text-2xl font-bold">£195,000</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Comparable Sale</p>
-                    <p className="text-xl font-bold">£185,000</p>
-                    <p className="text-xs text-muted-foreground">Apr 2025</p>
-                  </div>
-                </div>
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-sm font-medium mb-1">AI Confidence</p>
-                  <p className="text-3xl font-bold">96%</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
-
-        {/* CONTACT BAR */}
-        <div className="mt-6 border-t pt-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Contact {agent.name.split(" ")[0]}</p>
-              <div className="flex flex-col gap-2 text-sm sm:flex-row">
-                <a href={`mailto:${agent.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                  <Mail className="h-4 w-4" /> {agent.email}
-                </a>
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" /> {agent.phone}
-                </span>
-              </div>
-            </div>
-            <Button onClick={() => onOpenChange(false)} variant="outline">
-              Close
-            </Button>
-          </div>
-        </div>
       </DialogContent>
     </Dialog>
   );

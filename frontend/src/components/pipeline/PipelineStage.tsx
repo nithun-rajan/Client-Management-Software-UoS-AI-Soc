@@ -2,6 +2,7 @@ import { CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
 export interface PipelineStageData {
   id: string;
@@ -141,7 +142,7 @@ export default function PipelineStage({
 
             {stage.date && (
               <div className="text-xs text-muted-foreground">
-                {new Date(stage.date).toLocaleDateString()}
+                {format(new Date(stage.date), "dd/MM/yyyy")}
               </div>
             )}
 

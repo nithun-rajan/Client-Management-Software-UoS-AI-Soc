@@ -16,6 +16,7 @@ class PropertyBase(AppBaseModel):
 class PropertyCreate(PropertyBase):
     city: str
     landlord_id: str | None = None
+    vendor_id: str | None = None
 
 class PropertyUpdate(AppBaseModel):
     address: str | None = None
@@ -32,6 +33,7 @@ class PropertyUpdate(AppBaseModel):
     price_qualifier: str | None = None
     has_valuation_pack: bool | None = None
     landlord_id: str | None = None
+    vendor_id: str | None = None
     managed_by: str | None = None
     management_type: str | None = None
     management_notes: str | None = None
@@ -43,6 +45,14 @@ class LandlordInfo(AppBaseModel):
     email: str
     phone: str | None = None
 
+class VendorInfo(AppBaseModel):
+    """Basic vendor information for property responses"""
+    id: str
+    first_name: str
+    last_name: str
+    email: str
+    primary_phone: str | None = None
+
 class PropertyResponse(PropertyBase):
     id: str
     status: PropertyStatus
@@ -51,6 +61,8 @@ class PropertyResponse(PropertyBase):
     address_line2: str | None = None
     landlord_id: str | None = None
     landlord: LandlordInfo | None = None
+    vendor_id: str | None = None
+    vendor: VendorInfo | None = None
     sales_status: str | None = None
     asking_price: float | None = None
     price_qualifier: str | None = None

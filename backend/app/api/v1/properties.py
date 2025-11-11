@@ -5,12 +5,13 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import verify_token
+from app.core.security import verify_token, get_current_user
 from app.models.property import Property
 from app.models.landlord import Landlord
+from app.models.vendor import Vendor
 from app.models.user import User
 from app.models.enums import PropertyStatus
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo
+from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo, VendorInfo
 from app.services.notification_service import notify
 
 
@@ -76,7 +77,7 @@ def create_property(
         except Exception:
             pass
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(db_property)
     if db_property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == db_property.landlord_id).first()
@@ -87,6 +88,16 @@ def create_property(
                 email=landlord.email,
                 phone=landlord.phone
             )
+    if db_property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == db_property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
+            )
     return response
 
 @router.get("/", response_model=list[PropertyResponse])
@@ -94,14 +105,19 @@ def list_properties(
     skip: int = Query(0, ge=0), 
     limit: int = Query(100, ge=1, le=1000), 
     landlord_id: Optional[str] = Query(None, description="Filter properties by landlord ID"),
+    managed_by: Optional[str] = Query(None, description="Filter properties by manager user ID"),
     db: Session = Depends(get_db)
 ):
-    """List all properties with landlord information. Optionally filter by landlord_id."""
+    """List all properties with landlord information. Optionally filter by landlord_id or managed_by."""
     query = db.query(Property)
     
     # Filter by landlord_id if provided
     if landlord_id:
         query = query.filter(Property.landlord_id == landlord_id)
+    
+    # Filter by managed_by if provided
+    if managed_by:
+        query = query.filter(Property.managed_by == managed_by)
     
     properties = query.offset(skip).limit(limit).all()
     
@@ -121,6 +137,52 @@ def list_properties(
         if property.status is None:
             property.status = PropertyStatus.AVAILABLE
         
+        response = PropertyResponse.model_validate(property)
+        # Include landlord information if property has a landlord
+        if property.landlord_id:
+            landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+            if landlord:
+                response.landlord = LandlordInfo(
+                    id=landlord.id,
+                    full_name=landlord.full_name,
+                    email=landlord.email,
+                    phone=landlord.phone
+                )
+        # Include vendor information if property has a vendor
+        if property.vendor_id:
+            vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+            if vendor:
+                response.vendor = VendorInfo(
+                    id=vendor.id,
+                    first_name=vendor.first_name,
+                    last_name=vendor.last_name,
+                    email=vendor.email,
+                    primary_phone=vendor.primary_phone
+                )
+        result.append(response)
+    return result
+
+@router.get("/my-properties", response_model=list[PropertyResponse])
+def get_my_properties(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get properties managed by the current authenticated user
+    
+    CRM Feature: "My Properties" - Shows which properties are managed by which user
+    """
+    properties = db.query(Property)\
+        .filter(Property.managed_by == current_user.id)\
+        .order_by(Property.created_at.desc())\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+    
+    result = []
+    for property in properties:
         response = PropertyResponse.model_validate(property)
         # Include landlord information if property has a landlord
         if property.landlord_id:
@@ -159,6 +221,17 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
                 email=landlord.email,
                 phone=landlord.phone
             )
+    # Include vendor information if property has a vendor
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
+            )
     return response
 
 @router.put("/{property_id}", response_model=PropertyResponse)
@@ -182,7 +255,7 @@ def update_property(
     db.commit()
     db.refresh(property)
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(property)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -192,6 +265,16 @@ def update_property(
                 full_name=landlord.full_name,
                 email=landlord.email,
                 phone=landlord.phone
+            )
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
             )
     return response
 
@@ -216,7 +299,7 @@ def patch_property(
     db.commit()
     db.refresh(property)
     
-    # Include landlord information in response
+    # Include landlord or vendor information in response
     response = PropertyResponse.model_validate(property)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -226,6 +309,16 @@ def patch_property(
                 full_name=landlord.full_name,
                 email=landlord.email,
                 phone=landlord.phone
+            )
+    if property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo(
+                id=vendor.id,
+                first_name=vendor.first_name,
+                last_name=vendor.last_name,
+                email=vendor.email,
+                primary_phone=vendor.primary_phone
             )
     return response
 

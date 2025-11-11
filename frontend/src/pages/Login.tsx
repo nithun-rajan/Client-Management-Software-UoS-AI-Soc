@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,21 +12,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, Mail, Lock, Building2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
-  const { login, isLoggingIn, isAuthenticated } = useAuth();
+  const { login, isLoggingIn, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const hasCheckedAuth = useRef(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (only check once after initial load)
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/");
+    // Only check once after loading completes and we're actually on the login page
+    if (!isLoading && !hasCheckedAuth.current && location.pathname === "/login") {
+      hasCheckedAuth.current = true;
+      if (isAuthenticated) {
+        // Redirect to the page they were trying to access, or home
+        const from = (location.state as any)?.from?.pathname || "/";
+        navigate(from, { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isLoading, isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +47,17 @@ export default function Login() {
 
     try {
       await login({ email, password });
+      // Navigation will happen in the login mutation's onSuccess callback
+      // Clear any previous errors on success
+      setError("");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Login failed. Please try again.");
+      // Extract error message from various possible error formats
+      const errorMessage = err?.response?.data?.detail || 
+                          err?.response?.data?.message || 
+                          err?.message || 
+                          "Login failed. Please check your credentials and try again.";
+      setError(errorMessage);
+      console.error("Login failed:", err);
     }
   };
 
@@ -120,7 +137,8 @@ export default function Login() {
             </Button>
             <div className="text-xs text-muted-foreground text-center space-y-1">
               <p>Test credentials:</p>
-              <p className="font-mono">test@example.com / testpassword123</p>
+              <p className="font-mono">agent.test@example.com</p>
+              <p className="font-mono">testpassword123</p>
             </div>
           </CardFooter>
         </form>

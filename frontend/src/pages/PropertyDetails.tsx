@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { format } from "date-fns";
 import {
   Building2,
   Bed,
@@ -15,6 +16,8 @@ import {
   Workflow,
   Pencil,
   Trash2,
+  Wrench,
+  Handshake,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +46,10 @@ import {
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
+import { useTickets } from "@/hooks/useTickets";
+import { useOffers } from "@/hooks/useOffers";
+import { Badge } from "@/components/ui/badge";
+import NotesSection from "@/components/shared/NotesSection";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,7 +91,10 @@ export default function PropertyDetails() {
     try {
       await api.delete(`/api/v1/properties/${id}/`);
       toast({ title: "Success", description: "Property deleted successfully" });
-      navigate("/properties");
+      const backRoute = property?.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id
+        ? "/properties-for-sale"
+        : "/properties";
+      navigate(backRoute);
     } catch (error) {
       toast({
         title: "Error",
@@ -127,6 +137,22 @@ export default function PropertyDetails() {
     id || ""
   );
   const transitionMutation = useTransitionStatus();
+
+  // Get all tickets to filter by property_id
+  const { data: allTickets } = useTickets();
+  
+  // Filter tickets for this property
+  const propertyTickets = allTickets?.filter(
+    (ticket) => ticket.property_id === id
+  ) || [];
+
+  // Get all offers to filter by property_id
+  const { data: allOffers } = useOffers();
+  
+  // Filter offers for this property
+  const propertyOffers = allOffers?.filter(
+    (offer) => offer.property_id === id
+  ) || [];
 
   const handleSendEmail = () => {
     console.log("📧 Sending email for property:", property?.id);
@@ -201,9 +227,17 @@ export default function PropertyDetails() {
       <div className="space-y-6 p-6">
         {/* Header Bar */}
         <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => navigate("/properties")}>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const isForSale = property.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id;
+              navigate(isForSale ? "/properties-for-sale" : "/properties");
+            }}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Properties
+            {property.sales_status && property.sales_status.trim() !== "" && property.vendor_id && !property.landlord_id
+              ? "Back to Properties for Sale"
+              : "Back to Properties for Letting"}
           </Button>
           <div className="flex items-center gap-2">
             <StatusBadge status={property.status} />
@@ -233,17 +267,26 @@ export default function PropertyDetails() {
                     {property.city}, {property.postcode}
                   </span>
                 </div>
-                {property.landlord && (
+                {(property.landlord || property.vendor) && (
                   <div className="mt-3 flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       Owner:{" "}
-                      <Link 
-                        to={`/landlords/${property.landlord.id}`}
-                        className="font-medium text-foreground hover:underline"
-                      >
-                        {property.landlord.full_name}
-                      </Link>
+                      {property.landlord ? (
+                        <Link 
+                          to={`/landlords/${property.landlord.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {property.landlord.full_name}
+                        </Link>
+                      ) : property.vendor ? (
+                        <Link 
+                          to={`/vendors/${property.vendor.id}`}
+                          className="font-medium text-foreground hover:underline"
+                        >
+                          {property.vendor.first_name} {property.vendor.last_name}
+                        </Link>
+                      ) : null}
                     </span>
                   </div>
                 )}
@@ -314,54 +357,185 @@ export default function PropertyDetails() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Details</CardTitle>
-                    <Button size="sm" variant="outline" onClick={handleSendEmail}>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Details
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {property.landlord && (
-                      <div className="flex justify-between items-center pb-3 border-b">
-                        <span className="text-muted-foreground">Landlord</span>
-                        <Link 
-                          to={`/landlords/${property.landlord.id}`}
-                          className="font-medium text-primary hover:underline flex items-center gap-1"
-                        >
-                          {property.landlord.full_name}
-                          <Eye className="h-3 w-3" />
-                        </Link>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Property Type</span>
-                      <span className="font-medium capitalize">
-                        {property.property_type}
-                      </span>
+              <div className="flex flex-col gap-6">
+                <Card className="flex-shrink">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Details</CardTitle>
+                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                        <Mail className="mr-2 h-4 w-4" />
+                        Send Details
+                      </Button>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Bedrooms</span>
-                      <span className="font-medium">{property.bedrooms}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Bathrooms</span>
-                      <span className="font-medium">{property.bathrooms}</span>
-                    </div>
-                    {property.rent && (
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      {property.landlord && (
+                        <div className="flex justify-between items-center pb-3 border-b">
+                          <span className="text-muted-foreground">Landlord</span>
+                          <Link 
+                            to={`/landlords/${property.landlord.id}`}
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {property.landlord.full_name}
+                            <Eye className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
+                      {property.vendor && (
+                        <div className="flex justify-between items-center pb-3 border-b">
+                          <span className="text-muted-foreground">Vendor</span>
+                          <Link 
+                            to={`/vendors/${property.vendor.id}`}
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {property.vendor.first_name} {property.vendor.last_name}
+                            <Eye className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Rent</span>
-                        <span className="font-medium">£{property.rent.toLocaleString()}/month</span>
+                        <span className="text-muted-foreground">Property Type</span>
+                        <span className="font-medium capitalize">
+                          {property.property_type}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bedrooms</span>
+                        <span className="font-medium">{property.bedrooms}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bathrooms</span>
+                        <span className="font-medium">{property.bathrooms}</span>
+                      </div>
+                      {property.rent && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Rent</span>
+                          <span className="font-medium">£{property.rent.toLocaleString()}/month</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes Section - matches remaining height to Property Information */}
+                <div className="flex-1">
+                  <NotesSection
+                    entityType="property"
+                    entityId={id || ""}
+                    initialNotes={property?.management_notes || ""}
+                    className="h-full"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Tickets Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5" />
+                  Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyTickets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tickets</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyTickets.map((ticket) => (
+                      <button
+                        key={ticket.id}
+                        onClick={() => navigate("/tickets")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{ticket.title}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.status.replace("_", " ")}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ticket.urgency}
+                            </Badge>
+                          </div>
+                        </div>
+                        {ticket.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {ticket.description}
+                          </p>
+                        )}
+                        {ticket.ticket_category && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Category: {ticket.ticket_category}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Offers Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Handshake className="h-5 w-5" />
+                  Offers
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {propertyOffers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No offers</p>
+                ) : (
+                  <div className="space-y-2">
+                    {propertyOffers.map((offer) => (
+                      <button
+                        key={offer.id}
+                        onClick={() => navigate("/offers")}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                              {offer.applicant_id && (
+                                <span className="text-xs text-muted-foreground">
+                                  by{" "}
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/applicants/${offer.applicant_id}`);
+                                    }}
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                                  >
+                                    {offer.applicant?.name || "Unknown"}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                            {offer.proposed_term_months && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Term: {offer.proposed_term_months} months
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                        {offer.special_conditions && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {offer.special_conditions}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pipeline Tab */}
@@ -388,7 +562,7 @@ export default function PropertyDetails() {
                       <p className="text-sm font-medium">Property Created</p>
                       <p className="text-sm text-muted-foreground">
                         {property.created_at
-                          ? new Date(property.created_at).toLocaleDateString()
+                          ? format(new Date(property.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -402,7 +576,7 @@ export default function PropertyDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Property Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(property.updated_at).toLocaleDateString()}
+                            {format(new Date(property.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>
