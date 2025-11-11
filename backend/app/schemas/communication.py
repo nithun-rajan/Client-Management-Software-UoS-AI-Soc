@@ -54,36 +54,25 @@ class CommunicationCreate(CommunicationBase):
     
     @model_validator(mode='after')
     def validate_entity_link(self) -> 'CommunicationCreate':
-        # Normalize and check if at least one entity is linked (handle empty strings)
-        property_id = None
-        landlord_id = None
-        applicant_id = None
+        """
+        Validate that at least one entity is linked.
+        Note: We only validate, we don't modify attributes to avoid recursion.
+        Normalization of empty strings to None happens in the API endpoint.
+        """
+        # Check if at least one entity ID is provided (handle None and empty strings)
+        # Convert to string and strip to check if it's actually empty
+        def is_valid_id(value):
+            if value is None:
+                return False
+            value_str = str(value).strip()
+            return bool(value_str)
         
-        if self.property_id:
-            property_id = str(self.property_id).strip() if self.property_id else None
-            if property_id == "":
-                property_id = None
+        has_property = is_valid_id(self.property_id)
+        has_landlord = is_valid_id(self.landlord_id)
+        has_applicant = is_valid_id(self.applicant_id)
         
-        if self.landlord_id:
-            landlord_id = str(self.landlord_id).strip() if self.landlord_id else None
-            if landlord_id == "":
-                landlord_id = None
-        
-        if self.applicant_id:
-            applicant_id = str(self.applicant_id).strip() if self.applicant_id else None
-            if applicant_id == "":
-                applicant_id = None
-        
-        if not any([property_id, landlord_id, applicant_id]):
+        if not any([has_property, has_landlord, has_applicant]):
             raise ValueError("At least one entity (property, landlord, or applicant) must be linked")
-        
-        # Update the model with normalized values (only if they exist)
-        if property_id is not None:
-            self.property_id = property_id
-        if landlord_id is not None:
-            self.landlord_id = landlord_id
-        if applicant_id is not None:
-            self.applicant_id = applicant_id
         
         return self
 
