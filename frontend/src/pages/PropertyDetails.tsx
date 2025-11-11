@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { format } from "date-fns";
 import {
   Building2,
   Bed,
@@ -523,7 +524,7 @@ export default function PropertyDetails() {
                       <p className="text-sm font-medium">Property Created</p>
                       <p className="text-sm text-muted-foreground">
                         {property.created_at
-                          ? new Date(property.created_at).toLocaleDateString()
+                          ? format(new Date(property.created_at), "dd/MM/yyyy")
                           : "Recently"}
                       </p>
                     </div>
@@ -537,7 +538,7 @@ export default function PropertyDetails() {
                         <div className="flex-1">
                           <p className="text-sm font-medium">Property Updated</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(property.updated_at).toLocaleDateString()}
+                            {format(new Date(property.updated_at), "dd/MM/yyyy")}
                           </p>
                         </div>
                       </div>

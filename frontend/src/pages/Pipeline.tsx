@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
@@ -530,8 +531,8 @@ export default function Pipeline() {
                               £{tenancy.rent_amount?.toLocaleString() || tenancy.rent_amount}/month
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
-                              {tenancy.start_date && new Date(tenancy.start_date).toLocaleDateString()} -{" "}
-                              {tenancy.end_date ? new Date(tenancy.end_date).toLocaleDateString() : "Ongoing"}
+                              {tenancy.start_date && format(new Date(tenancy.start_date), "dd/MM/yyyy")} -{" "}
+                              {tenancy.end_date ? format(new Date(tenancy.end_date), "dd/MM/yyyy") : "Ongoing"}
                             </div>
                             {tenancy.applicant && (
                               <div className="text-xs text-muted-foreground mt-1">
