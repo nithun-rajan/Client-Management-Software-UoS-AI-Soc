@@ -77,8 +77,7 @@ class Valuation(ValuationBase):
     # Relationships
     comparable_sales: List[ComparableSale] = []
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ValuationRequest(BaseModel):
