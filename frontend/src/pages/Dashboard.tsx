@@ -23,6 +23,8 @@ import {
   UserPlus,
   Sun,
   Moon,
+  Handshake,
+  MessageSquare,
 } from "lucide-react";
 import {
   Card,
@@ -296,6 +298,7 @@ export default function Dashboard() {
     <div>
       <Header title="Dashboard" />
       <div className="space-y-6 p-6">
+<<<<<<< HEAD
         {/* Personalized Greeting */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -524,6 +527,30 @@ export default function Dashboard() {
 
           {/* Recent Activity Feed - Right side */}
           <Card className="shadow-card">
+=======
+        {/* KPI Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {kpiCards.map((card) => (
+            <Card
+              key={card.title}
+              className={`bg-gradient-to-br ${card.gradient} border-0 text-white shadow-elevated transition-shadow hover:shadow-xl`}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-white/90">
+                  <span className="text-sm font-medium">{card.title}</span>
+                  <card.icon className="h-5 w-5" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{card.value}</div>
+                <p className="mt-1 text-sm text-white/80">{card.subtitle}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Recent Activity */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="shadow-card md:col-span-2">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Latest updates across your portfolio</CardDescription>
@@ -536,46 +563,81 @@ export default function Dashboard() {
                   <Skeleton className="h-16" />
                 </>
               ) : events && events.length > 0 ? (
-                events.slice(0, 8).map((event) => {
-                  const eventIcon =
-                    event.entity_type === "property"
-                      ? Building2
-                      : event.entity_type === "applicant"
-                        ? Users
-                        : event.entity_type === "landlord"
-                          ? UserCheck
-                          : Activity;
+                events.slice(0, 10).map((event) => {
+                  // Determine icon component based on entity type
+                  let IconComponent = Activity;
+                  if (event.entity_type === "property") {
+                    IconComponent = Building2;
+                  } else if (event.entity_type === "applicant") {
+                    IconComponent = Users;
+                  } else if (event.entity_type === "landlord") {
+                    IconComponent = UserCheck;
+                  } else if (event.entity_type === "vendor") {
+                    IconComponent = UserCircle;
+                  } else if (event.entity_type === "task") {
+                    IconComponent = Activity;
+                  } else if (event.entity_type === "viewing") {
+                    IconComponent = Calendar;
+                  } else if (event.entity_type === "offer") {
+                    IconComponent = Handshake;
+                  } else if (event.entity_type === "communication") {
+                    IconComponent = MessageSquare;
+                  }
 
-                  const eventColor =
-                    event.entity_type === "property"
-                      ? "accent"
-                      : event.entity_type === "applicant"
-                        ? "primary"
-                        : event.entity_type === "landlord"
-                          ? "accent"
-                          : "secondary";
+                  // Determine color classes based on entity type (using full class names for Tailwind)
+                  let bgColorClass = "bg-muted/10";
+                  let iconColorClass = "text-muted-foreground";
+                  if (event.entity_type === "property") {
+                    bgColorClass = "bg-primary/10";
+                    iconColorClass = "text-primary";
+                  } else if (event.entity_type === "applicant") {
+                    bgColorClass = "bg-blue-500/10";
+                    iconColorClass = "text-blue-500";
+                  } else if (event.entity_type === "landlord") {
+                    bgColorClass = "bg-accent/10";
+                    iconColorClass = "text-accent";
+                  } else if (event.entity_type === "vendor") {
+                    bgColorClass = "bg-indigo-500/10";
+                    iconColorClass = "text-indigo-500";
+                  } else if (event.entity_type === "task") {
+                    bgColorClass = "bg-orange-500/10";
+                    iconColorClass = "text-orange-500";
+                  } else if (event.entity_type === "viewing") {
+                    bgColorClass = "bg-cyan-500/10";
+                    iconColorClass = "text-cyan-500";
+                  } else if (event.entity_type === "offer") {
+                    bgColorClass = "bg-green-500/10";
+                    iconColorClass = "text-green-500";
+                  } else if (event.entity_type === "communication") {
+                    bgColorClass = "bg-purple-500/10";
+                    iconColorClass = "text-purple-500";
+                  }
 
-                  const eventTitle = event.event
-                    .split(".")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
+                  // Format event title - use description if available, otherwise format event name
+                  const eventTitle = event.description 
+                    ? event.description
+                    : event.event
+                        .split(".")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ");
 
                   const timeAgo = formatDistanceToNow(new Date(event.timestamp), {
                     addSuffix: true,
                   });
 
-                  const IconComponent = eventIcon;
                   return (
-                    <div key={event.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted shrink-0">
-                        <IconComponent className="h-4 w-4" />
+                    <div key={event.id} className="flex items-start gap-4">
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bgColorClass}`}>
+                        <IconComponent className={`h-5 w-5 ${iconColorClass}`} />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{eventTitle}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {event.entity_type} #{event.entity_id}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
+                        {event.entity_name && (
+                          <p className="text-sm text-muted-foreground">
+                            {event.entity_name}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
                       </div>
                     </div>
                   );

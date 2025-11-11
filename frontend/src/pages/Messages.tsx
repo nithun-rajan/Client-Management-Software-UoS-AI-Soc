@@ -113,12 +113,30 @@ export default function Messages() {
         is_important: newComm.is_important,
       };
 
+<<<<<<< HEAD
       if (newComm.subject) data.subject = newComm.subject;
       if (newComm.direction) data.direction = newComm.direction;
       if (newComm.created_by) data.created_by = newComm.created_by;
       if (newComm.property_id) data.property_id = parseInt(newComm.property_id);
       if (newComm.landlord_id) data.landlord_id = parseInt(newComm.landlord_id);
       if (newComm.applicant_id) data.applicant_id = parseInt(newComm.applicant_id);
+=======
+      if (newComm.subject && newComm.subject.trim()) data.subject = newComm.subject.trim();
+      if (newComm.direction && newComm.direction !== "" && newComm.direction !== "none") {
+        data.direction = newComm.direction;
+      }
+      if (newComm.created_by && newComm.created_by.trim()) data.created_by = newComm.created_by.trim();
+      // Send IDs as strings (backend expects String UUIDs)
+      if (newComm.property_id && newComm.property_id.trim() !== "") {
+        data.property_id = newComm.property_id.trim();
+      }
+      if (newComm.landlord_id && newComm.landlord_id.trim() !== "") {
+        data.landlord_id = newComm.landlord_id.trim();
+      }
+      if (newComm.applicant_id && newComm.applicant_id.trim() !== "") {
+        data.applicant_id = newComm.applicant_id.trim();
+      }
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
       await createCommunication(data);
       setIsDialogOpen(false);
@@ -135,9 +153,35 @@ export default function Messages() {
       });
     } catch (err: any) {
       console.error("Failed to create communication:", err);
+<<<<<<< HEAD
       const errorMsg =
         err.response?.data?.detail ||
         "Failed to create communication. Please try again.";
+=======
+      
+      // Handle validation errors - FastAPI returns detail as string or array of error objects
+      let errorMsg = "Failed to create communication. Please try again.";
+      
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          // Pydantic validation errors are arrays of error objects
+          const errorMessages = detail.map((e: any) => {
+            const field = e.loc ? e.loc.join('.') : 'field';
+            return `${field}: ${e.msg || 'Invalid value'}`;
+          });
+          errorMsg = errorMessages.join('\n');
+        } else if (typeof detail === 'object') {
+          // Single error object
+          errorMsg = detail.msg || detail.message || JSON.stringify(detail);
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
       alert(errorMsg);
     }
   };
@@ -208,16 +252,26 @@ export default function Messages() {
                 <div>
                   <Label>Direction</Label>
                   <Select
+<<<<<<< HEAD
                     value={newComm.direction}
                     onValueChange={(value) =>
                       setNewComm({ ...newComm, direction: value })
+=======
+                    value={newComm.direction || "none"}
+                    onValueChange={(value) =>
+                      setNewComm({ ...newComm, direction: value === "none" ? "" : value })
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                     }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select direction" />
                     </SelectTrigger>
                     <SelectContent>
+<<<<<<< HEAD
                       <SelectItem value="">None</SelectItem>
+=======
+                      <SelectItem value="none">None</SelectItem>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                       <SelectItem value="inbound">Inbound</SelectItem>
                       <SelectItem value="outbound">Outbound</SelectItem>
                     </SelectContent>
@@ -427,7 +481,13 @@ export default function Messages() {
       {loading ? (
         <div className="py-12 text-center">Loading communications...</div>
       ) : error ? (
+<<<<<<< HEAD
         <div className="py-12 text-center text-red-600">{error}</div>
+=======
+        <div className="py-12 text-center text-red-600">
+          {typeof error === 'string' ? error : 'An error occurred while loading communications'}
+        </div>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
       ) : communications.length === 0 ? (
         <EmptyState
           icon={MessageSquare}

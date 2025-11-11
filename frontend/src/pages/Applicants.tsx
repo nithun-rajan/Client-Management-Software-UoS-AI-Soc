@@ -41,9 +41,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Applicants() {
+  const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
@@ -186,12 +187,15 @@ export default function Applicants() {
                     <span>Pet friendly</span>
                   </div>
                 )}
+<<<<<<< HEAD
                 {applicant.assigned_agent && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1 border-t">
                     <User className="h-4 w-4 shrink-0" />
                     <span>Managed by: {applicant.assigned_agent.first_name} {applicant.assigned_agent.last_name}</span>
                   </div>
                 )}
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
               </CardContent>
               <CardFooter className="flex gap-2">
                 <Button
@@ -379,7 +383,18 @@ export default function Applicants() {
                       <Button size="sm" variant="outline">
                         Book Viewing
                       </Button>
+<<<<<<< HEAD
                       <Button size="sm" variant="outline">
+=======
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setMatchesDialogOpen(false);
+                          navigate(`/properties/${match.property_id}`);
+                        }}
+                      >
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         View Property
                       </Button>
                     </CardFooter>

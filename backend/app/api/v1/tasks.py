@@ -5,6 +5,10 @@ from typing import Optional
 from app.core.database import get_db
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+<<<<<<< HEAD
+=======
+from typing import List, Optional
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -27,6 +31,10 @@ def list_tasks(
     limit: int = Query(100, ge=1, le=1000), 
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
+<<<<<<< HEAD
+=======
+    tenancy_id: Optional[str] = Query(None),
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     db: Session = Depends(get_db)
 ):
     """List all tasks with optional filtering"""
@@ -37,6 +45,11 @@ def list_tasks(
         query = query.filter(Task.status == status)
     if priority:
         query = query.filter(Task.priority == priority)
+<<<<<<< HEAD
+=======
+    if tenancy_id:
+        query = query.filter(Task.tenancy_id == tenancy_id)
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     
     tasks = query.offset(skip).limit(limit).all()
     return tasks

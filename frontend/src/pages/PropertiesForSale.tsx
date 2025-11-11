@@ -13,7 +13,10 @@ import {
   Download,
   Search,
   X,
+<<<<<<< HEAD
   User,
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,6 +56,11 @@ export default function PropertiesForSale() {
         postcode: property.postcode,
         property_type: property.property_type,
         bedrooms: property.bedrooms,
+<<<<<<< HEAD
+=======
+        property_id: property.id,
+        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
       });
       setValuationPack(response.data.data);
       setValuationPackOpen(true);
@@ -219,12 +227,15 @@ export default function PropertiesForSale() {
                         Owner: {property.vendor.first_name} {property.vendor.last_name}
                       </p>
                     )}
+<<<<<<< HEAD
                     {property.managed_agent && (
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <User className="h-3 w-3" />
                         Managed by: {property.managed_agent.first_name} {property.managed_agent.last_name}
                       </p>
                     )}
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                   </div>
                   <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                     {property.property_type}

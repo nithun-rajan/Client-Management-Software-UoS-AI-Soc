@@ -18,7 +18,12 @@ import {
   Trash2,
   Wrench,
   Handshake,
+<<<<<<< HEAD
   User,
+=======
+  AlertTriangle,
+  Plus,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +66,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+<<<<<<< HEAD
+=======
+import { useMaintenanceByProperty } from "@/hooks/useMaintenance";
+import { MaintenanceIssue } from "@/types";
+import EmptyState from "@/components/shared/EmptyState";
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -286,6 +297,7 @@ export default function PropertyDetails() {
                     </span>
                   </div>
                 )}
+<<<<<<< HEAD
                 {property.managed_agent && (
                   <div className="mt-2 flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -297,6 +309,8 @@ export default function PropertyDetails() {
                     </span>
                   </div>
                 )}
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
               </div>
               {property.rent && (
                 <div className="text-right">
@@ -313,11 +327,19 @@ export default function PropertyDetails() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
+<<<<<<< HEAD
           <TabsList className="grid w-full max-w-2xl grid-cols-4">
+=======
+          <TabsList className="grid w-full max-w-2xl grid-cols-5">
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
+<<<<<<< HEAD
+=======
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
           </TabsList>
 
           {/* Overview Tab */}
@@ -661,6 +683,14 @@ export default function PropertyDetails() {
               </CardContent>
             </Card>
           </TabsContent>
+<<<<<<< HEAD
+=======
+
+          {/* Maintenance Tab */}
+          <TabsContent value="maintenance" className="mt-6">
+            <PropertyMaintenanceTab propertyId={id || ""} />
+          </TabsContent>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         </Tabs>
       </div>
 
@@ -812,3 +842,127 @@ export default function PropertyDetails() {
     </div>
   );
 }
+<<<<<<< HEAD
+=======
+
+// Maintenance Tab Component
+function PropertyMaintenanceTab({ propertyId }: { propertyId: string }) {
+  const { data: maintenance, isLoading } = useMaintenanceByProperty(propertyId);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  if (!maintenance || maintenance.length === 0) {
+    return (
+      <EmptyState
+        icon={Wrench}
+        title="No maintenance issues"
+        description="No maintenance issues have been reported for this property."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Maintenance Issues ({maintenance.length})</h3>
+        <Button asChild size="sm">
+          <Link to="/maintenance">
+            <Plus className="mr-2 h-4 w-4" />
+            New Issue
+          </Link>
+        </Button>
+      </div>
+      <div className="grid gap-4">
+        {maintenance.map((issue: MaintenanceIssue) => (
+          <Card
+            key={issue.id}
+            className={`transition-shadow hover:shadow-lg ${
+              issue.is_emergency ? "border-red-500 border-2" : ""
+            } ${issue.is_overdue ? "border-orange-500" : ""}`}
+          >
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg">
+                    <Link
+                      to={`/maintenance/${issue.id}`}
+                      className="hover:underline"
+                    >
+                      {issue.title}
+                    </Link>
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    {issue.description}
+                  </p>
+                </div>
+                {issue.is_emergency && (
+                  <Badge variant="destructive" className="ml-2">
+                    <AlertTriangle className="mr-1 h-3 w-3" />
+                    Emergency
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <StatusBadge status={issue.status} />
+                <StatusBadge status={issue.priority} />
+                {issue.is_overdue && (
+                  <Badge variant="outline" className="border-orange-500 text-orange-500">
+                    Overdue
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Reported:</span>{" "}
+                  <span className="font-medium">{formatDate(issue.reported_date)}</span>
+                </div>
+                {issue.days_open !== undefined && (
+                  <div>
+                    <span className="text-muted-foreground">Days Open:</span>{" "}
+                    <span className="font-medium">{issue.days_open} days</span>
+                  </div>
+                )}
+                {issue.quote_amount && (
+                  <div>
+                    <span className="text-muted-foreground">Quote:</span>{" "}
+                    <span className="font-medium">£{issue.quote_amount.toFixed(2)}</span>
+                  </div>
+                )}
+                {issue.reported_by && (
+                  <div>
+                    <span className="text-muted-foreground">Reported By:</span>{" "}
+                    <span className="font-medium">{issue.reported_by}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/maintenance/${issue.id}`}>View Details</Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4

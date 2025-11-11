@@ -50,14 +50,20 @@ class Vendor(BaseModel):
     
     # Contact tracking
     last_contacted_at = Column(DateTime(timezone=True), nullable=True, index=True)  # When last contacted (updated on communication)
+<<<<<<< HEAD
     
     # CRM fields - Agent assignment
     managed_by = Column(String, ForeignKey('users.id'), nullable=True, index=True)  # Which agent manages this vendor
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
     # Relationships
     tasks = relationship("Task", back_populates="vendor")
     sales_progression = relationship("SalesProgression", back_populates="vendor")
+<<<<<<< HEAD
     managed_agent = relationship("User", foreign_keys=[managed_by])
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
     
     def __repr__(self):

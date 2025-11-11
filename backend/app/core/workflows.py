@@ -2,14 +2,26 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException
 from enum import Enum
 from datetime import datetime, timedelta, timezone
+<<<<<<< HEAD
 
+=======
+# --- 1. ADDED/UPDATED IMPORTS ---
+from app.models.tenancy import Tenancy
+from app.models.enums import TenancyStatus
+from sqlalchemy.orm import Session
+# --- END OF ADDED/UPDATED IMPORTS ---
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 class Domain(str, Enum):
     PROPERTY = "property"
     TENANCY = "tenancy"
     VENDOR = "vendor"
     APPLICANT = "applicant"
+<<<<<<< HEAD
 
+=======
+    VALUATION = "valuation"
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 class WorkflowManager:
     """
@@ -46,6 +58,10 @@ class WorkflowManager:
             Domain.VENDOR: {
                 # Vendor sales progression - Updated with sales instruction workflow
                 "new": ["valuation_booked", "instructed"],  # Can go straight to instructed
+<<<<<<< HEAD
+=======
+                
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                 "valuation_booked": ["instructed", "lost"],
                 "instructed": ["active", "sstc", "withdrawn", "lost"],  # Added SSTC stage
                 "active": ["sstc", "withdrawn", "lost"],  # Property on market
@@ -57,6 +73,7 @@ class WorkflowManager:
                 "past_client": []  # Final state for successful sales
             },
             Domain.APPLICANT: {
+<<<<<<< HEAD
                 # Applicant lifecycle - Blueprint pages 21-27
                 "new": ["qualified"],
                 "qualified": ["viewing_booked", "archived"],
@@ -67,6 +84,37 @@ class WorkflowManager:
                 "let_agreed": ["tenancy_started", "references"],  # Page 29
                 "tenancy_started": ["archived"],  # Page 33: 5.2
                 "archived": ["new"]
+=======
+                # Applicant lifecycle - Blueprint pages 21-27 + Sales buyer workflow (Pages 55-64)
+                "new": ["qualified", "sales_qualified"],
+                "qualified": ["viewing_booked", "archived"],
+                "sales_qualified": ["sales_viewing_booked", "archived"],
+                "viewing_booked": ["offer_submitted", "qualified", "archived"],
+                "sales_viewing_booked": ["sales_offer_submitted", "sales_qualified", "archived"],
+                "offer_submitted": ["offer_accepted", "viewing_booked", "archived"],  # Page 29
+                "sales_offer_submitted": ["sales_offer_accepted", "sales_viewing_booked", "archived"],
+                "offer_accepted": ["references", "viewing_booked"],  # Page 29: 1.2
+                "sales_offer_accepted": ["sales_references", "sales_viewing_booked"],
+                "references": ["let_agreed", "offer_accepted"],  # Page 30
+                "sales_references": ["sales_let_agreed", "sales_offer_accepted"],
+                "let_agreed": ["tenancy_started", "references"],  # Page 29
+                "sales_let_agreed": ["exchange_agreed", "sales_references"],
+                "tenancy_started": ["archived"],  # Page 33: 5.2
+                "exchange_agreed": ["completed", "sales_let_agreed"],
+                "completed": ["archived"],
+                "archived": ["new"]
+            },
+
+            Domain.VALUATION: {
+                # Valuation workflow states
+                "draft": ["in_progress", "cancelled"],
+                "in_progress": ["completed", "failed", "cancelled"],
+                "completed": ["superseded", "archived"],
+                "failed": ["draft", "archived"],
+                "cancelled": ["draft"],
+                "superseded": ["archived"],
+                "archived": []
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             }
         }
 
@@ -111,7 +159,12 @@ class WorkflowManager:
             ("tenancy", "ready_to_move_in", "active"): [
                 "register_security_deposit",  # Page 32: 3.4
                 "sign_tenancy_agreement",  # Page 32: 3.5
+<<<<<<< HEAD
                 "execute_move_in"  # Page 33: 5.1
+=======
+                "execute_move_in",  # Page 33: 5.1
+                "trigger_compliance_tasks"
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             ],
 
             # Applicant transitions
@@ -123,6 +176,51 @@ class WorkflowManager:
                 "archive_applicant_record",  # Page 33: 5.2
                 "create_active_tenancy"  # Page 33: 5.2
             ],
+<<<<<<< HEAD
+=======
+            #Applicant (Sales transitions)
+            # Add to self.side_effects
+            ("applicant", "new", "sales_qualified"): [
+                "setup_buyer_financial_profile",
+                "schedule_mortgage_advice",
+                "create_buyer_search_alerts"
+            ],
+            ("applicant", "sales_qualified", "sales_viewing_booked"): [
+                "book_sales_viewing",
+                "send_sales_property_pack", 
+                "update_buyer_match_score"
+            ],
+            ("applicant", "sales_viewing_booked", "sales_offer_submitted"): [
+                "create_sales_offer_record",
+                "notify_vendor_of_offer",
+                "start_sales_negotiation_process"
+            ],
+            ("applicant", "sales_offer_submitted", "sales_offer_accepted"): [
+                "mark_offer_accepted_sales",
+                "initiate_sales_progression",
+                "collect_reservation_deposit"
+            ],
+            ("applicant", "sales_offer_accepted", "sales_references"): [
+                "verify_buyer_finances_sales",
+                "conduct_buyer_aml_checks",
+                "connect_with_buyer_solicitor"
+            ],
+            ("applicant", "sales_references", "sales_let_agreed"): [
+                "update_property_to_sstc",
+                "generate_sales_memorandum", 
+                "notify_parties_sstc_status"
+            ],
+            ("applicant", "sales_let_agreed", "exchange_agreed"): [
+                "prepare_exchange_contracts",
+                "conduct_pre_exchange_checks",
+                "coordinate_completion_date"
+            ],
+            ("applicant", "exchange_agreed", "completed"): [
+                "finalize_property_purchase",
+                "process_land_registry_update",
+                "archive_completed_buyer"
+            ],
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
             #Vendor transitions
             ("vendor", "new", "instructed"): [
@@ -147,9 +245,101 @@ class WorkflowManager:
                 "finalize_sale",  # Complete sale process
                 "update_land_registry",  # Update land registry
                 "archive_sales_progression"  # Archive sales progression
+<<<<<<< HEAD
             ]
         }
 
+=======
+            ],
+
+            ("vendor", "new", "valuation_booked"): [
+                "schedule_valuation",
+                "create_valuation_record",  # Add this
+                "notify_agent_valuation_scheduled"
+            ],
+            ("vendor", "valuation_booked", "instructed"): [
+                "generate_final_valuation",  # Add this - generate final valuation pack
+                "create_sales_progression",
+                "notify_sales_team"
+            ],
+
+
+            # Valuation transitions
+            ("valuation", "draft", "in_progress"): [
+                "generate_valuation_pack",  # Trigger AI valuation generation
+                "notify_agent_valuation_started"
+            ],
+            ("valuation", "in_progress", "completed"): [
+                "store_valuation_document",  # Save the generated valuation pack
+                "notify_agent_valuation_ready",
+                "link_valuation_to_property"
+            ],
+            ("valuation", "in_progress", "failed"): [
+                "log_valuation_failure",
+                "notify_agent_valuation_failed"
+            ],
+            ("valuation", "completed", "superseded"): [
+                "archive_old_valuation",  # When new valuation is generated
+                "update_property_valuation"
+            ]
+        }
+
+    # --- NEW FUNCTION: LETTINGS GUARDS (ADDED) ---
+    # This function is adapted to check string statuses against Enum values
+    def validate_tenancy_guards(self, tenancy: Tenancy, new_status: str):
+
+        """
+        Checks if a tenancy is allowed to move to a new status
+        based on the blueprint's "guard" rules (pages 29-34).
+
+        This function is called by the API endpoint BEFORE updating the status.
+        """
+
+        # --- Guard for Stage 2: REFERENCING ---
+        # Note: TenancyStatus.REFERENCING.value is "referencing"
+        if new_status == TenancyStatus.REFERENCING.value:
+            # GUARD: Must have paid holding deposit (Blueprint p. 29, 1.4)
+            if not tenancy.holding_deposit_date:
+                raise HTTPException(status_code=400,
+                    detail="Cannot start referencing. Holding deposit has not been received.")
+
+        # --- Guard for Stage 3: REFERENCED (after referencing is complete) ---
+        # Note: TenancyStatus.REFERENCED.value is "referenced"
+        elif new_status == TenancyStatus.REFERENCED.value:
+            # GUARD: Must have passed referencing (Blueprint p. 30-31, 2.2 & 2.3)
+            if tenancy.reference_status != "pass" or tenancy.right_to_rent_status != "pass":
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to referenced. References and Right to Rent must be 'pass'.")
+
+        # --- Guard for Stage 4: DOCUMENTATION ("legal_docs") ---
+        # Note: TenancyStatus.DOCUMENTATION.value is "legal_docs"
+        elif new_status == TenancyStatus.DOCUMENTATION.value:
+            # GUARD: Must have signed docs and paid monies (Blueprint p. 31, 3.3 & 3.5)
+            if not tenancy.tenancy_agreement_signed or not tenancy.move_in_monies_received:
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to documentation. Tenancy agreement must be signed and move-in monies received.")
+
+        # --- Guard for Stage 5: MOVE_IN_PREP ("ready_to_move_in") ---
+        # Note: TenancyStatus.MOVE_IN_PREP.value is "ready_to_move_in"
+        elif new_status == TenancyStatus.MOVE_IN_PREP.value:
+            # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)
+            if not tenancy.inventory_check_in_complete or not tenancy.gas_safety_certificate_provided:
+                 raise HTTPException(status_code=400,
+                    detail="Cannot move to ready_to_move_in. Inventory check-in and compliance docs (Gas Safety) are required.")
+
+        # --- Guard for Stage 6: ACTIVE ("active") ---
+        # Note: TenancyStatus.ACTIVE.value is "active"
+        elif new_status == TenancyStatus.ACTIVE.value:
+            # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)
+            if not tenancy.inventory_check_in_complete or not tenancy.gas_safety_certificate_provided:
+                 raise HTTPException(status_code=400,
+                    detail="Cannot activate tenancy. Inventory check-in and compliance docs (Gas Safety) are required.")
+
+        # All checks passed
+        return True
+    # --- END OF NEW FUNCTION ---
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     def get_valid_transitions(self, domain: Domain, current_status: str) -> List[str]:
         """Get all possible transitions from current status"""
         return self.transitions.get(domain, {}).get(current_status, [])
@@ -308,7 +498,13 @@ class WorkflowManager:
         from app.models.tenancy import Tenancy
         from app.models.task import Task
         from app.models.enums import TaskStatus, TaskPriority
+<<<<<<< HEAD
 
+=======
+        from app.services.email_service import send_templated_email
+        from app.models.applicant import Applicant
+        
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
             task = Task(
@@ -323,6 +519,29 @@ class WorkflowManager:
             )
             db.add(task)
 
+<<<<<<< HEAD
+=======
+            try:
+            # Find the applicant to get their email
+                if tenancy.applicant_id:
+                    applicant = db.query(Applicant).filter(Applicant.id == tenancy.applicant_id).first()
+                    if applicant and applicant.email:
+                        email_context = {
+                            "applicant_name": applicant.first_name,
+                            "property_address": tenancy.property.address,
+                            "rent_amount": tenancy.agreed_rent
+                        }
+                        # This new function sends the email
+                        await send_templated_email(
+                            to_email=applicant.email,
+                            template_name="offer_confirmation.html",
+                            context=email_context
+                        )
+                        print(f"Successfully sent offer confirmation email to {applicant.email}")
+            except Exception as e:
+                print(f"ERROR: Failed to send offer confirmation email: {e}")
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     async def execute_start_referencing_process(self, domain: Domain, entity_id: str, db):
         """Start referencing process - Page 30: 2.1"""
         from app.models.tenancy import Tenancy
@@ -384,6 +603,7 @@ class WorkflowManager:
             )
             db.add(task)
 
+<<<<<<< HEAD
     async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db):
         """Draft tenancy agreement - Page 31: 3.1"""
         from app.models.tenancy import Tenancy
@@ -392,6 +612,26 @@ class WorkflowManager:
 
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
+=======
+
+
+
+    async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db: Session):
+        """Draft tenancy agreement - Page 31: 3.1"""
+        import jinja2
+        from weasyprint import HTML
+        from app.api.v1.documents import upload_file_to_cloud
+        from app.models.document import Document
+        from app.schemas.documents import DocumentCreate, DocumentCategory
+        from app.models.tenancy import Tenancy
+        from app.models.tasks import Task
+        
+        tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
+
+        if tenancy:
+
+            # 1. Create workflow task (existing logic unchanged)
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             task = Task(
                 title="Draft Tenancy Agreement (AST)",
                 description="Draft Assured Shorthold Tenancy agreement with all terms and conditions.",
@@ -404,6 +644,62 @@ class WorkflowManager:
             )
             db.add(task)
 
+<<<<<<< HEAD
+=======
+            try:
+                print(f"Starting AST generation for tenancy {entity_id}...")
+
+                # 2. Load HTML template
+                template_loader = jinja2.FileSystemLoader(searchpath="app/templates")
+                template_env = jinja2.Environment(loader=template_loader)
+                template = template_env.get_template("ast_template.html")
+
+                # 3. Fill template context
+                context = {
+                    "tenant_name": f"{tenancy.applicant.first_name} {tenancy.applicant.last_name}",
+                    "address": tenancy.property.address,
+                    "start_date": tenancy.start_date.strftime("%d %B %Y"),
+                    "end_date": tenancy.end_date.strftime("%d %B %Y"),
+                    "rent": tenancy.agreed_rent,
+                    "deposit": tenancy.deposit_amount
+                }
+
+                html_out = template.render(context)
+
+                # 4. Convert HTML → PDF using WeasyPrint
+                pdf_bytes = HTML(string=html_out).write_pdf()
+
+                # 5. Create temporary file
+                file_name = f"AST_{tenancy.property.address.replace(' ', '_')}.pdf"
+                temp_file_path = f"/tmp/{file_name}"
+
+                with open(temp_file_path, "wb") as f:
+                    f.write(pdf_bytes)
+
+                # 6. Upload to cloud / S3 / etc.
+                file_path = upload_file_to_cloud(file_name, pdf_bytes)
+
+                # 7. Save document record
+                doc_create = DocumentCreate(
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_type="application/pdf",
+                    category=DocumentCategory.TENANCY_AGREEMENT,
+                    tenancy_id=tenancy.id,
+                    uploaded_by_id="system"
+                )   
+
+                db_document = Document(**doc_create.model_dump())
+                db.add(db_document)
+                db.commit()
+
+                print(f"✅ Successfully generated and saved AST: {file_name}")
+
+            except Exception as e:
+                print(f"❌ ERROR: Failed to generate AST: {e}")
+
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     async def execute_send_statutory_documents(self, domain: Domain, entity_id: str, db):
         """Send statutory documents - Page 31: 3.2"""
         from app.models.tenancy import Tenancy
@@ -733,5 +1029,227 @@ class WorkflowManager:
             )
             db.add(task)
 
+<<<<<<< HEAD
 # Global workflow manager instance
 workflow_manager = WorkflowManager()
+=======
+    #valuation packs
+    
+    async def execute_generate_valuation_pack(self, domain: Domain, entity_id: str, db):
+        """Generate AI valuation pack when valuation starts"""
+        from app.models.valuation import Valuation
+        from app.services.valuation_service import get_valuation_service
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            try:
+                valuation_service = await get_valuation_service()
+                
+                # Get property data for valuation
+                property_data = {
+                    'id': valuation.property_id,
+                    'full_address': valuation.property.address if valuation.property else "Unknown",
+                    'postcode': valuation.property.postcode if valuation.property else "Unknown",
+                    'property_type': valuation.property.property_type if valuation.property else "Unknown",
+                    'bedrooms': valuation.property.bedrooms if valuation.property else 0,
+                    'bathrooms': valuation.property.bathrooms if valuation.property else 0,
+                    'floor_area_sqm': valuation.property.floor_area_sqft / 10.764 if valuation.property and valuation.property.floor_area_sqft else None,
+                    'tenure': 'Unknown'
+                }
+                
+                # Generate valuation pack
+                result = await valuation_service.generate_sales_valuation_pack(property_data)
+                
+                if result.get("success"):
+                    # Update valuation with results
+                    valuation_data = result["valuation"]
+                    valuation.estimated_value = valuation_data.get("estimated_value")
+                    valuation.value_range_min = valuation_data.get("value_range_min")
+                    valuation.value_range_max = valuation_data.get("value_range_max")
+                    valuation.confidence = valuation_data.get("confidence")
+                    valuation.market_conditions = valuation_data.get("market_conditions")
+                    valuation.comparable_properties = valuation_data.get("comparable_properties")
+                    valuation.key_factors = valuation_data.get("key_factors")
+                    valuation.recommended_price = valuation_data.get("recommended_price")
+                    valuation.pricing_strategy = valuation_data.get("pricing_strategy")
+                    valuation.recommendations = valuation_data.get("recommendations")
+                    valuation.property_advantages = valuation_data.get("property_advantages")
+                    valuation.property_limitations = valuation_data.get("property_limitations")
+                    valuation.location_analysis = valuation_data.get("location_analysis")
+                    valuation.valuation_logic = valuation_data.get("valuation_logic")
+                    valuation.location_infrastructure = valuation_data.get("location_infrastructure")
+                    
+                    print(f"Successfully generated valuation pack for {entity_id}")
+                else:
+                    print(f"Valuation generation failed: {result.get('error')}")
+                    
+            except Exception as e:
+                print(f"Error generating valuation pack: {str(e)}")
+
+    async def execute_notify_agent_valuation_started(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation generation has started"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Generation Started",
+                description=f"AI valuation generation started for {valuation.property.address}",
+                status=TaskStatus.IN_PROGRESS,
+                priority=TaskPriority.MEDIUM,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_store_valuation_document(self, domain: Domain, entity_id: str, db):
+        """Store the completed valuation document"""
+        from app.models.valuation import Valuation
+        from app.models.document import Document
+        from app.models.enums import DocumentType
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            # Create document record for the valuation pack
+            document = Document(
+                title=f"Valuation Report - {valuation.property.address if valuation.property else 'Unknown'}",
+                document_type=DocumentType.VALUATION_REPORT,
+                related_entity_type="valuation",
+                related_entity_id=entity_id,
+                file_path=f"/valuations/{entity_id}.pdf",  # Path where PDF would be stored
+                metadata={
+                    "valuation_type": valuation.valuation_type,
+                    "estimated_value": valuation.estimated_value,
+                    "confidence": valuation.confidence,
+                    "generated_at": valuation.updated_at.isoformat()
+                }
+            )
+            db.add(document)
+            print(f"Created valuation document record for {entity_id}")
+
+    async def execute_notify_agent_valuation_ready(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation is ready"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Report Ready",
+                description=f"AI valuation report ready for {valuation.property.address}. Estimated value: £{valuation.estimated_value:,.2f}",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.HIGH,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_link_valuation_to_property(self, domain: Domain, entity_id: str, db):
+        """Link valuation to property for easy access"""
+        from app.models.valuation import Valuation
+        from app.models.property import Property
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id:
+            # This is handled by the foreign key relationship
+            # Could add additional logic here if needed
+            print(f"Valuation {entity_id} linked to property {valuation.property_id}")
+
+    async def execute_log_valuation_failure(self, domain: Domain, entity_id: str, db):
+        """Log valuation generation failure"""
+        from app.models.valuation import Valuation
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation:
+            valuation.valuation_logic = "Valuation generation failed. Please try again or contact support."
+            print(f"Logged valuation failure for {entity_id}")
+
+    async def execute_notify_agent_valuation_failed(self, domain: Domain, entity_id: str, db):
+        """Notify agent that valuation generation failed"""
+        from app.models.valuation import Valuation
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property:
+            task = Task(
+                title="Valuation Generation Failed",
+                description=f"AI valuation generation failed for {valuation.property.address}. Please review and retry.",
+                status=TaskStatus.TODO,
+                priority=TaskPriority.HIGH,
+                related_entity_type="valuation",
+                related_entity_id=entity_id
+            )
+            db.add(task)
+
+    async def execute_archive_old_valuation(self, domain: Domain, entity_id: str, db):
+        """Archive old valuation when new one is generated"""
+        from app.models.valuation import Valuation
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id:
+            # Archive other active valuations for the same property
+            old_valuations = db.query(Valuation).filter(
+                Valuation.property_id == valuation.property_id,
+                Valuation.id != entity_id,
+                Valuation.status == "active"
+            ).all()
+            
+            for old_val in old_valuations:
+                old_val.status = "superseded"
+            
+            print(f"Archived {len(old_valuations)} old valuations for property {valuation.property_id}")
+
+    async def execute_update_property_valuation(self, domain: Domain, entity_id: str, db):
+        """Update property with latest valuation data"""
+        from app.models.valuation import Valuation
+        from app.models.property import Property
+        
+        valuation = db.query(Valuation).filter(Valuation.id == entity_id).first()
+        if valuation and valuation.property_id and valuation.status == "active":
+            property_obj = db.query(Property).filter(Property.id == valuation.property_id).first()
+            if property_obj and valuation.valuation_type == "sales":
+                # Update property with valuation data for quick reference
+                # This could be stored in a separate field or relationship
+                print(f"Property {valuation.property_id} updated with new valuation data")
+
+    async def execute_create_valuation_record(self, domain: Domain, entity_id: str, db):
+        """Create valuation record when valuation is booked"""
+        from app.models.vendor import Vendor
+        from app.models.valuation import Valuation
+        
+        vendor = db.query(Vendor).filter(Vendor.id == entity_id).first()
+        if vendor and vendor.instructed_property_id:
+            # Create draft valuation record
+            valuation = Valuation(
+                property_id=vendor.instructed_property_id,
+                valuation_type="sales",
+                valuation_method="ai_analysis",
+                status="draft"
+            )
+            db.add(valuation)
+            print(f"Created draft valuation record for vendor {entity_id}")
+
+    async def execute_generate_final_valuation(self, domain: Domain, entity_id: str, db):
+        """Generate final valuation pack when vendor is instructed"""
+        from app.models.vendor import Vendor
+        from app.models.valuation import Valuation
+        
+        vendor = db.query(Vendor).filter(Vendor.id == entity_id).first()
+        if vendor and vendor.instructed_property_id:
+            # Find the draft valuation and trigger generation
+            valuation = db.query(Valuation).filter(
+                Valuation.property_id == vendor.instructed_property_id,
+                Valuation.status == "draft"
+            ).first()
+            
+            if valuation:
+                # Trigger workflow transition to start valuation generation
+                await self.execute_side_effects(Domain.VALUATION, valuation.id, "draft", "in_progress", db)
+
+# Global workflow manager instance
+workflow_manager = WorkflowManager()
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4

@@ -1,5 +1,8 @@
 import { useState } from 'react';
+<<<<<<< HEAD
 import { useQuery } from '@tanstack/react-query';
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 import api from '@/lib/api';
 
 export interface Viewing {
@@ -17,20 +20,27 @@ export interface Viewing {
   property?: {
     id: string;
     address: string;
+<<<<<<< HEAD
     address_line1?: string;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     rent: number;
     bedrooms: number;
   };
   applicant?: {
     id: string;
     name: string;
+<<<<<<< HEAD
     first_name?: string;
     last_name?: string;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     email: string;
     phone: string;
   };
 }
 
+<<<<<<< HEAD
 // React Query hook for fetching viewings
 export function useViewingsQuery(filters?: {
   property_id?: string;
@@ -53,6 +63,8 @@ export function useViewingsQuery(filters?: {
   });
 }
 
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 export const useViewings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

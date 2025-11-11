@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+<<<<<<< HEAD
 import { Sparkles } from "lucide-react";
 import AgentProfileDialog from "./AgentProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +12,17 @@ import {
   BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
   Calendar, StickyNote, UserCog
+=======
+import AgentProfileDialog from "./AgentProfileDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Home, Building2, Users, UserCheck,
+  BarChart3, Settings, MessageSquare, Store, ShoppingBag,
+  User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
+  Calendar, StickyNote, UserCog, Sparkles
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 } from "lucide-react";
 
 const AGENT_KEY = "john-smith-agent";
@@ -33,6 +45,11 @@ const navigation = {
     { name: "Vendors", href: "/vendors", icon: UserCircle },
   ],
         other: [
+<<<<<<< HEAD
+=======
+          { name: "Maintenance", href: "/maintenance", icon: Wrench },
+          { name: "Messages", href: "/messages", icon: MessageSquare },
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
           { name: "Tasks", href: "/tasks", icon: CheckSquare },
           { name: "Tickets", href: "/tickets", icon: Wrench },
           { name: "Offers", href: "/offers", icon: Handshake },
@@ -47,6 +64,7 @@ const navigation = {
 export default function Sidebar() {
   const location = useLocation();
   const [agentOpen, setAgentOpen] = useState(false);
+<<<<<<< HEAD
   const [agent, setAgent] = useState({
     name: "John Smith",
     avatarUrl: "",
@@ -68,12 +86,32 @@ export default function Sidebar() {
   // Load on mount
   useEffect(() => {
     loadAgent();
+=======
+  const { user } = useAuth();
+  const [agentAvatarUrl, setAgentAvatarUrl] = useState("");
+
+  const loadAgentAvatar = () => {
+    const saved = localStorage.getItem(AGENT_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      setAgentAvatarUrl(data.avatarUrl || "");
+    }
+  };
+
+  // Load avatar on mount
+  useEffect(() => {
+    loadAgentAvatar();
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   }, []);
 
   // Listen to Settings save (from another tab or same tab)
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
+<<<<<<< HEAD
       if (e.key === AGENT_KEY) loadAgent();
+=======
+      if (e.key === AGENT_KEY) loadAgentAvatar();
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
@@ -81,11 +119,40 @@ export default function Sidebar() {
 
   // Listen to custom event from Settings (same tab)
   useEffect(() => {
+<<<<<<< HEAD
     const handleSave = () => loadAgent();
+=======
+    const handleSave = () => loadAgentAvatar();
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     window.addEventListener("agent-saved", handleSave);
     return () => window.removeEventListener("agent-saved", handleSave);
   }, []);
 
+<<<<<<< HEAD
+=======
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "User";
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   return (
     <aside className="fixed inset-y-0 left-0 w-64 border-r border-white/10 bg-gradient-primary backdrop-blur-sm">
       <div className="flex h-full flex-col">
@@ -225,6 +292,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Agent Profile - Compact & Clean */}
+<<<<<<< HEAD
         <div className="border-t border-white/10 p-3">
           <button
             onClick={() => setAgentOpen(true)}
@@ -246,6 +314,31 @@ export default function Sidebar() {
             <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />
           </button>
         </div>
+=======
+        {user && (
+          <div className="border-t border-white/10 p-3">
+            <button
+              onClick={() => setAgentOpen(true)}
+              className="group flex w-full items-center gap-2.5 rounded-lg p-2 transition-all hover:bg-white/10"
+            >
+              <div className="relative">
+                <Avatar className="h-9 w-9 ring-2 ring-white/20">
+                  <AvatarImage src={agentAvatarUrl} />
+                  <AvatarFallback className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs font-semibold text-white truncate">{getUserDisplayName()}</p>
+                <p className="text-[10px] text-white/60">Online</p>
+              </div>
+              <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />
+            </button>
+          </div>
+        )}
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
         <AgentProfileDialog open={agentOpen} onOpenChange={setAgentOpen} />
       </div>

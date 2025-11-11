@@ -58,8 +58,13 @@ export default function Header({ title }: HeaderProps) {
   const [vendorOpen, setVendorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyType, setPropertyType] = useState<"rent" | "sale">("rent");
+<<<<<<< HEAD
   const [selectedLandlordId, setSelectedLandlordId] = useState<string>("");
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+=======
+  const [selectedLandlordId, setSelectedLandlordId] = useState<string>("none");
+  const [selectedVendorId, setSelectedVendorId] = useState<string>("none");
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: landlords } = useLandlords();
@@ -132,13 +137,21 @@ export default function Header({ title }: HeaderProps) {
       
       if (propertyType === "rent") {
         propertyData.rent = parseFloat(formData.get("price") as string);
+<<<<<<< HEAD
         if (selectedLandlordId) {
+=======
+        if (selectedLandlordId && selectedLandlordId !== "none") {
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
           propertyData.landlord_id = selectedLandlordId;
         }
       } else {
         propertyData.asking_price = parseFloat(formData.get("price") as string);
         propertyData.sales_status = "available";
+<<<<<<< HEAD
         if (selectedVendorId) {
+=======
+        if (selectedVendorId && selectedVendorId !== "none") {
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
           propertyData.vendor_id = selectedVendorId;
         }
       }
@@ -147,8 +160,13 @@ export default function Header({ title }: HeaderProps) {
       toast({ title: "Success", description: "Property added successfully" });
       setPropertyOpen(false);
       setPropertyType("rent");
+<<<<<<< HEAD
       setSelectedLandlordId("");
       setSelectedVendorId("");
+=======
+      setSelectedLandlordId("none");
+      setSelectedVendorId("none");
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
       window.location.reload();
     } catch (error) {
       toast({
@@ -482,8 +500,13 @@ export default function Header({ title }: HeaderProps) {
         setPropertyOpen(open); 
         if (!open) {
           setPropertyType("rent");
+<<<<<<< HEAD
           setSelectedLandlordId("");
           setSelectedVendorId("");
+=======
+          setSelectedLandlordId("none");
+          setSelectedVendorId("none");
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         }
       }}>
         <DialogContent>
@@ -559,7 +582,11 @@ export default function Header({ title }: HeaderProps) {
                       <SelectValue placeholder="Select landlord" />
                     </SelectTrigger>
                     <SelectContent>
+<<<<<<< HEAD
                       <SelectItem value="">None</SelectItem>
+=======
+                      <SelectItem value="none">None</SelectItem>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                       {landlords?.map((landlord) => (
                         <SelectItem key={landlord.id} value={landlord.id}>
                           {landlord.full_name}
@@ -577,7 +604,11 @@ export default function Header({ title }: HeaderProps) {
                       <SelectValue placeholder="Select vendor" />
                     </SelectTrigger>
                     <SelectContent>
+<<<<<<< HEAD
                       <SelectItem value="">None</SelectItem>
+=======
+                      <SelectItem value="none">None</SelectItem>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                       {vendors?.map((vendor) => (
                         <SelectItem key={vendor.id} value={vendor.id}>
                           {vendor.first_name} {vendor.last_name}

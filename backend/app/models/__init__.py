@@ -13,6 +13,7 @@ from .offer import Offer
 from .viewing import Viewing
 from .match_history import MatchHistory
 from .document import Document
+from .valuation import Valuation, ComparableSale
 from .maintenance import MaintenanceIssue
 from .sales import SalesProgression, SalesOffer
 from .notification import Notification
@@ -35,6 +36,8 @@ __all__ = [
     "Document",
     "MaintenanceIssue",
     "SalesProgression",
+    "Valuation",
+    "ComparableSale",
     "SalesOffer",
     "Notification",
     "Ticket",

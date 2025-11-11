@@ -12,7 +12,11 @@ Best part: Completely FREE, no API key required!
 
 import httpx
 from typing import Optional, List, Dict, Any
+<<<<<<< HEAD
 from datetime import datetime, timedelta
+=======
+from datetime import datetime, timedelta, timezone
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 import urllib.parse
 import re
 
@@ -207,7 +211,11 @@ class LandRegistryService:
             List of sold properties with prices
         """
         # Calculate date range
+<<<<<<< HEAD
         end_date = datetime.now()
+=======
+        end_date = datetime.now(timezone.utc)
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         start_date = end_date - timedelta(days=months_back * 30)
         
         # Clean postcode (remove spaces, uppercase)
@@ -367,6 +375,10 @@ class LandRegistryService:
         postcode: str,
         property_type: str,
         bedrooms: Optional[int] = None,
+<<<<<<< HEAD
+=======
+        asking_price_fallback: Optional[float] = None,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     ) -> Dict[str, Any]:
         """
         Generate a comprehensive valuation pack
@@ -381,6 +393,10 @@ class LandRegistryService:
             postcode: Property postcode
             property_type: Type of property (e.g., "Flat", "Terraced")
             bedrooms: Number of bedrooms (for filtering)
+<<<<<<< HEAD
+=======
+            asking_price_fallback: Optional asking price to use if no Land Registry data found
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             
         Returns:
             Comprehensive valuation pack
@@ -392,6 +408,7 @@ class LandRegistryService:
             months_back=24,
         )
         
+<<<<<<< HEAD
         # Filter by property type
         filtered_sales = [
             p for p in sold_prices
@@ -438,32 +455,211 @@ class LandRegistryService:
         # Recommended valuation range (±5% of average)
         recommended_min = int(avg_price * 0.95) if avg_price else None
         recommended_max = int(avg_price * 1.05) if avg_price else None
+=======
+        # Filter by property type (case-insensitive, partial match)
+        filtered_sales = [
+            p for p in sold_prices
+            if property_type and property_type.lower() in p.get("property_type", "").lower()
+        ]
+        
+        # If no results with property_type filter, try broader search with variants
+        if not filtered_sales and sold_prices:
+            type_variants = {
+                "flat": ["flat", "apartment"],
+                "house": ["house", "terraced", "semi-detached", "detached"],
+                "terraced": ["terraced", "house"],
+                "semi-detached": ["semi", "detached", "house"],
+                "detached": ["detached", "house"],
+            }
+            variants = type_variants.get(property_type.lower() if property_type else "", [property_type.lower()] if property_type else [])
+            if variants:
+                filtered_sales = [
+                    p for p in sold_prices
+                    if any(variant in p.get("property_type", "").lower() for variant in variants)
+                ]
+            
+            # If still no results, use all sales (remove property_type filter)
+            if not filtered_sales:
+                filtered_sales = sold_prices
+        
+        # Initialize variables
+        avg_price = 0
+        median_price = 0
+        trend = "unknown"
+        trend_percentage = 0.0
+        has_land_registry_data = len(filtered_sales) > 0
+        
+        # Calculate statistics from Land Registry data if available
+        if filtered_sales:
+            prices = [p.get("price", 0) for p in filtered_sales if p.get("price", 0) > 0]
+            if prices:
+                avg_price = sum(prices) / len(prices)
+                sorted_prices = sorted(prices)
+                median_price = sorted_prices[len(sorted_prices) // 2]
+                
+                # Calculate price trend (last 6 months vs previous 6 months)
+                mid_point = datetime.now(timezone.utc) - timedelta(days=180)
+                recent_prices = []
+                older_prices = []
+                
+                for p in filtered_sales:
+                    try:
+                        date_str = p.get("date", "")
+                        if date_str:
+                            # Handle different date formats
+                            if "T" in date_str:
+                                sale_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                            else:
+                                sale_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                            
+                            if sale_date > mid_point:
+                                recent_prices.append(p.get("price", 0))
+                            else:
+                                older_prices.append(p.get("price", 0))
+                    except Exception:
+                        continue
+                
+                if recent_prices and older_prices:
+                    recent_avg = sum(recent_prices) / len(recent_prices)
+                    older_avg = sum(older_prices) / len(older_prices)
+                    if older_avg > 0:
+                        trend_percentage = ((recent_avg - older_avg) / older_avg) * 100
+                        
+                        if trend_percentage > 3:
+                            trend = "increasing"
+                        elif trend_percentage < -3:
+                            trend = "decreasing"
+                        else:
+                            trend = "stable"
+                elif recent_prices or older_prices:
+                    trend = "stable"
+        
+        # Get area statistics (might have data even if filtered_sales is empty)
+        area_stats = await self.get_area_statistics(postcode, property_type)
+        
+        # Fallback logic: use area_stats, asking_price, or estimate
+        if avg_price == 0:
+            # Try area_stats first
+            if area_stats.get("average_price") and area_stats["average_price"] > 0:
+                avg_price = area_stats["average_price"]
+                median_price = area_stats.get("median_price", avg_price)
+                has_land_registry_data = True
+            # Try asking_price fallback
+            elif asking_price_fallback and asking_price_fallback > 0:
+                avg_price = asking_price_fallback
+                median_price = asking_price_fallback
+                trend = "stable"
+            # Last resort: estimate based on property type and bedrooms
+            else:
+                # UK average prices by property type (rough estimates)
+                base_estimates = {
+                    "flat": 180000,
+                    "apartment": 180000,
+                    "terraced": 220000,
+                    "semi-detached": 280000,
+                    "detached": 350000,
+                    "house": 250000,
+                }
+                
+                # Find matching property type
+                property_type_lower = (property_type or "").lower()
+                base_price = 200000  # Default
+                for prop_type, price in base_estimates.items():
+                    if prop_type in property_type_lower:
+                        base_price = price
+                        break
+                
+                # Adjust for bedrooms (rough estimate: +£30k per bedroom above 2)
+                if bedrooms and bedrooms > 0:
+                    if bedrooms >= 2:
+                        base_price = base_price + ((bedrooms - 2) * 30000)
+                    else:
+                        base_price = int(base_price * 0.8)  # 1-bed properties are cheaper
+                
+                avg_price = base_price
+                median_price = base_price
+                trend = "stable"
+        
+        # Ensure we have valid prices
+        if avg_price <= 0:
+            avg_price = 200000  # Absolute fallback
+            median_price = 200000
+        
+        # Recommended valuation range
+        if asking_price_fallback and asking_price_fallback > 0 and abs(avg_price - asking_price_fallback) < 1000:
+            # If using asking_price as fallback, create a reasonable range around it
+            recommended_min = max(0, int(asking_price_fallback * 0.90))
+            recommended_max = int(asking_price_fallback * 1.10)
+        else:
+            recommended_min = max(0, int(avg_price * 0.95))
+            recommended_max = int(avg_price * 1.05)
+        
+        # Determine confidence and data source
+        if len(filtered_sales) >= 10:
+            confidence = "High"
+            data_source = "HM Land Registry (Official UK Government Data)"
+        elif len(filtered_sales) >= 5:
+            confidence = "Medium"
+            data_source = "HM Land Registry (Official UK Government Data)"
+        elif has_land_registry_data:
+            confidence = "Low"
+            data_source = "HM Land Registry (Limited Data)"
+        elif asking_price_fallback and asking_price_fallback > 0:
+            confidence = "Low"
+            data_source = "Property Asking Price (No Land Registry data available)"
+        else:
+            confidence = "Low"
+            data_source = "Estimated (No Land Registry data available for this postcode)"
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         
         return {
             "postcode": postcode,
             "property_type": property_type,
             "bedrooms": bedrooms,
+<<<<<<< HEAD
             "generated_at": datetime.now().isoformat(),
             "valuation_summary": {
                 "average_price": round(avg_price, 2),
                 "median_price": median_price,
+=======
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "valuation_summary": {
+                "average_price": round(avg_price, 2),
+                "median_price": round(median_price, 2),
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                 "recommended_range": {
                     "min": recommended_min,
                     "max": recommended_max,
                 },
+<<<<<<< HEAD
                 "confidence": "High" if len(filtered_sales) >= 10 else "Medium" if len(filtered_sales) >= 5 else "Low",
+=======
+                "confidence": confidence,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             },
             "market_trend": {
                 "direction": trend,
                 "percentage_change": round(trend_percentage, 2),
+<<<<<<< HEAD
                 "period": "Last 6 months vs previous 6 months",
             },
             "comparables": filtered_sales[:15],  # Top 15 comparables
+=======
+                "period": "Last 6 months vs previous 6 months" if has_land_registry_data else "No trend data available",
+            },
+            "comparables": filtered_sales[:15] if filtered_sales else [],  # Top 15 comparables
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             "area_statistics": area_stats,
             "data_quality": {
                 "total_comparables": len(filtered_sales),
                 "data_period": "Last 24 months",
+<<<<<<< HEAD
                 "source": "HM Land Registry (Official UK Government Data)",
+=======
+                "source": data_source,
+                "has_land_registry_data": has_land_registry_data,
+                "used_fallback": not has_land_registry_data,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
             },
         }
     

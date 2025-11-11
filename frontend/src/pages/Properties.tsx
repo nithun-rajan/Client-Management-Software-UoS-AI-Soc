@@ -139,6 +139,11 @@ export default function Properties() {
         postcode: property.postcode,
         property_type: property.property_type,
         bedrooms: property.bedrooms,
+<<<<<<< HEAD
+=======
+        property_id: property.id,
+        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
       });
       setValuationPack(response.data.data);
       setValuationPackOpen(true);
@@ -317,12 +322,15 @@ export default function Properties() {
                         Owner: {property.landlord?.full_name || `${property.vendor?.first_name} ${property.vendor?.last_name}`}
                       </p>
                     )}
+<<<<<<< HEAD
                     {property.managed_agent && (
                       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <User className="h-3 w-3" />
                         Managed by: {property.managed_agent.first_name} {property.managed_agent.last_name}
                       </p>
                     )}
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                   </div>
                   <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                     {property.property_type}
@@ -612,7 +620,13 @@ export default function Properties() {
               )}
 
               {/* Area Statistics */}
+<<<<<<< HEAD
               {valuationPack.area_statistics && (
+=======
+              {valuationPack.area_statistics && 
+               valuationPack.area_statistics.total_sales > 0 && 
+               valuationPack.area_statistics.average_price > 0 && (
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                 <Card>
                   <CardHeader>
                     <CardTitle>Area Statistics</CardTitle>
@@ -622,16 +636,32 @@ export default function Properties() {
                       <div>
                         <div className="text-sm text-muted-foreground">Total Sales</div>
                         <div className="text-lg font-semibold">
+<<<<<<< HEAD
                           {valuationPack.area_statistics.total_sales || "N/A"}
+=======
+                          {valuationPack.area_statistics.total_sales.toLocaleString()}
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         </div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Average Price</div>
                         <div className="text-lg font-semibold">
+<<<<<<< HEAD
                           £{valuationPack.area_statistics.average_price?.toLocaleString() || "N/A"}
                         </div>
                       </div>
                     </div>
+=======
+                          £{valuationPack.area_statistics.average_price.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    {valuationPack.area_statistics.time_period && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        {valuationPack.area_statistics.time_period}
+                      </div>
+                    )}
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                   </CardContent>
                 </Card>
               )}
@@ -651,3 +681,7 @@ export default function Properties() {
     </div>
   );
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4

@@ -13,6 +13,7 @@ export interface VendorInfo {
   primary_phone?: string;
 }
 
+<<<<<<< HEAD
 export interface AgentInfo {
   id: string;
   first_name: string;
@@ -21,6 +22,8 @@ export interface AgentInfo {
   full_name?: string;
 }
 
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 export interface Property {
   id: string;
   address_line1?: string;
@@ -55,7 +58,10 @@ export interface Property {
   has_valuation_pack?: boolean;
   // Property management fields
   managed_by?: string;
+<<<<<<< HEAD
   managed_agent?: AgentInfo;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   management_type?: string;
   management_notes?: string;
   created_at: string;
@@ -77,9 +83,12 @@ export interface Landlord {
   notes?: string;
   last_contacted_at?: string;
   landlord_complete_info?: boolean;
+<<<<<<< HEAD
   managed_by?: string;
   managed_agent?: AgentInfo;
   properties_count?: number;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   created_at: string;
   updated_at?: string;
 }
@@ -111,8 +120,11 @@ export interface Vendor {
   instructed_property_id?: string;
   vendor_complete_info?: boolean;
   last_contacted_at?: string;
+<<<<<<< HEAD
   managed_by?: string;
   managed_agent?: AgentInfo;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   // Optional fields that may not be in model yet
   id_document_type?: string;
   proof_of_address_type?: string;
@@ -153,14 +165,80 @@ export interface Applicant {
   willing_to_buy?: boolean;
   buyer_questions_answered?: boolean;
   tenant_questions_answered?: boolean;
+<<<<<<< HEAD
   assigned_agent_id?: string;
   assigned_agent?: AgentInfo;
   last_contacted_at?: string;
   notes?: string;
+=======
+  last_contacted_at?: string;
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   created_at: string;
   updated_at?: string;
 }
 
+<<<<<<< HEAD
+=======
+export interface MaintenanceIssue {
+  id: string;
+  title: string;
+  description: string;
+  issue_type: string; // repair, emergency, plumbing, electrical, heating, etc.
+  status: string; // reported, acknowledged, inspected, quoted, approved, in_progress, completed, closed, cancelled
+  priority: string; // low, medium, high, urgent
+  is_complaint: boolean;
+  complaint_type?: string;
+  reported_by?: string;
+  reported_by_phone?: string;
+  reported_by_email?: string;
+  reported_via?: string;
+  property_id: string;
+  tenancy_id?: string;
+  landlord_id?: string;
+  managed_by?: string;
+  assigned_to?: string;
+  acknowledged_date?: string;
+  inspection_date?: string;
+  scheduled_date?: string;
+  started_date?: string;
+  completed_date?: string;
+  closed_date?: string;
+  estimated_cost?: number;
+  actual_cost?: number;
+  quote_received: boolean;
+  quote_amount?: number;
+  landlord_approved: boolean;
+  landlord_approval_date?: string;
+  contractor_name?: string;
+  contractor_contact?: string;
+  contractor_quote_ref?: string;
+  contractor_invoice_ref?: string;
+  resolution_notes?: string;
+  tenant_satisfied: boolean;
+  follow_up_required: boolean;
+  follow_up_date?: string;
+  photos_urls?: string;
+  documents_urls?: string;
+  internal_notes?: string;
+  public_notes?: string;
+  is_emergency: boolean;
+  emergency_response_time?: string;
+  is_recurring: boolean;
+  parent_issue_id?: string;
+  recurrence_count: number;
+  requires_epc_update: boolean;
+  requires_gas_safety_update: boolean;
+  requires_eicr_update: boolean;
+  reported_date: string;
+  created_at: string;
+  updated_at?: string;
+  // Computed properties
+  days_open?: number;
+  is_overdue?: boolean;
+  requires_attention?: boolean;
+}
+
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 export interface KPIData {
   properties_letting?: {
     total: number;
@@ -343,4 +421,9 @@ export interface Ticket {
   assigned_contractor_id?: string;
   created_at: string;
   updated_at?: string;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> pivzavod-3
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4

@@ -32,15 +32,52 @@ def create_communication(
     CRM Feature: Automatically updates last_contacted_at for applicants when
     a communication is created (email, call, sms, etc.)
     """
+<<<<<<< HEAD
     # Create new communication
     db_communication = Communication(**communication.dict())
+=======
+    # Convert schema to dict (handle Pydantic v2)
+    comm_data = communication.model_dump(exclude_unset=True) if hasattr(communication, 'model_dump') else communication.dict(exclude_unset=True)
+    
+    # Normalize IDs - handle empty strings and convert to strings
+    for id_field in ['property_id', 'landlord_id', 'applicant_id']:
+        if id_field in comm_data and comm_data[id_field]:
+            # Convert to string and strip whitespace
+            value = str(comm_data[id_field]).strip()
+            comm_data[id_field] = value if value else None
+        else:
+            comm_data[id_field] = None
+    
+    # Validate that at least one entity is linked (after normalization)
+    if not any([comm_data.get('property_id'), comm_data.get('landlord_id'), comm_data.get('applicant_id')]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one entity (property, landlord, or applicant) must be linked"
+        )
+    
+    # Handle empty strings for optional fields - convert to None
+    for field in ['direction', 'subject', 'created_by']:
+        if field in comm_data:
+            if comm_data[field] == '' or (isinstance(comm_data[field], str) and not comm_data[field].strip()):
+                comm_data[field] = None
+            elif isinstance(comm_data[field], str):
+                comm_data[field] = comm_data[field].strip()
+    
+    # Create new communication
+    db_communication = Communication(**comm_data)
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     
     db.add(db_communication)
     
     # CRM: Update last_contacted_at for applicant if this communication is for an applicant
     # Only update for outbound communications (email, call, sms) - not notes
+<<<<<<< HEAD
     if communication.applicant_id and communication.type in ['email', 'call', 'sms']:
         applicant = db.query(Applicant).filter(Applicant.id == communication.applicant_id).first()
+=======
+    if db_communication.applicant_id and db_communication.type in ['email', 'call', 'sms']:
+        applicant = db.query(Applicant).filter(Applicant.id == db_communication.applicant_id).first()
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         if applicant:
             applicant.last_contacted_at = datetime.now(timezone.utc)
     

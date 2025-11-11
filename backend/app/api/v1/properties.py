@@ -10,6 +10,7 @@ from app.models.property import Property
 from app.models.landlord import Landlord
 from app.models.vendor import Vendor
 from app.models.user import User
+from app.models.enums import PropertyStatus
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo, VendorInfo, AgentInfo
 from app.services.notification_service import notify
 
@@ -117,18 +118,38 @@ def list_properties(
     skip: int = Query(0, ge=0), 
     limit: int = Query(100, ge=1, le=1000), 
     landlord_id: Optional[str] = Query(None, description="Filter properties by landlord ID"),
+    managed_by: Optional[str] = Query(None, description="Filter properties by manager user ID"),
     db: Session = Depends(get_db)
 ):
-    """List all properties with landlord information. Optionally filter by landlord_id."""
+    """List all properties with landlord information. Optionally filter by landlord_id or managed_by."""
     query = db.query(Property)
     
     # Filter by landlord_id if provided
     if landlord_id:
         query = query.filter(Property.landlord_id == landlord_id)
     
+    # Filter by managed_by if provided
+    if managed_by:
+        query = query.filter(Property.managed_by == managed_by)
+    
     properties = query.offset(skip).limit(limit).all()
+    
+    # Fix any properties with None status
+    properties_to_fix = [p for p in properties if p.status is None]
+    if properties_to_fix:
+        for property in properties_to_fix:
+            property.status = PropertyStatus.AVAILABLE
+        db.commit()
+        # Refresh properties to get updated status
+        for property in properties_to_fix:
+            db.refresh(property)
+    
     result = []
     for property in properties:
+        # Ensure status is never None (should be fixed above, but double-check)
+        if property.status is None:
+            property.status = PropertyStatus.AVAILABLE
+        
         response = PropertyResponse.model_validate(property)
         # Include landlord information if property has a landlord
         if property.landlord_id:
@@ -196,6 +217,12 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
     
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
+        db.commit()
+        db.refresh(property)
+    
     response = PropertyResponse.model_validate(property)
     # Include landlord information if property has a landlord
     if property.landlord_id:
@@ -233,6 +260,10 @@ def update_property(
 
     for key, value in property_data.model_dump(exclude_unset=True).items():
         setattr(property, key, value)
+
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
 
     db.commit()
     db.refresh(property)
@@ -273,6 +304,10 @@ def patch_property(
 
     for key, value in property_data.model_dump(exclude_unset=True).items():
         setattr(property, key, value)
+
+    # Ensure status is never None - use default if missing
+    if property.status is None:
+        property.status = PropertyStatus.AVAILABLE
 
     db.commit()
     db.refresh(property)

@@ -80,7 +80,11 @@ class MaintenanceIssue(BaseModel):
     reported_by = Column(String, nullable=True)  # Tenant name or contact
     reported_by_phone = Column(String)
     reported_by_email = Column(String)
+<<<<<<< HEAD
     reported_date = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+=======
+    reported_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     reported_via = Column(String)  # phone, email, portal, in_person
     
     # Property and tenancy relationships
@@ -153,9 +157,33 @@ class MaintenanceIssue(BaseModel):
     @builtin_property
     def days_open(self):
         """Calculate days since issue was reported"""
+<<<<<<< HEAD
         if self.closed_date:
             return (self.closed_date - self.reported_date).days
         return (datetime.now(timezone.utc) - self.reported_date).days
+=======
+        now = datetime.now(timezone.utc)
+        
+        # Normalize reported_date to UTC-aware datetime
+        if self.reported_date:
+            if self.reported_date.tzinfo is None:
+                # If naive, assume UTC
+                reported_date = self.reported_date.replace(tzinfo=timezone.utc)
+            else:
+                reported_date = self.reported_date.astimezone(timezone.utc)
+        else:
+            return 0
+        
+        if self.closed_date:
+            # Normalize closed_date to UTC-aware datetime
+            if self.closed_date.tzinfo is None:
+                closed_date = self.closed_date.replace(tzinfo=timezone.utc)
+            else:
+                closed_date = self.closed_date.astimezone(timezone.utc)
+            return (closed_date - reported_date).days
+        
+        return (now - reported_date).days
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     
     @builtin_property
     def is_overdue(self):

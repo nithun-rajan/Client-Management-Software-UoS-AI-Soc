@@ -8,7 +8,10 @@ export interface User {
   last_name: string;
   role: string;
   is_active: boolean;
+<<<<<<< HEAD
   team?: string | null;
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 }
 
 export function useUsers(role?: string) {

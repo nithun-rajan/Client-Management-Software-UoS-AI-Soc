@@ -8,15 +8,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+<<<<<<< HEAD
 import { useUsers } from "@/hooks/useUsers";
+=======
+import { useAgents, Agent } from "@/hooks/useAgents";
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/shared/EmptyState";
 import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
+<<<<<<< HEAD
 // Generate agent ID (4-digit) from agent ID
 const getAgentId = (id: string): string => {
   // Use a hash of the ID to generate a consistent 4-digit number
+=======
+// Format agent ID for display (convert UUID to 4-digit number)
+const formatAgentId = (id: string): string => {
+  if (!id) return "N/A";
+  // Convert UUID to a consistent 4-digit number
+  // Use a simple hash of the UUID to get a deterministic 4-digit number
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash) + id.charCodeAt(i);
@@ -33,6 +45,7 @@ const getAgentPhotoUrl = (firstName: string, lastName: string): string => {
   return `https://i.pravatar.cc/150?img=${Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)) % 70}`;
 };
 
+<<<<<<< HEAD
 // Get team from agent data, fallback to mock if not available
 const getAgentTeam = (agent: { id: string; team?: string | null }): string => {
   // Use team from database if available
@@ -81,11 +94,15 @@ const getAgentOnlineStatus = (agentId: string): boolean => {
   const hash = agentId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
   return Math.abs(hash) % 3 !== 0; // 2/3 chance of being online
 };
+=======
+// Note: Team, position, phone, and online status now come from the API
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 export default function Agents() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [onMyTeamFilter, setOnMyTeamFilter] = useState(false);
+<<<<<<< HEAD
   const { data: agents, isLoading } = useUsers("agent"); // Filter for agents only
 
   // Get current user's team (mock - in real app would come from auth)
@@ -121,6 +138,22 @@ export default function Agents() {
   const stats = useMemo(() => {
     if (!agents) return { total: 0, active: 0, inactive: 0, online: 0, offline: 0 };
     const onlineCount = agents.filter((a) => getAgentOnlineStatus(a.id)).length;
+=======
+  
+  // Get current user's team (mock - in real app would come from auth)
+  // Set to "Sales Team" for testing - change this to "Lettings Team" to test the other team
+  const currentUserTeam = "Sales Team"; // This would come from the logged-in user's data
+  
+  const { data: agents, isLoading } = useAgents(onMyTeamFilter ? currentUserTeam : undefined, searchQuery || undefined);
+
+  // Agents are already filtered by the API, so we can use them directly
+  const filteredAgents = agents || [];
+
+  // Calculate stats from API data
+  const stats = useMemo(() => {
+    if (!agents) return { total: 0, active: 0, inactive: 0, online: 0, offline: 0 };
+    const onlineCount = agents.filter((a) => a.online_status).length;
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     return {
       total: agents.length,
       active: agents.filter((a) => a.is_active).length,
@@ -136,6 +169,7 @@ export default function Agents() {
     return agents.find((a) => a.id === selectedAgent);
   }, [selectedAgent, agents]);
 
+<<<<<<< HEAD
   // Calculate stats for an agent (mock data for now)
   const getAgentStats = (agentId: string) => {
     // In a real app, these would come from the API
@@ -144,6 +178,23 @@ export default function Agents() {
       daysOnMarket: `${Math.floor(Math.random() * 30) + 30}`,
       monthlyFees: `£${(Math.random() * 30 + 20).toFixed(1)}k`,
       satisfaction: (Math.random() * 1.5 + 3.5).toFixed(1),
+=======
+  // Get agent stats from API data
+  const getAgentStats = (agent: Agent) => {
+    return {
+      askingPrice: agent.stats.asking_price_achievement 
+        ? `${agent.stats.asking_price_achievement.toFixed(0)}%`
+        : "N/A",
+      daysOnMarket: agent.stats.days_on_market_avg 
+        ? `${agent.stats.days_on_market_avg.toFixed(0)}`
+        : "N/A",
+      monthlyFees: agent.stats.monthly_fees 
+        ? `£${(agent.stats.monthly_fees / 1000).toFixed(1)}k`
+        : "£0",
+      satisfaction: agent.stats.satisfaction_score 
+        ? agent.stats.satisfaction_score.toFixed(1)
+        : "N/A",
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
     };
   };
 
@@ -243,7 +294,11 @@ export default function Agents() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredAgents.map((agent) => {
+<<<<<<< HEAD
               const stats = getAgentStats(agent.id);
+=======
+              const stats = getAgentStats(agent);
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
               const fullName = `${agent.first_name || ""} ${agent.last_name || ""}`.trim() || "Unknown";
               const initials = fullName
                 .split(" ")
@@ -251,12 +306,21 @@ export default function Agents() {
                 .join("")
                 .toUpperCase()
                 .slice(0, 2);
+<<<<<<< HEAD
               const agentId = getAgentId(agent.id);
               const isOnline = getAgentOnlineStatus(agent.id);
               const photoUrl = getAgentPhotoUrl(agent.first_name || "", agent.last_name || "");
               const phone = getAgentPhone(agent.id);
               const position = getAgentPosition(agent.id, agent.first_name || "");
               const team = getAgentTeam(agent);
+=======
+              const agentId = formatAgentId(agent.id);
+              const isOnline = agent.online_status;
+              const photoUrl = getAgentPhotoUrl(agent.first_name || "", agent.last_name || "");
+              const phone = agent.phone || "N/A";
+              const position = agent.position || "Agent";
+              const team = agent.team || "N/A";
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
               return (
                 <Card
@@ -283,7 +347,17 @@ export default function Agents() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg font-semibold truncate">{fullName}</CardTitle>
+<<<<<<< HEAD
                           <Badge variant="outline" className="text-xs font-mono">{agentId}</Badge>
+=======
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs font-mono"
+                            title={`Full ID: ${agent.id}`}
+                          >
+                            {agentId}
+                          </Badge>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
                           {position}: <span className={team === currentUserTeam ? "text-primary font-medium" : "text-muted-foreground font-medium"}>{team}</span>
@@ -319,6 +393,7 @@ export default function Agents() {
             {selectedAgentData && (() => {
               const fullName = `${selectedAgentData.first_name || ""} ${selectedAgentData.last_name || ""}`.trim() || "Unknown";
               const initials = fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+<<<<<<< HEAD
               const agentId = getAgentId(selectedAgentData.id);
               const isOnline = getAgentOnlineStatus(selectedAgentData.id);
               const photoUrl = getAgentPhotoUrl(selectedAgentData.first_name || "", selectedAgentData.last_name || "");
@@ -328,6 +403,17 @@ export default function Agents() {
               const role = selectedAgentData.role ? selectedAgentData.role.charAt(0).toUpperCase() + selectedAgentData.role.slice(1) : "Agent";
               const qualifications = `ARLA Level 3 • ${Math.floor(Math.random() * 10) + 3} years experience`;
               const stats = getAgentStats(selectedAgentData.id);
+=======
+              const agentId = formatAgentId(selectedAgentData.id);
+              const isOnline = selectedAgentData.online_status;
+              const photoUrl = getAgentPhotoUrl(selectedAgentData.first_name || "", selectedAgentData.last_name || "");
+              const phone = selectedAgentData.phone || "N/A";
+              const position = selectedAgentData.position || "Agent";
+              const team = selectedAgentData.team || "N/A";
+              const role = selectedAgentData.role ? selectedAgentData.role.charAt(0).toUpperCase() + selectedAgentData.role.slice(1) : "Agent";
+              const qualifications = `ARLA Level 3 • ${Math.floor(Math.random() * 10) + 3} years experience`;
+              const stats = getAgentStats(selectedAgentData);
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
               
               // Mock activity feed
               const activities = [
@@ -357,7 +443,17 @@ export default function Agents() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <DialogTitle className="text-xl">{fullName}</DialogTitle>
+<<<<<<< HEAD
                           <Badge variant="outline" className="text-xs font-mono">{agentId}</Badge>
+=======
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs font-mono"
+                            title={`Full ID: ${selectedAgentData.id}`}
+                          >
+                            {agentId}
+                          </Badge>
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         </div>
                         <p className="text-sm font-semibold text-primary mt-1">{role}</p>
                         <p className="text-sm text-muted-foreground">

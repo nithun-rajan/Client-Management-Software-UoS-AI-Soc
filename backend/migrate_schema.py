@@ -57,6 +57,7 @@ def migrate_database():
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),
             ("landlords", "landlord_complete_info", "INTEGER DEFAULT 0"),
+<<<<<<< HEAD
             ("landlords", "managed_by", "VARCHAR"),
             
             # Vendor table - Contact tracking and managed_by
@@ -65,6 +66,11 @@ def migrate_database():
             
             # User table - Team assignment
             ("users", "team", "VARCHAR"),
+=======
+            
+            # Vendor table - Contact tracking
+            ("vendors", "last_contacted_at", "DATETIME"),
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
         ]
         
         # Combine old and new migrations
@@ -72,6 +78,7 @@ def migrate_database():
         
         for table, column, column_type in all_migrations:
             try:
+<<<<<<< HEAD
                 # Check if column exists by querying table info (SQLite-specific)
                 # Get table info to check existing columns
                 table_info = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
@@ -99,6 +106,16 @@ def migrate_database():
                             print(f"[WARN] Error adding {table}.{column}: {e}")
                     except:
                         print(f"[WARN] Error adding {table}.{column}: {e}")
+=======
+                # Check if column exists (SQLite doesn't have a direct way, so we'll try to add it)
+                # SQLite will raise an error if column already exists, which we'll catch
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"))
+                conn.commit()
+                print(f"[OK] Added column {table}.{column}")
+            except Exception as e:
+                if "duplicate column" in str(e).lower() or "already exists" in str(e).lower():
+                    print(f"[SKIP] Column {table}.{column} already exists, skipping...")
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                 else:
                     print(f"[WARN] Error adding {table}.{column}: {e}")
         

@@ -39,6 +39,24 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   sold: { label: "Sold", className: "bg-secondary text-white" },
   withdrawn: { label: "Withdrawn", className: "bg-status-inactive text-white" },
   lost: { label: "Lost", className: "bg-status-urgent text-white" },
+<<<<<<< HEAD
+=======
+  // Maintenance statuses
+  reported: { label: "Reported", className: "bg-status-available text-white" },
+  acknowledged: { label: "Acknowledged", className: "bg-status-pending text-white" },
+  inspected: { label: "Inspected", className: "bg-status-pending text-white" },
+  quoted: { label: "Quoted", className: "bg-status-pending text-white" },
+  approved: { label: "Approved", className: "bg-status-active text-white" },
+  in_progress: { label: "In Progress", className: "bg-status-active text-white" },
+  completed: { label: "Completed", className: "bg-secondary text-white" },
+  closed: { label: "Closed", className: "bg-status-inactive text-white" },
+  cancelled: { label: "Cancelled", className: "bg-status-inactive text-white" },
+  // Maintenance priorities
+  low: { label: "Low", className: "bg-blue-500 text-white" },
+  medium: { label: "Medium", className: "bg-yellow-500 text-white" },
+  high: { label: "High", className: "bg-orange-500 text-white" },
+  urgent: { label: "Urgent", className: "bg-status-urgent text-white" },
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 };
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {

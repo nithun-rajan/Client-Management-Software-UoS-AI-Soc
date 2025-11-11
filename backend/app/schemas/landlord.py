@@ -4,6 +4,7 @@ from pydantic import ConfigDict, EmailStr
 from app.schemas.model_config import AppBaseModel
 
 
+<<<<<<< HEAD
 class AgentInfo(AppBaseModel):
     """Basic agent information for landlord responses"""
     id: str
@@ -17,6 +18,8 @@ class AgentInfo(AppBaseModel):
         return f"{self.first_name} {self.last_name}"
 
 
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 class LandlordBase(AppBaseModel):
     full_name: str
     email: EmailStr
@@ -43,7 +46,10 @@ class LandlordUpdate(AppBaseModel):
     notes: str | None = None
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool | None = None
+<<<<<<< HEAD
     managed_by: str | None = None
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 class LandlordResponse(LandlordBase):
     id: str
@@ -53,6 +59,9 @@ class LandlordResponse(LandlordBase):
     properties_count: int = 0  # Number of properties owned by this landlord
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool = False
+<<<<<<< HEAD
     managed_by: str | None = None
     managed_agent: AgentInfo | None = None
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 

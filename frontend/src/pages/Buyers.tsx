@@ -12,7 +12,10 @@ import {
   AlertCircle,
   Search,
   X,
+<<<<<<< HEAD
   User,
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 } from "lucide-react";
 import {
   Card,
@@ -38,9 +41,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
+<<<<<<< HEAD
 import { Link } from "react-router-dom";
 
 export default function Buyers() {
+=======
+import { Link, useNavigate } from "react-router-dom";
+
+export default function Buyers() {
+  const navigate = useNavigate();
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
   const { data: applicants, isLoading } = useApplicants();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
@@ -186,12 +196,15 @@ export default function Buyers() {
                     <span className="truncate">{buyer.preferred_locations}</span>
                   </div>
                 )}
+<<<<<<< HEAD
                 {buyer.assigned_agent && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1 border-t">
                     <User className="h-4 w-4 shrink-0" />
                     <span>Managed by: {buyer.assigned_agent.first_name} {buyer.assigned_agent.last_name}</span>
                   </div>
                 )}
+=======
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
               </CardContent>
               <CardFooter className="flex flex-col gap-2">
                 <Button
@@ -351,7 +364,18 @@ export default function Buyers() {
                       <Button size="sm" variant="outline">
                         Book Viewing
                       </Button>
+<<<<<<< HEAD
                       <Button size="sm" variant="outline">
+=======
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setMatchesDialogOpen(false);
+                          navigate(`/properties/${match.property_id}`);
+                        }}
+                      >
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         View Property
                       </Button>
                     </CardFooter>

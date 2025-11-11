@@ -34,6 +34,11 @@ import Valuations from "./pages/Valuations";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+<<<<<<< HEAD
+=======
+import Maintenance from "./pages/Maintenance";
+import MaintenanceDetails from "./pages/MaintenanceDetails";
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -121,6 +126,11 @@ const AppContent = () => {
                         <Route path="/tickets" element={<Tickets />} />
                         <Route path="/offers" element={<Offers />} />
                         <Route path="/kpis" element={<KPIsDashboard />} />
+<<<<<<< HEAD
+=======
+                        <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/maintenance/:id" element={<MaintenanceDetails />} />
+>>>>>>> 9d0b1540847c2b481219f38d6f6162ceb0b2aae4
                         <Route path="/agents" element={<Agents />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />
