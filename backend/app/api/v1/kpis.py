@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, cast, Float
 from datetime import datetime # --- ADDED ---
 
 from app.core.database import get_db
@@ -16,6 +17,25 @@ from app.models.enums import PropertyStatus, ApplicantStatus, TaskStatus, Tenanc
 
 
 router = APIRouter(prefix="/kpis", tags=["kpis"])
+
+def _average_sale_price_per_bedroom(db: Session) -> float:
+    value = (
+        db.query(
+            cast(
+                func.sum(Property.asking_price)
+                / func.nullif(func.sum(Property.bedrooms), 0),
+                Float,
+            ))
+
+        .filter(
+            Property.asking_price != None,
+            Property.bedrooms != None,
+            Property.bedrooms > 0,
+        )
+        .scalar()
+    )
+    return float(value or 0)
+
 
 @router.get("/")
 def get_kpis(db: Session = Depends(get_db)):
@@ -53,6 +73,9 @@ def get_kpis(db: Session = Depends(get_db)):
     avg_selling_price = db.query(func.avg(Property.asking_price)).filter(
         Property.asking_price != None
     ).scalar() or 0
+
+    avg_sale_price_per_bedroom = _average_sale_price_per_bedroom(db)
+
 
     # Total landlords
     total_landlords = db.query(Landlord).count()
@@ -104,7 +127,8 @@ def get_kpis(db: Session = Depends(get_db)):
         },
         "properties_sale": {
             "total": properties_for_sale,
-            "avg_selling_price": round(avg_selling_price, 2)
+            "avg_selling_price": round(avg_selling_price, 2),
+            "avg_price_per_bedroom": round(avg_sale_price_per_bedroom, 2),
         },
         "landlords": {
             "total": total_landlords,
