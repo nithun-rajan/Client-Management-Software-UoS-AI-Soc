@@ -42,7 +42,7 @@ def upload_document(
     """
     Upload a document and associate it with a tenancy or property.
     """
-    if not tenancy_id and not property_id and applicant_id:
+    if not tenancy_id and not property_id and not applicant_id:
         raise HTTPException(status_code=400, detail="A tenancy_id or property_id must be provided.")
 
     # Generate a unique file name to prevent conflicts
