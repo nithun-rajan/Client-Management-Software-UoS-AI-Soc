@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 
 from app.core.database import get_db
 from app.services.valuation_service import get_valuation_service, ValuationService
-from app.services.land_registry_service import get_land_registry_service
 from app.schemas.valuation import (
     Valuation,
     ValuationCreate,
@@ -19,8 +18,7 @@ from app.schemas.valuation import (
 from app.models.valuation import Valuation as ValuationModel
 from app.models.property import Property as PropertyModel
 
-
-router = APIRouter()
+router = APIRouter(prefix="/valuations", tags=["valuations"])
 
 
 @router.post(
@@ -32,9 +30,11 @@ router = APIRouter()
 async def generate_valuation_pack(
     request: ValuationRequest,
     db: Session = Depends(get_db),
-    valuation_service: ValuationService = Depends(get_valuation_service),
-    land_registry_service = Depends(get_land_registry_service)
 ):
+    # Log the incoming request for debugging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Received valuation request: property_id={request.property_id}, valuation_type={request.valuation_type}, include_comparables={request.include_comparables}, market_analysis_depth={request.market_analysis_depth}, radius_km={request.radius_km}, max_comparables={request.max_comparables}")
     """
     Generate AI-powered valuation pack for a property
     
@@ -45,6 +45,13 @@ async def generate_valuation_pack(
     - Detailed valuation reasoning
     """
     try:
+        # Get services (await async dependencies)
+        valuation_service = await get_valuation_service()
+        
+        # Log the request for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Valuation request received: property_id={request.property_id}, valuation_type={request.valuation_type}")
         # Verify property exists
         property_obj = db.query(PropertyModel).filter(PropertyModel.id == request.property_id).first()
         if not property_obj:
@@ -56,7 +63,7 @@ async def generate_valuation_pack(
         # Get property data for analysis
         property_data = {
             'id': property_obj.id,
-            'full_address': property_obj.address,
+            'full_address': property_obj.address or property_obj.address_line1,
             'postcode': property_obj.postcode,
             'property_type': property_obj.property_type,
             'bedrooms': property_obj.bedrooms,
@@ -83,9 +90,18 @@ async def generate_valuation_pack(
         )
         
         if not result.get("success"):
+            error_msg = result.get("error", "Valuation generation failed")
+            
+            # Provide more helpful error messages
+            if "401" in error_msg or "API key" in error_msg or "unauthorized" in error_msg.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="OpenAI API key is missing or invalid. Please configure OPENAI_API_KEY in your .env file."
+                )
+            
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=result.get("error", "Valuation generation failed")
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=error_msg
             )
         
         # Create valuation record in database
@@ -414,3 +430,4 @@ def delete_valuation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting valuation: {str(e)}"
         )
+

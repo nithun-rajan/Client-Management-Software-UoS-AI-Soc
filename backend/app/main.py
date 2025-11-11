@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.core.database import Base, engine, get_db
 import app.models  # ensure all models are registered before table creation
-from app.api.v1 import properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance
+from app.api.v1 import properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations
 from app.models import Property, Landlord, Applicant
 
 # REMOVE these direct model imports - they cause circular imports
@@ -279,3 +279,4 @@ app.include_router(notifications.router, prefix="/api/v1")  # 🔔 Notifications
 app.include_router(auth.router, prefix="/api/v1")  # 🔐 Authentication (by Anthony)
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")  # 🔧 Maintenance Management
+app.include_router(valuations.router, prefix="/api/v1")  # 💰 Valuation Management

@@ -33,7 +33,7 @@ class Valuation(BaseModel):
     location_analysis = Column(Text)
     
     # Technical details
-    valuation_date = Column(DateTime, default=datetime.now(timezone.utc))
+    valuation_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     valuation_method = Column(String)  # 'ai_analysis', 'manual', 'comparison'
     model_used = Column(String)  # 'gpt-4o', etc.
 
@@ -77,8 +77,6 @@ class ComparableSale(BaseModel):
     data_source = Column(String)  # 'land_registry', 'rightmove', 'zoopla'
     source_url = Column(String)
 
-    
-    
     # Relationships
     valuation = relationship("Valuation", back_populates="comparable_sales")
-    
+

@@ -37,7 +37,7 @@ __all__ = [
     "MaintenanceIssue",
     "SalesProgression",
     "Valuation",
-    "ComparableSale"
+    "ComparableSale",
     "SalesOffer",
     "Notification",
     "Ticket",

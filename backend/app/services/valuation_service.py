@@ -81,9 +81,35 @@ pricing recommendations. Your analysis follows the exact format shown in the CRM
                 )
                 
                 if response.status_code != 200:
+                    error_detail = f"LLM API error: {response.status_code}"
+                    quota_exceeded = False
+                    try:
+                        error_data = response.json()
+                        if "error" in error_data:
+                            error_msg = error_data['error'].get('message', error_detail)
+                            error_detail = f"LLM API error: {error_msg}"
+                            # Check if it's a quota/billing error
+                            if "quota" in error_msg.lower() or "billing" in error_msg.lower() or "exceeded" in error_msg.lower():
+                                quota_exceeded = True
+                    except:
+                        pass
+                    
+                    if response.status_code == 401:
+                        error_detail = "OpenAI API key is missing or invalid. Please check your OPENAI_API_KEY in the .env file."
+                    
+                    # If quota exceeded, return mock data for development
+                    if quota_exceeded:
+                        return {
+                            "success": True,
+                            "valuation": self._generate_mock_valuation(property_data, comparables),
+                            "processing_time": 0,
+                            "model_used": "mock (quota exceeded)",
+                            "warning": "Using mock data due to OpenAI API quota exceeded. Please add credits to your OpenAI account."
+                        }
+                    
                     return {
                         "success": False,
-                        "error": f"LLM API error: {response.status_code}",
+                        "error": error_detail,
                         "valuation": None
                     }
                 
@@ -277,6 +303,61 @@ Consider:
                 "price_per_sqft": 450.50
             }
         ]
+    
+    def _generate_mock_valuation(self, property_data: Dict[str, Any], 
+                                comparables: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        Generate mock valuation data when API quota is exceeded
+        Useful for development and testing
+        """
+        # Calculate estimated value based on property data
+        bedrooms = property_data.get('bedrooms', 2)
+        property_type = property_data.get('property_type', 'Unknown')
+        
+        # Base price per bedroom (rough UK averages)
+        base_price_per_bedroom = {
+            'Flat': 120000,
+            'House': 150000,
+            'Terraced': 140000,
+            'Semi-Detached': 180000,
+            'Detached': 250000
+        }
+        
+        base_price = base_price_per_bedroom.get(property_type, 150000)
+        estimated_value = base_price * bedrooms
+        
+        # Add some variation
+        value_range_min = int(estimated_value * 0.85)
+        value_range_max = int(estimated_value * 1.15)
+        
+        return {
+            "estimated_value": estimated_value,
+            "value_range_min": value_range_min,
+            "value_range_max": value_range_max,
+            "confidence": "medium",
+            "market_conditions": "Current market conditions suggest stable pricing. Note: This is mock data generated due to API quota limitations.",
+            "comparable_properties": comparables or [],
+            "key_factors": {
+                "positive": [
+                    f"{bedrooms} bedrooms",
+                    property_type,
+                    "Good location"
+                ],
+                "negative": [],
+                "neutral": []
+            },
+            "recommended_price": estimated_value,
+            "pricing_strategy": "Guide Price",
+            "recommendations": [
+                "This is mock valuation data. Add credits to your OpenAI account for AI-powered analysis.",
+                "Consider professional valuation for accurate pricing.",
+                "Review local market trends and comparable sales."
+            ],
+            "property_advantages": f"Property features {bedrooms} bedrooms and is a {property_type}.",
+            "property_limitations": "Mock data - real analysis requires API access.",
+            "location_analysis": "Location analysis unavailable in mock mode.",
+            "executive_summary": f"Estimated value: £{estimated_value:,} (mock data). Add OpenAI credits for AI-powered valuation analysis."
+        }
 
 
 # Singleton instance
@@ -290,3 +371,4 @@ async def get_valuation_service() -> ValuationService:
         llm_service = await get_llm_service()
         _valuation_service = ValuationService(llm_service)
     return _valuation_service
+
