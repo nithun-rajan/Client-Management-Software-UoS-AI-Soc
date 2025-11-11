@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, and_, cast, Float
 from sqlalchemy.orm import Session, aliased
-from datetime import datetime # --- ADDED ---
+from datetime import datetime, timedelta # --- ADDED ---
 from typing import Dict
 
 from app.core.database import get_db
@@ -16,6 +16,7 @@ from app.models.task import Task # --- ADDED ---
 from app.models.enums import PropertyStatus, ApplicantStatus, TaskStatus, TenancyStatus
 from app.models.enums_sales import SalesStatus
 from app.models.sales import SalesProgression
+
 
 def _to_float(value) -> float:
     return float(value) if value not in (None,) else 0.0
@@ -104,10 +105,45 @@ def _listing_to_sales_ratio(db: Session, total_listed: int):
         'loss_breakdown': loss_breakdown,
     }
 
+def _financial_kpis(db: Session):
+    active_statuses = [TenancyStatus.ACTIVE, TenancyStatus.RENEWED]
 
-router = APIRouter(prefix="/kpis", tags=["kpis"])
+    rent_roll = db.query(func.sum(Tenancy.rent_amount)).filter(
+        Tenancy.status.in_(active_statuses)
+    ).scalar()
 
-def _average_sale_price_per_bedroom(db: Session) -> float:
+    rent_pipeline = db.query(func.sum(Tenancy.rent_amount)).filter(
+        Tenancy.status == TenancyStatus.PENDING
+    ).scalar()
+
+    completed_sales_value = db.query(func.sum(SalesProgression.agreed_price)).filter(
+        SalesProgression.sales_status == SalesStatus.COMPLETED
+    ).scalar()
+
+    pipeline_sales_value = db.query(func.sum(SalesProgression.agreed_price)).filter(
+        SalesProgression.sales_status.in_(
+            [SalesStatus.UNDER_OFFER, SalesStatus.SSTC, SalesStatus.EXCHANGED]
+        )
+    ).scalar()
+
+    monthly_rent_roll = _to_float(rent_roll)
+    monthly_rent_pipeline = _to_float(rent_pipeline)
+    pipeline_sales = _to_float(pipeline_sales_value)
+    completed_sales = _to_float(completed_sales_value)
+
+    projected_annual_revenue = (monthly_rent_roll*12) + completed_sales
+
+    return {
+        "rent_roll_monthly": round(monthly_rent_roll, 2),
+        "rent_pipeline": round(monthly_rent_pipeline, 2),
+        "sales_pipeline_value": round(pipeline_sales, 2),
+        "completed_sales_value": round(completed_sales, 2),
+        "projected_annual_revenue": round(projected_annual_revenue, 2),
+    }
+
+
+
+def _average_sale_price_per_bedroom(db: Session):
     value = (
         db.query(
             cast(
@@ -125,6 +161,7 @@ def _average_sale_price_per_bedroom(db: Session) -> float:
     )
     return float(value or 0)
 
+router = APIRouter(prefix="/kpis", tags=["kpis"])
 
 @router.get("/")
 def get_kpis(db: Session = Depends(get_db)):
@@ -209,6 +246,9 @@ def get_kpis(db: Session = Depends(get_db)):
     ).count()
     # --- END OF SECTION ---
 
+    # Get financial KPIs
+    financial_data = _financial_kpis(db)
+
     return {
         "properties_letting": {
             "total": properties_for_let,
@@ -244,7 +284,8 @@ def get_kpis(db: Session = Depends(get_db)):
         "compliance": {
             "overdue_tasks": overdue_tasks,
             "upcoming_tasks": upcoming_tasks
-        }
+        },
+        "financial": financial_data
         # --- END OF SECTION ---
     }
 
