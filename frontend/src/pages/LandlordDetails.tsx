@@ -30,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
+import { useProperties } from "@/hooks/useProperties";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,6 +77,14 @@ export default function LandlordDetails() {
   // Filter tasks assigned to this landlord (landlords use full_name)
   const assignedTasks = allTasks?.filter(
     (task) => task.assigned_to === landlord?.full_name
+  ) || [];
+
+  // Get all properties to filter by landlord_id
+  const { data: allProperties } = useProperties();
+  
+  // Filter properties owned by this landlord
+  const landlordProperties = allProperties?.filter(
+    (property) => property.landlord_id === landlord?.id
   ) || [];
 
   const handleDelete = async () => {
@@ -550,6 +560,47 @@ export default function LandlordDetails() {
                           </p>
                         )}
                       </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Properties Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Properties
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {landlordProperties.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No properties</p>
+                ) : (
+                  <div className="space-y-2">
+                    {landlordProperties.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/properties/${property.id}`}
+                        className="block w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium">
+                              {property.address_line1 || property.address || property.city}
+                            </span>
+                            {property.postcode && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {property.city}, {property.postcode}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {property.status}
+                          </Badge>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 )}

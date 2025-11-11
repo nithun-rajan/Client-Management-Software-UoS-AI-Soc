@@ -852,31 +852,28 @@ def main():
         # Create diverse offers (only for letting properties)
         offers = create_offers(db, properties_rent, tenants, count=20)
 
-        # Link landlords to properties-for-let
-        print("\n[*] Linking landlords to properties...")
+        # Link landlords to properties-for-let (ensure no sales_status)
+        print("\n[*] Linking landlords to properties for letting...")
         for i, property in enumerate(properties_rent):
             if landlords:
                 property.landlord_id = landlords[i % len(landlords)].id
+            # Ensure properties for letting don't have sales_status
+            property.sales_status = None
+            property.vendor_id = None
         db.commit()
-        print("[OK] Linked landlords to properties")
+        print("[OK] Linked landlords to properties for letting")
 
-        # Link vendors to properties-for-sale
+        # Link vendors to properties-for-sale (set vendor_id on property)
         print("\n[*] Linking vendors to properties-for-sale...")
-        for i, vendor in enumerate(vendors):
-            if properties_sale and i < len(properties_sale):
-                vendor.instructed_property_id = properties_sale[i].id
+        for i, property in enumerate(properties_sale):
+            if vendors:
+                # Assign vendor to property
+                vendor = vendors[i % len(vendors)]
+                property.vendor_id = vendor.id
+            # Ensure properties for sale don't have landlord_id
+            property.landlord_id = None
         db.commit()
         print("[OK] Linked vendors to properties-for-sale")
-
-        # Assign properties to landlords
-        print("\n[*] Assigning properties to landlords...")
-        for i, property in enumerate(properties_rent):
-            # Assign each property to a random landlord
-            landlord = random.choice(landlords)
-            property.landlord_id = landlord.id
-        
-        db.commit()
-        print("[OK] Properties assigned to landlords")
 
         # Summary
         print("\n" + "="*60)

@@ -5,6 +5,14 @@ export interface LandlordInfo {
   phone?: string;
 }
 
+export interface VendorInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  primary_phone?: string;
+}
+
 export interface Property {
   id: string;
   address_line1?: string;
@@ -28,6 +36,8 @@ export interface Property {
   rent?: number;
   landlord_id?: string;
   landlord?: LandlordInfo;
+  vendor_id?: string;
+  vendor?: VendorInfo;
   virtual_tour_url?: string;
   main_photo_url?: string;
   // Sales fields

@@ -60,6 +60,7 @@ class Property(BaseModel):
     portal_views = Column(Integer, default=0)
     last_viewed_at = Column(DateTime)
     landlord_id = Column(String, ForeignKey('landlords.id'))
+    vendor_id = Column(String, ForeignKey('vendors.id'), nullable=True)  # For sales properties
     
     # Property management
     managed_by = Column(String, ForeignKey('users.id'), nullable=True)  # Property manager user_id
@@ -73,6 +74,7 @@ class Property(BaseModel):
 
     # Relationships
     landlord = relationship("Landlord", back_populates="properties")
+    vendor = relationship("Vendor", foreign_keys=[vendor_id])
     tenancies = relationship("Tenancy", back_populates="property")
     communications = relationship("Communication", back_populates="property")
     maintenance_issues = relationship("MaintenanceIssue", back_populates="property", cascade="all, delete-orphan")

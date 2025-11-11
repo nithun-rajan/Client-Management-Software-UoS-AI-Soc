@@ -753,47 +753,47 @@ export default function ApplicantDetails() {
                     <p className="text-sm text-muted-foreground">No offers</p>
                   ) : (
                     <div className="space-y-2">
-                      {applicantOffers.map((offer) => (
-                        <button
-                          key={offer.id}
-                          onClick={() => navigate("/offers")}
-                          className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
-                                {offer.property_id && (
-                                  <span className="text-xs text-muted-foreground">
-                                    for{" "}
-                                    <span
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/properties/${offer.property_id}`);
-                                      }}
-                                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
-                                    >
-                                      {offer.property?.address || "Unknown Property"}
-                                    </span>
+                    {applicantOffers.map((offer) => (
+                      <div
+                        key={offer.id}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                        onClick={() => navigate("/offers")}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">£{offer.offered_rent.toLocaleString()}</span>
+                              {offer.property_id && (
+                                <span className="text-xs text-muted-foreground">
+                                  for{" "}
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/properties/${offer.property_id}`);
+                                    }}
+                                    className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                                  >
+                                    {offer.property?.address || "Unknown Property"}
                                   </span>
-                                )}
-                              </div>
-                              {offer.proposed_term_months && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Term: {offer.proposed_term_months} months
-                                </p>
+                                </span>
                               )}
                             </div>
-                            <Badge variant="outline" className="text-xs">
-                              {offer.status}
-                            </Badge>
+                            {offer.proposed_term_months && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Term: {offer.proposed_term_months} months
+                              </p>
+                            )}
                           </div>
-                          {offer.special_conditions && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                              {offer.special_conditions}
-                            </p>
-                          )}
-                        </button>
+                          <Badge variant="outline" className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                        {offer.special_conditions && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {offer.special_conditions}
+                          </p>
+                        )}
+                      </div>
                       ))}
                     </div>
                   )}
