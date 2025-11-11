@@ -30,7 +30,7 @@ def upload_file_to_cloud(file_name: str, file_content: bytes) -> str:
         
     return file_path # In production, this would be the cloud URL/key
 
-@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_2_0_CREATED)
+@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 def upload_document(
     tenancy_id: str = Form(None),
     property_id: str = Form(None),
