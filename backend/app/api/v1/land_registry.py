@@ -29,6 +29,8 @@ class ValuationPackRequest(BaseModel):
     postcode: str
     property_type: str  # e.g., "Flat", "Terraced", "Semi-Detached", "Detached"
     bedrooms: Optional[int] = None
+    property_id: Optional[str] = None  # Optional: property ID to get asking_price as fallback
+    asking_price: Optional[float] = None  # Optional: asking price to use as fallback
 
 
 # ==================== Endpoints ====================
@@ -318,10 +320,17 @@ async def generate_valuation_pack(request: ValuationPackRequest):
     """
     try:
         service = await get_land_registry_service()
+        
+        # Get property asking_price as fallback if property_id is provided
+        asking_price_fallback = request.asking_price
+        # Note: We can't use get_db() directly here since it's a dependency
+        # The asking_price should be passed from the frontend, which we now do
+        
         valuation_pack = await service.generate_valuation_pack(
             postcode=request.postcode,
             property_type=request.property_type,
             bedrooms=request.bedrooms,
+            asking_price_fallback=asking_price_fallback,
         )
         
         return {

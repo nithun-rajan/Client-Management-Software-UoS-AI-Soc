@@ -52,6 +52,8 @@ export default function PropertiesForSale() {
         postcode: property.postcode,
         property_type: property.property_type,
         bedrooms: property.bedrooms,
+        property_id: property.id,
+        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
       });
       setValuationPack(response.data.data);
       setValuationPackOpen(true);
