@@ -2,8 +2,12 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, computed_field
 
+from app.schemas.model_config import AppBaseModel
 
-class ApplicantBase(BaseModel):
+from app.models.applicant import ApplicantStatus
+
+
+class ApplicantBase(AppBaseModel):
     first_name: str
     last_name: str
     email: EmailStr
@@ -18,6 +22,12 @@ class ApplicantBase(BaseModel):
     has_pets: bool = False
     pet_details: str | None = None
     special_requirements: str | None = None
+    willing_to_rent: bool = True
+    willing_to_buy: bool = False
+    buyer_questions_answered: bool = False
+    tenant_questions_answered: bool = False
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Sales buyer specific fields
     buyer_type: str | None = None
@@ -88,7 +98,7 @@ class ApplicantBase(BaseModel):
 class ApplicantCreate(ApplicantBase):
     pass
 
-class ApplicantUpdate(BaseModel):
+class ApplicantUpdate(AppBaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: EmailStr | None = None
@@ -104,6 +114,14 @@ class ApplicantUpdate(BaseModel):
     has_pets: bool | None = None
     pet_details: str | None = None
     special_requirements: str | None = None
+    willing_to_rent: bool | None = None
+    willing_to_buy: bool | None = None
+    buyer_questions_answered: bool | None = None
+    tenant_questions_answered: bool | None = None
+    assigned_agent_id: str | None = None
+    last_contacted_at: datetime | None = None
+    notes: str | None = None
+
 
     # Sales buyer specific fields
     buyer_type: str | None = None
@@ -175,12 +193,13 @@ class ApplicantUpdate(BaseModel):
 class ApplicantResponse(ApplicantBase):
     id: str
     status: str
+    assigned_agent_id: str | None = None
+    last_contacted_at: datetime | None = None
+    notes: str | None = None
 
     @computed_field
     @property
     def full_name(self) -> str:
         """Computed field combining first_name and last_name"""
         return f"{self.first_name} {self.last_name}"
-
-    model_config = ConfigDict(from_attributes=True)
    

@@ -31,6 +31,7 @@ import {
   usePropertySearchCount,
   SearchFilters,
 } from "@/hooks/useSearch";
+import { getFlatOrUnitNumber } from "@/lib/utils";
 
 export default function Search() {
   const [filters, setFilters] = useState<SearchFilters>({});
@@ -202,7 +203,7 @@ export default function Search() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h3 className="text-lg font-semibold leading-tight">
-                            {property.address_line1}
+                            {getFlatOrUnitNumber(property.address_line1, property.address, property.city, property.property_type) || property.city.toUpperCase()}
                           </h3>
                           <p className="text-sm text-muted-foreground">
                             {property.city}, {property.postcode}

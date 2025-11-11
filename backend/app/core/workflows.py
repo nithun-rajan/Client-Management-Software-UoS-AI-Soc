@@ -2,7 +2,11 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException
 from enum import Enum
 from datetime import datetime, timedelta, timezone
-
+# --- 1. ADDED/UPDATED IMPORTS ---
+from app.models.tenancy import Tenancy
+from app.models.enums import TenancyStatus
+from sqlalchemy.orm import Session
+# --- END OF ADDED/UPDATED IMPORTS ---
 
 class Domain(str, Enum):
     PROPERTY = "property"
@@ -104,6 +108,7 @@ class WorkflowManager:
                 "send_offer_confirmation_property",  # Page 29: 1.5
             ],
             ("property", "let_agreed", "tenanted"): [
+                "update_portal_status",  # Page 29: 1.3 - Mark as let on Rightmove/Zoopla
                 "create_tenancy_record",  # Page 33: 5.2
                 "assign_property_manager"  # Page 34: 5.3
             ],
@@ -130,7 +135,8 @@ class WorkflowManager:
             ("tenancy", "ready_to_move_in", "active"): [
                 "register_security_deposit",  # Page 32: 3.4
                 "sign_tenancy_agreement",  # Page 32: 3.5
-                "execute_move_in"  # Page 33: 5.1
+                "execute_move_in",  # Page 33: 5.1
+                "trigger_compliance_tasks"
             ],
 
             # Applicant transitions
@@ -242,6 +248,53 @@ class WorkflowManager:
             ]
         }
 
+    # --- NEW FUNCTION: LETTINGS GUARDS (ADDED) ---
+    # This function is adapted to check string statuses against Enum values
+    def validate_tenancy_guards(self, tenancy: Tenancy, new_status: str):
+
+        """
+        Checks if a tenancy is allowed to move to a new status
+        based on the blueprint's "guard" rules (pages 29-34).
+
+        This function is called by the API endpoint BEFORE updating the status.
+        """
+
+        # --- Guard for Stage 2: REFERENCING ---
+        # Note: TenancyStatus.REFERENCING.value is "referencing"
+        if new_status == TenancyStatus.REFERENCING.value:
+            # GUARD: Must have paid holding deposit (Blueprint p. 29, 1.4)
+            if not tenancy.holding_deposit_date:
+                raise HTTPException(status_code=400,
+                    detail="Cannot start referencing. Holding deposit has not been received.")
+
+        # --- Guard for Stage 3: DOCUMENTATION ("referenced") ---
+        # Note: TenancyStatus.DOCUMENTATION.value is "referenced"
+        elif new_status == TenancyStatus.DOCUMENTATION.value:
+            # GUARD: Must have passed referencing (Blueprint p. 30-31, 2.2 & 2.3)
+            if tenancy.reference_status != "pass" or tenancy.right_to_rent_status != "pass":
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to documentation. References and Right to Rent must be 'pass'.")
+
+        # --- Guard for Stage 4: MOVE_IN_PREP ("legal_docs") ---
+        # Note: TenancyStatus.MOVE_IN_PREP.value is "legal_docs"
+        elif new_status == TenancyStatus.MOVE_IN_PREP.value:
+            # GUARD: Must have signed docs and paid monies (Blueprint p. 31, 3.3 & 3.5)
+            if not tenancy.tenancy_agreement_signed or not tenancy.move_in_monies_received:
+                raise HTTPException(status_code=400,
+                    detail="Cannot move to prep. Tenancy agreement must be signed and move-in monies received.")
+
+        # --- Guard for Stage 5: ACTIVE ("ready_to_move_in") ---
+        # Note: TenancyStatus.ACTIVE.value is "active"
+        elif new_status == TenancyStatus.ACTIVE.value:
+            # GUARD: Must have compliance docs & inventory (Blueprint p. 32, 4.1 & 4.2)
+            if not tenancy.inventory_check_in_complete or not tenancy.gas_safety_certificate_provided:
+                 raise HTTPException(status_code=400,
+                    detail="Cannot activate tenancy. Inventory check-in and compliance docs (Gas Safety) are required.")
+
+        # All checks passed
+        return True
+    # --- END OF NEW FUNCTION ---
+
     def get_valid_transitions(self, domain: Domain, current_status: str) -> List[str]:
         """Get all possible transitions from current status"""
         return self.transitions.get(domain, {}).get(current_status, [])
@@ -253,8 +306,7 @@ class WorkflowManager:
 
     def get_side_effects(self, domain: Domain, current_status: str, new_status: str) -> List[str]:
         """Get automated actions for this transition"""
-        return self.side_effects.get((domain, current_status, new_status), [])
-
+        return self.side_effects.get((domain.value, current_status, new_status), [])
     async def execute_side_effects(self, domain: Domain, entity_id: str, current_status: str, new_status: str, db):
         """Execute automated actions for this transition"""
         side_effects = self.get_side_effects(domain, current_status, new_status)
@@ -401,7 +453,9 @@ class WorkflowManager:
         from app.models.tenancy import Tenancy
         from app.models.task import Task
         from app.models.enums import TaskStatus, TaskPriority
-
+        from app.services.email_service import send_templated_email
+        from app.models.applicant import Applicant
+        
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
             task = Task(
@@ -415,6 +469,26 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(hours=4)
             )
             db.add(task)
+
+            try:
+            # Find the applicant to get their email
+                if tenancy.applicant_id:
+                    applicant = db.query(Applicant).filter(Applicant.id == tenancy.applicant_id).first()
+                    if applicant and applicant.email:
+                        email_context = {
+                            "applicant_name": applicant.first_name,
+                            "property_address": tenancy.property.address,
+                            "rent_amount": tenancy.agreed_rent
+                        }
+                        # This new function sends the email
+                        await send_templated_email(
+                            to_email=applicant.email,
+                            template_name="offer_confirmation.html",
+                            context=email_context
+                        )
+                        print(f"Successfully sent offer confirmation email to {applicant.email}")
+            except Exception as e:
+                print(f"ERROR: Failed to send offer confirmation email: {e}")
 
     async def execute_start_referencing_process(self, domain: Domain, entity_id: str, db):
         """Start referencing process - Page 30: 2.1"""
@@ -477,14 +551,24 @@ class WorkflowManager:
             )
             db.add(task)
 
-    async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db):
-        """Draft tenancy agreement - Page 31: 3.1"""
-        from app.models.tenancy import Tenancy
-        from app.models.task import Task
-        from app.models.enums import TaskStatus, TaskPriority
 
+
+
+    async def execute_draft_tenancy_agreement(self, domain: Domain, entity_id: str, db: Session):
+        """Draft tenancy agreement - Page 31: 3.1"""
+        import jinja2
+        from weasyprint import HTML
+        from app.api.v1.documents import upload_file_to_cloud
+        from app.models.document import Document
+        from app.schemas.documents import DocumentCreate, DocumentCategory
+        from app.models.tenancy import Tenancy
+        from app.models.tasks import Task
+        
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
+
         if tenancy:
+
+            # 1. Create workflow task (existing logic unchanged)
             task = Task(
                 title="Draft Tenancy Agreement (AST)",
                 description="Draft Assured Shorthold Tenancy agreement with all terms and conditions.",
@@ -496,6 +580,59 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(days=5)
             )
             db.add(task)
+
+            try:
+                print(f"Starting AST generation for tenancy {entity_id}...")
+
+                # 2. Load HTML template
+                template_loader = jinja2.FileSystemLoader(searchpath="app/templates")
+                template_env = jinja2.Environment(loader=template_loader)
+                template = template_env.get_template("ast_template.html")
+
+                # 3. Fill template context
+                context = {
+                    "tenant_name": f"{tenancy.applicant.first_name} {tenancy.applicant.last_name}",
+                    "address": tenancy.property.address,
+                    "start_date": tenancy.start_date.strftime("%d %B %Y"),
+                    "end_date": tenancy.end_date.strftime("%d %B %Y"),
+                    "rent": tenancy.agreed_rent,
+                    "deposit": tenancy.deposit_amount
+                }
+
+                html_out = template.render(context)
+
+                # 4. Convert HTML → PDF using WeasyPrint
+                pdf_bytes = HTML(string=html_out).write_pdf()
+
+                # 5. Create temporary file
+                file_name = f"AST_{tenancy.property.address.replace(' ', '_')}.pdf"
+                temp_file_path = f"/tmp/{file_name}"
+
+                with open(temp_file_path, "wb") as f:
+                    f.write(pdf_bytes)
+
+                # 6. Upload to cloud / S3 / etc.
+                file_path = upload_file_to_cloud(file_name, pdf_bytes)
+
+                # 7. Save document record
+                doc_create = DocumentCreate(
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_type="application/pdf",
+                    category=DocumentCategory.TENANCY_AGREEMENT,
+                    tenancy_id=tenancy.id,
+                    uploaded_by_id="system"
+                )   
+
+                db_document = Document(**doc_create.model_dump())
+                db.add(db_document)
+                db.commit()
+
+                print(f"✅ Successfully generated and saved AST: {file_name}")
+
+            except Exception as e:
+                print(f"❌ ERROR: Failed to generate AST: {e}")
+
 
     async def execute_send_statutory_documents(self, domain: Domain, entity_id: str, db):
         """Send statutory documents - Page 31: 3.2"""

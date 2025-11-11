@@ -1,6 +1,22 @@
+export interface LandlordInfo {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+}
+
+export interface VendorInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  primary_phone?: string;
+}
+
 export interface Property {
   id: string;
-  address_line1: string;
+  address_line1?: string;
+  address?: string;
   address_line2?: string;
   city: string;
   postcode: string;
@@ -11,13 +27,28 @@ export interface Property {
     | "tenanted"
     | "under_offer"
     | "blocked"
-    | "maintenance";
+    | "maintenance"
+    | "managed"
+    | "withdrawn";
   property_type: string;
   bedrooms: number;
   bathrooms: number;
   rent?: number;
-  landlord_id?: number;
+  landlord_id?: string;
+  landlord?: LandlordInfo;
+  vendor_id?: string;
+  vendor?: VendorInfo;
   virtual_tour_url?: string;
+  main_photo_url?: string;
+  // Sales fields
+  sales_status?: string;
+  asking_price?: number;
+  price_qualifier?: string;
+  has_valuation_pack?: boolean;
+  // Property management fields
+  managed_by?: string;
+  management_type?: string;
+  management_notes?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -35,6 +66,44 @@ export interface Landlord {
   sort_code?: string;
   account_number?: string;
   notes?: string;
+  last_contacted_at?: string;
+  landlord_complete_info?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Vendor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  primary_phone: string;
+  current_address?: string;
+  date_of_birth?: string;
+  nationality?: string;
+  aml_status: string; // "pending" | "verified" | "rejected"
+  aml_verification_date?: string;
+  aml_verification_expiry?: string;
+  proof_of_ownership_uploaded?: boolean;
+  status: string; // "new" | "instructed" | "active" | "sold" | "withdrawn" | "lost"
+  instruction_type?: string; // "sole_agency" | "multi_agency"
+  instruction_date?: string;
+  agreed_commission?: number | string; // Numeric or string
+  minimum_fee?: string;
+  contract_expiry_date?: string;
+  source_of_lead?: string;
+  marketing_consent?: boolean;
+  conveyancer_name?: string;
+  conveyancer_firm?: string;
+  conveyancer_contact?: string;
+  instructed_property_id?: string;
+  vendor_complete_info?: boolean;
+  last_contacted_at?: string;
+  // Optional fields that may not be in model yet
+  id_document_type?: string;
+  proof_of_address_type?: string;
+  pep_check?: boolean;
+  contract_length_weeks?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -66,26 +135,195 @@ export interface Applicant {
   pet_details?: string;
   special_requirements?: string;
   references_passed?: boolean;
+  willing_to_rent?: boolean;
+  willing_to_buy?: boolean;
+  buyer_questions_answered?: boolean;
+  tenant_questions_answered?: boolean;
+  last_contacted_at?: string;
   created_at: string;
   updated_at?: string;
 }
 
 export interface KPIData {
-  properties: {
+  properties_letting?: {
     total: number;
     available: number;
     let_by: number;
     managed: number;
     avg_rent: number;
   };
-  landlords: {
+  properties_sale?: {
+    total: number;
+    avg_selling_price: number;
+  };
+  landlords?: {
     total: number;
     aml_verified: number;
     verification_rate: number;
   };
-  applicants: {
+  tenants?: {
     total: number;
     qualified: number;
     qualification_rate: number;
   };
+  buyers?: {
+    total: number;
+  };
+  vendors?: {
+    total: number;
+  };
+  // Legacy fields for backward compatibility
+  properties?: {
+    total: number;
+    available: number;
+    let_by: number;
+    managed: number;
+    avg_rent: number;
+  };
+  applicants?: {
+    total: number;
+    qualified: number;
+    qualification_rate: number;
+  };
+}
+
+export interface SalesProgression {
+  id: string;
+  property_id: string;
+  vendor_id: string;
+  buyer_id: string;
+  assigned_progressor_id?: string;
+  current_stage: string;
+  sales_status: string;
+  offer_date?: string;
+  offer_accepted_date?: string;
+  sstc_date?: string;
+  solicitor_instructed_date?: string;
+  mortgage_applied_date?: string;
+  survey_ordered_date?: string;
+  searches_ordered_date?: string;
+  exchange_date?: string;
+  completion_date?: string;
+  offer_amount?: number;
+  agreed_price?: number;
+  offer_status?: string;
+  offer_conditions?: string;
+  chain_id?: string;
+  chain_position?: string;
+  is_chain_break: boolean;
+  chain_notes?: string;
+  buyer_solicitor_name?: string;
+  buyer_solicitor_contact?: string;
+  buyer_solicitor_email?: string;
+  vendor_solicitor_name?: string;
+  vendor_solicitor_contact?: string;
+  vendor_solicitor_email?: string;
+  mortgage_status?: string;
+  mortgage_lender?: string;
+  mortgage_offer_expiry?: string;
+  mortgage_notes?: string;
+  survey_type?: string;
+  surveyor_name?: string;
+  survey_issues_identified: boolean;
+  survey_issues_notes?: string;
+  is_leasehold: boolean;
+  service_charge?: number;
+  ground_rent?: number;
+  lease_length_years?: number;
+  major_works_planned: boolean;
+  major_works_details?: string;
+  is_fall_through: boolean;
+  fall_through_reason?: string;
+  delay_reason?: string;
+  internal_notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SalesOffer {
+  id: string;
+  property_id: string;
+  buyer_id: string;
+  sales_progression_id?: string;
+  offer_amount: number;
+  status: string;
+  is_subject_to_survey: boolean;
+  is_subject_to_contract: boolean;
+  is_subject_to_mortgage: boolean;
+  is_cash_buyer: boolean;
+  has_chain: boolean;
+  offer_made_date?: string;
+  offer_expiry_date?: string;
+  decision_date?: string;
+  special_conditions?: string;
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Offer {
+  id: string;
+  property_id: string;
+  applicant_id: string;
+  offered_rent: number;
+  proposed_start_date?: string;
+  proposed_term_months?: number;
+  status: "submitted" | "accepted" | "rejected" | "countered" | "withdrawn";
+  counter_offer_rent?: number;
+  negotiation_notes?: string;
+  special_conditions?: string;
+  applicant_notes?: string;
+  agent_notes?: string;
+  deposit_amount?: number;
+  holding_deposit_paid?: boolean;
+  holding_deposit_amount?: number;
+  holding_deposit_date?: string;
+  submitted_at: string;
+  responded_at?: string;
+  accepted_at?: string;
+  created_at: string;
+  updated_at?: string;
+  // Nested data from API
+  property?: {
+    id: string;
+    address: string;
+    asking_rent?: number;
+  };
+  applicant?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: "todo" | "in_progress" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high" | "urgent";
+  due_date?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  tenancy_id?: string;
+  vendor_id?: string;
+  assigned_to?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Ticket {
+  id: string;
+  title: string;
+  description?: string;
+  status: "new" | "open" | "in_progress" | "resolved" | "closed" | "cancelled";
+  urgency: "routine" | "normal" | "urgent" | "emergency";
+  ticket_category: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  reported_date: string;
+  property_id: string;
+  applicant_id?: string;
+  assigned_contractor_id?: string;
+  created_at: string;
+  updated_at?: string;
 }

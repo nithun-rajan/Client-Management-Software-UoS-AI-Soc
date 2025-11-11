@@ -44,7 +44,7 @@ import EmptyState from "@/components/shared/EmptyState";
 // Helper to safely format dates
 const formatDate = (dateString: string) => {
   try {
-    return format(new Date(dateString), "MMM dd, yyyy HH:mm");
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm");
   } catch {
     return "Invalid date";
   }

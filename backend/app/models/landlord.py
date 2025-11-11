@@ -1,6 +1,8 @@
-from sqlalchemy import Column, String, Boolean, Date, Text
+from sqlalchemy import Column, String, Boolean, Date, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
+
+
 
 class Landlord(BaseModel):
     __tablename__ = "landlords"
@@ -23,6 +25,13 @@ class Landlord(BaseModel):
     # Notes
     notes = Column(Text)
     
+    # Contact tracking
+    last_contacted_at = Column(DateTime, nullable=True, index=True)  # When last contacted (updated on communication)
+    
+    # Complete info flag (similar to vendor_complete_info)
+    landlord_complete_info = Column(Boolean, default=False)
+    
     # Relationships
     properties = relationship("Property", back_populates="landlord")
     communications = relationship("Communication", back_populates="landlord")
+    maintenance_issues = relationship("MaintenanceIssue", back_populates="landlord", cascade="all, delete-orphan")

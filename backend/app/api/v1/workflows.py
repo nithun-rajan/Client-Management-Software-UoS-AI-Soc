@@ -77,6 +77,16 @@ async def change_status(
                        f"Valid transitions: {valid_transitions}"
             )
         
+        # If the domain is 'tenancy', run additional blueprint checks
+        if domain_enum == Domain.TENANCY:
+            try:
+                # 'entity' is the tenancy object, transition.new_status is the string
+                # This function is defined in app/core/workflows.py
+                workflow_manager.validate_tenancy_guards(entity, transition.new_status)
+            except HTTPException as e:
+                # Re-raise the specific error from the guardrail
+                raise e
+        
         # Execute transition
         previous_status = current_status
         setattr(entity, 'status', transition.new_status)
@@ -104,7 +114,7 @@ async def change_status(
                 to_status=transition.new_status,
                 user_id="user123",  # TODO: Get from auth context
                 notes=transition.notes,
-                workflow_metadata=transition.metadata,
+                metadata_json=transition.metadata if transition.metadata else None,
                 side_effects_executed=side_effects_executed
             )
             db.add(transition_record)
@@ -164,12 +174,6 @@ def get_available_transitions(
     """
     Get all available status transitions for an entity
     Useful for UI to show only valid next steps
-    
-    Parameters:
-    - domain: One of 'property', 'tenancy', 'vendor', or 'applicant'
-    - entity_id: The ID of the entity (property, tenancy, vendor, or applicant)
-    
-    Example: /api/v1/workflows/property/1ff0d1e6-399c-419c-bbc8-6726df4d0bd9/transitions
     """
     try:
         domain_enum = Domain(domain.lower())
@@ -198,57 +202,4 @@ def get_available_transitions(
             transition: workflow_manager.get_side_effects(domain_enum, current_status, transition)
             for transition in available_transitions
         }
-    }
-
-
-@router.get("/{domain}/{entity_id}/history")
-def get_pipeline_history(
-    domain: str,
-    entity_id: str,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """
-    Get pipeline history for an entity
-    Returns all workflow transitions for tracking progress
-    """
-    try:
-        domain_enum = Domain(domain.lower())
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid domain. Must be one of: {[d.value for d in Domain]}"
-        )
-    
-    # Verify entity exists
-    entity = get_entity_by_domain(domain_enum, entity_id, db)
-    if not entity:
-        raise HTTPException(
-            status_code=404,
-            detail=f"{domain.capitalize()} with ID {entity_id} not found"
-        )
-    
-    # Get transition history
-    transitions = db.query(WorkflowTransition).filter(
-        WorkflowTransition.domain == domain,
-        WorkflowTransition.entity_id == entity_id
-    ).order_by(WorkflowTransition.created_at.desc()).limit(limit).all()
-    
-    return {
-        "domain": domain,
-        "entity_id": entity_id,
-        "current_status": getattr(entity, 'status'),
-        "history": [
-            {
-                "id": t.id,
-                "from_status": t.from_status,
-                "to_status": t.to_status,
-                "created_at": t.created_at.isoformat() if t.created_at else None,
-                "notes": t.notes,
-                "user_id": t.user_id,
-                "side_effects_executed": t.side_effects_executed or [],
-            }
-            for t in transitions
-        ],
-        "total_transitions": len(transitions)
     }

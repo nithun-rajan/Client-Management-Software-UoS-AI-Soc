@@ -144,3 +144,19 @@ class CommunicationDirection(str, Enum):
     """Communication direction"""
     INBOUND = "inbound"
     OUTBOUND = "outbound"
+
+class TicketStatus(str, Enum):
+    """Ticket status"""
+    NEW = "new"
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
+    CANCELLED = "cancelled"
+
+class TicketUrgency(str, Enum):
+    """Ticket urgency levels"""
+    ROUTINE = "routine"
+    NORMAL = "normal"
+    URGENT = "urgent"
+    EMERGENCY = "emergency"

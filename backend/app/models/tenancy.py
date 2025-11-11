@@ -39,14 +39,26 @@ class Tenancy(BaseModel):
 
     # Document tracking
     tenancy_agreement_sent = Column(Boolean, default=False)  # Page 31: 3.1
+    tenancy_agreement_signed = Column(Boolean, default=False) # Page 32: 3.5
     statutory_documents_sent = Column(Boolean, default=False)  # Page 31: 3.2
     
     # Relationships
     property_id = Column(String, ForeignKey('properties.id'), nullable=False)
     property = relationship("Property", back_populates="tenancies")
 
-    # Link to applicant (when we implement applicants)
-    applicant_id = Column(String, ForeignKey('applicants.id'))
+    # Tenant information
+    applicant_id = Column(String, ForeignKey('applicants.id'), nullable=True)  # Link to applicant record
     applicant = relationship("Applicant", back_populates="tenancies")
-
+    
+    # Direct tenant information (for quick access, synced from applicant)
+    tenant_name = Column(String, nullable=True)  # Primary tenant name
+    tenant_email = Column(String, nullable=True)  # Primary tenant email
+    tenant_phone = Column(String, nullable=True)  # Primary tenant phone
+    tenant_id = Column(String, nullable=True, index=True)  # Tenant ID (can be same as applicant_id or separate)
+    
+    # Property manager assignment
+    managed_by = Column(String, ForeignKey('users.id'), nullable=True)  # Property manager user_id
+    
+    # Relationships
     tasks = relationship("Task", back_populates="tenancy")
+    maintenance_issues = relationship("MaintenanceIssue", back_populates="tenancy", cascade="all, delete-orphan")

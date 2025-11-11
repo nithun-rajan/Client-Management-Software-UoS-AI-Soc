@@ -9,10 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.database import get_db
 from app.models.communication import Communication
+from app.models.applicant import Applicant
 from app.schemas.communication import CommunicationCreate, CommunicationUpdate, CommunicationResponse
 
 router = APIRouter(prefix="/messaging", tags=["messaging"])
@@ -26,12 +27,23 @@ def create_communication(
     """
     Create a new communication log entry
     
-    At least one entity (property, landlord, or applicant) must be linked
+    At least one entity (property, landlord, or applicant) must be linked.
+    
+    CRM Feature: Automatically updates last_contacted_at for applicants when
+    a communication is created (email, call, sms, etc.)
     """
     # Create new communication
     db_communication = Communication(**communication.dict())
     
     db.add(db_communication)
+    
+    # CRM: Update last_contacted_at for applicant if this communication is for an applicant
+    # Only update for outbound communications (email, call, sms) - not notes
+    if communication.applicant_id and communication.type in ['email', 'call', 'sms']:
+        applicant = db.query(Applicant).filter(Applicant.id == communication.applicant_id).first()
+        if applicant:
+            applicant.last_contacted_at = datetime.now(timezone.utc)
+    
     db.commit()
     db.refresh(db_communication)
     

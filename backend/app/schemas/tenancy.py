@@ -1,4 +1,5 @@
 from app.schemas.model_config import AppBaseModel
+from app.models.enums import TenancyStatus
 
 from datetime import date, datetime
 from typing import Optional
@@ -43,6 +44,7 @@ class TenancyUpdate(AppBaseModel):
     deposit_amount: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    status: Optional[TenancyStatus] = None
     status: Optional[str] = None
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
@@ -65,3 +67,6 @@ class TenancyResponse(TenancyBase):
     id: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True

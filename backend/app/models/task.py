@@ -21,11 +21,13 @@ class Task(BaseModel):
     related_entity_id = Column(String)
 
     # Specific relationships
-    tenancy_id = Column(String, ForeignKey('tenancies.id'))
-    vendor_id = Column(String, ForeignKey('vendors.id'))
+    tenancy_id = Column(String, ForeignKey('tenancies.id'), nullable=True)
+    vendor_id = Column(String, ForeignKey('vendors.id'), nullable=True)
+    maintenance_issue_id = Column(String, ForeignKey('maintenance_issues.id'), nullable=True)
 
     # Relationships
     tenancy = relationship("Tenancy", back_populates="tasks")
     vendor = relationship("Vendor", back_populates="tasks")
+    maintenance_issue = relationship("MaintenanceIssue", back_populates="related_tasks")
 
     assigned_to = Column(String)

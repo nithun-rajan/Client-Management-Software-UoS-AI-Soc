@@ -11,6 +11,7 @@ from app.core.security import (
     verify_password, get_current_user,
     jwt, settings, JWTError, TokenData
 )
+from typing import Optional
 from app.core.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -111,3 +112,30 @@ def refresh_access_token(
 @router.get("/me", response_model=UserRead)
 def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+@router.get("/users", response_model=list[UserRead])
+def list_users(
+    skip: int = 0, 
+    limit: int = 100, 
+    role: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    List all active users, optionally filtered by role.
+    """
+    from app.schemas.user import Role
+    
+    query = db.query(User).filter(User.is_active == True)
+    
+    # Filter by role if provided
+    if role:
+        try:
+            # Validate role enum
+            role_enum = Role(role)
+            query = query.filter(User.role == role_enum)
+        except ValueError:
+            # Invalid role, return empty list
+            return []
+    
+    users = query.order_by(User.first_name, User.last_name).offset(skip).limit(limit).all()
+    return users

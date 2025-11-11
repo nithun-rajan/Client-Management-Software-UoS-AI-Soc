@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from app.core.database import Base, engine, get_db
 import app.models  # ensure all models are registered before table creation
-from app.api.v1 import properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tenancy, tasks, vendors, viewings, offers, workflows
+from app.api.v1 import properties, landlords, applicants, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents
 from app.models import Property, Landlord, Applicant
 
 # REMOVE these direct model imports - they cause circular imports
@@ -268,10 +268,12 @@ app.include_router(land_registry.router, prefix="/api/v1")  # 🏡 HM Land Regis
 app.include_router(messaging.router, prefix="/api/v1")  # 💬 Communication Log / Activity Feed
 app.include_router(tenancy.router, prefix="/api/v1")  # 🏠 Tenancy Management (by Abdullah)
 app.include_router(tasks.router, prefix="/api/v1")  # ✅ Task Management
+app.include_router(tickets.router, prefix="/api/v1")  # 🎫 Tickets / Maintenance
 app.include_router(vendors.router, prefix="/api/v1")  # 🏪 Vendor Management
 app.include_router(viewings.router, prefix="/api/v1")  # 📅 Viewing Management
 app.include_router(offers.router, prefix="/api/v1")  # 💰 Offer Management
+app.include_router(sales.router, prefix="/api/v1")  # 🏠 Sales Progression Management
 app.include_router(workflows.router, prefix="/api/v1")  # 🔄 Workflow State Machine
-
-#add a router for auth.py (by Anthony)
-# app.include_router(auth.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")  # 🔔 Notifications
+app.include_router(auth.router, prefix="/api/v1")  # 🔐 Authentication (by Anthony)
+app.include_router(documents.router, prefix="/api/v1")
