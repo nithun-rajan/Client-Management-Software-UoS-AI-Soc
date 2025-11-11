@@ -622,6 +622,7 @@ def create_agents(db: Session, count: int = 5):
             "last_name": "Brown",
             "email": "michael.brown@uos-crm.co.uk",
             "title": "Sales Manager – Southampton",
+            "team": "Sales Team",
         },
         {
             "first_name": "Emma",
@@ -654,6 +655,7 @@ def create_agents(db: Session, count: int = 5):
             hashed_password=get_password_hash("password123"),  # Default password for all agents
             organization_id=org.id,
             is_active=True,
+            team=agent_info.get("team"),  # Set team if provided
         )
         
         db.add(agent)

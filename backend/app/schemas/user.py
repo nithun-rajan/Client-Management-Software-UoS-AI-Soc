@@ -31,4 +31,5 @@ class UserRead(UserBase):
     is_active: bool
     organization_id: uuid.UUID
     branch_id: uuid.UUID | None
+    team: str | None = None
 

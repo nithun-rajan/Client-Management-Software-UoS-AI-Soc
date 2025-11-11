@@ -33,11 +33,14 @@ const getAgentPhotoUrl = (firstName: string, lastName: string): string => {
   return `https://i.pravatar.cc/150?img=${Math.abs(name.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)) % 70}`;
 };
 
-// Mock team assignments (in real app, this would come from backend)
-const getAgentTeam = (agentId: string): string => {
-  // Assign teams based on agent ID to ensure consistent assignment
-  // First two agents: Sales Team, rest: Lettings Team
-  const hash = agentId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
+// Get team from agent data, fallback to mock if not available
+const getAgentTeam = (agent: { id: string; team?: string | null }): string => {
+  // Use team from database if available
+  if (agent.team) {
+    return agent.team;
+  }
+  // Fallback to mock assignment for backwards compatibility
+  const hash = agent.id.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
   const index = Math.abs(hash) % 5; // 5 agents total
   // Make first two agents (index 0, 1) Sales Team, rest Lettings Team
   if (index < 2) {
@@ -97,7 +100,7 @@ export default function Agents() {
     
     // Apply team filter
     if (onMyTeamFilter) {
-      filtered = filtered.filter((agent) => getAgentTeam(agent.id) === currentUserTeam);
+      filtered = filtered.filter((agent) => getAgentTeam(agent) === currentUserTeam);
     }
     
     // Apply search filter
@@ -253,7 +256,7 @@ export default function Agents() {
               const photoUrl = getAgentPhotoUrl(agent.first_name || "", agent.last_name || "");
               const phone = getAgentPhone(agent.id);
               const position = getAgentPosition(agent.id, agent.first_name || "");
-              const team = getAgentTeam(agent.id);
+              const team = getAgentTeam(agent);
 
               return (
                 <Card
@@ -321,7 +324,7 @@ export default function Agents() {
               const photoUrl = getAgentPhotoUrl(selectedAgentData.first_name || "", selectedAgentData.last_name || "");
               const phone = getAgentPhone(selectedAgentData.id);
               const position = getAgentPosition(selectedAgentData.id, selectedAgentData.first_name || "");
-              const team = getAgentTeam(selectedAgentData.id);
+              const team = getAgentTeam(selectedAgentData);
               const role = selectedAgentData.role ? selectedAgentData.role.charAt(0).toUpperCase() + selectedAgentData.role.slice(1) : "Agent";
               const qualifications = `ARLA Level 3 • ${Math.floor(Math.random() * 10) + 3} years experience`;
               const stats = getAgentStats(selectedAgentData.id);

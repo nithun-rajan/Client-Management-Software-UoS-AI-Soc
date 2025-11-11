@@ -60,6 +60,9 @@ def migrate_database():
             
             # Vendor table - Contact tracking
             ("vendors", "last_contacted_at", "DATETIME"),
+            
+            # User table - Team assignment
+            ("users", "team", "VARCHAR"),
         ]
         
         # Combine old and new migrations

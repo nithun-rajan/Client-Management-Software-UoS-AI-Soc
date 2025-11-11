@@ -8,6 +8,7 @@ export interface User {
   last_name: string;
   role: string;
   is_active: boolean;
+  team?: string | null;
 }
 
 export function useUsers(role?: string) {

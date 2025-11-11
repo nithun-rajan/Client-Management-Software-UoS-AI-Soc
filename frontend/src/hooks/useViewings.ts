@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 export interface Viewing {
@@ -16,15 +17,40 @@ export interface Viewing {
   property?: {
     id: string;
     address: string;
+    address_line1?: string;
     rent: number;
     bedrooms: number;
   };
   applicant?: {
     id: string;
     name: string;
+    first_name?: string;
+    last_name?: string;
     email: string;
     phone: string;
   };
+}
+
+// React Query hook for fetching viewings
+export function useViewingsQuery(filters?: {
+  property_id?: string;
+  applicant_id?: string;
+  status?: string;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ['viewings', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.property_id) params.append('property_id', filters.property_id);
+      if (filters?.applicant_id) params.append('applicant_id', filters.applicant_id);
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      
+      const { data } = await api.get(`/api/v1/viewings?${params.toString()}`);
+      return (data?.viewings || data || []) as Viewing[];
+    },
+  });
 }
 
 export const useViewings = () => {

@@ -17,6 +17,7 @@ class User(BaseModel):
     is_active = Column(Boolean, default=True)
 
     role = Column(SQLEnum(Role))
+    team = Column(String, nullable=True)  # e.g., "Sales Team", "Lettings Team"
 
     # Use Column(String, ...) for all ForeignKeys
     organization_id = Column(String, ForeignKey("organizations.id"))
