@@ -304,22 +304,22 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Row 1: Upcoming Viewings, Tasks Due Today, and My Team */}
+        {/* Row 1: Upcoming Events, Tasks Due Today, and My Team */}
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Upcoming Viewings */}
+          {/* Upcoming Events */}
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Calendar className="h-5 w-5 text-blue-500" />
-                Upcoming Viewings
+                Upcoming Events
               </CardTitle>
-              <CardDescription>Scheduled viewings in the next 7 days</CardDescription>
+              <CardDescription>Scheduled events in the next 7 days</CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingViewings ? (
                 <Skeleton className="h-32" />
               ) : upcomingViewings.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">No upcoming viewings</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">No upcoming events</div>
               ) : (
                 <div className="space-y-3">
                   {upcomingViewings.map((viewing) => (

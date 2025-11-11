@@ -7,6 +7,7 @@ from app.schemas.notification import NotificationOut
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
+@router.get("", response_model=list[NotificationOut])
 @router.get("/", response_model=list[NotificationOut])
 def get_my_notifications(db: Session = Depends(get_db)):
     """Get all notifications (simplified for now - no auth required)"""

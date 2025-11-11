@@ -13,6 +13,7 @@ import {
   Download,
   Search,
   X,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,12 +49,15 @@ export default function PropertiesForSale() {
     setSelectedProperty(property);
     setGeneratingPack(true);
     try {
-      const response = await api.post("/api/v1/land-registry/valuation-pack", {
-        postcode: property.postcode,
-        property_type: property.property_type,
-        bedrooms: property.bedrooms,
+      const response = await api.post("/api/v1/valuations/generate", {
+        property_id: property.id,
+        valuation_type: "sales",
+        include_comparables: true,
+        market_analysis_depth: "comprehensive",
+        radius_km: 5.0,
+        max_comparables: 10,
       });
-      setValuationPack(response.data.data);
+      setValuationPack(response.data.valuation);
       setValuationPackOpen(true);
       // Update property flag
       await api.patch(`/api/v1/properties/${property.id}`, {
@@ -64,9 +68,26 @@ export default function PropertiesForSale() {
         description: "Valuation pack generated successfully",
       });
     } catch (error: any) {
+      console.error("Valuation pack generation error:", error);
+      console.error("Error response:", error?.response?.data);
+      
+      // Show detailed error message
+      let errorMessage = "Failed to generate valuation pack";
+      if (error?.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map((err: any) => 
+            `${err.loc?.join('.')}: ${err.msg}`
+          ).join(', ');
+        } else if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else {
+          errorMessage = JSON.stringify(error.response.data.detail);
+        }
+      }
+      
       toast({
         title: "Error",
-        description: error?.response?.data?.detail || "Failed to generate valuation pack",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -296,84 +317,156 @@ export default function PropertiesForSale() {
           {valuationPack && (
             <div className="space-y-6">
               {/* Recommended Valuation - Highlighted */}
-              {valuationPack.valuation_summary && (
+              {valuationPack.recommended_price && (
                 <Card className="border-2 border-primary bg-primary/5">
                   <CardHeader>
-                    <CardTitle className="text-lg">Recommended Valuation & Price Range</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Recommended Valuation & Price Range
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Quick Sale Range</div>
+                      <div className="rounded-lg bg-background p-4 border">
+                        <div className="text-sm text-muted-foreground mb-1">Quick Sale Range</div>
                         <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.min?.toLocaleString()} - 
-                          £{Math.round((valuationPack.valuation_summary?.recommended_range?.min || 0) * 1.05).toLocaleString()}
+                          £{valuationPack.value_range_min?.toLocaleString() || "N/A"}
                         </div>
                       </div>
-                      <div className="rounded-lg bg-primary/10 p-3 border-2 border-primary">
-                        <div className="text-sm text-muted-foreground">Recommended Guide Price</div>
+                      <div className="rounded-lg bg-primary/10 p-4 border-2 border-primary">
+                        <div className="text-sm text-muted-foreground mb-1">Recommended Guide Price</div>
                         <div className="text-xl font-bold text-primary">
-                          £{Math.round(((valuationPack.valuation_summary?.recommended_range?.min || 0) + (valuationPack.valuation_summary?.recommended_range?.max || 0)) / 2).toLocaleString()}
+                          £{valuationPack.recommended_price?.toLocaleString() || valuationPack.estimated_value?.toLocaleString() || "N/A"}
                         </div>
                       </div>
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Aspirational Range</div>
+                      <div className="rounded-lg bg-background p-4 border">
+                        <div className="text-sm text-muted-foreground mb-1">Aspirational Range</div>
                         <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.max?.toLocaleString()}+
+                          £{valuationPack.value_range_max?.toLocaleString() || "N/A"}+
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Average Price:</strong> £{valuationPack.valuation_summary.average_price?.toLocaleString()} | 
-                      <strong> Median:</strong> £{valuationPack.valuation_summary.median_price?.toLocaleString()}
-                    </div>
+                    {valuationPack.pricing_strategy && (
+                      <div className="text-sm text-muted-foreground pt-2 border-t">
+                        <strong>Pricing Strategy:</strong> {valuationPack.pricing_strategy} |{" "}
+                        <strong>Confidence:</strong> {valuationPack.confidence || "Medium"}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
 
-              {/* Market Trend */}
-              {valuationPack.market_trend && (
+              {/* Market Conditions */}
+              {valuationPack.market_conditions && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Market Trend</CardTitle>
+                    <CardTitle>Market Conditions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-2">
-                      {valuationPack.market_trend.percentage_change > 0 ? (
-                        <AlertCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                      )}
-                      <span>
-                        {valuationPack.market_trend.percentage_change > 0 ? "Increasing" : "Decreasing"} by{" "}
-                        {Math.abs(valuationPack.market_trend.percentage_change).toFixed(1)}% over{" "}
-                        {valuationPack.market_trend.period}
-                      </span>
-                    </div>
+                    <p className="text-sm">{valuationPack.market_conditions}</p>
                   </CardContent>
                 </Card>
               )}
 
               {/* Comparables */}
-              {valuationPack.comparables && valuationPack.comparables.length > 0 && (
+              {valuationPack.comparable_properties && valuationPack.comparable_properties.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Comparative Sales</CardTitle>
+                    <CardTitle>Comparative Sales ({valuationPack.comparable_properties.length} found)</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {valuationPack.comparables.slice(0, 10).map((comp: any, idx: number) => (
-                        <div key={idx} className="flex justify-between border-b pb-2">
-                          <div>
-                            <div className="font-medium">{comp.address || `${comp.street}, ${comp.town}`}</div>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {valuationPack.comparable_properties.slice(0, 15).map((comp: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center border-b pb-3 last:border-0"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium">
+                              {comp.address || comp.sale_address || "Unknown address"}
+                            </div>
                             <div className="text-sm text-muted-foreground">
-                              {comp.property_type} | Sold {comp.date || comp.sold_date}
+                              {comp.property_type || "Unknown"} | Sold {comp.sale_date || comp.date || "N/A"}
+                              {comp.bedrooms && ` | ${comp.bedrooms} bed${comp.bedrooms > 1 ? 's' : ''}`}
                             </div>
                           </div>
-                          <div className="font-bold">£{comp.price?.toLocaleString()}</div>
+                          <div className="font-bold text-primary ml-4">
+                            £{comp.sale_price?.toLocaleString() || comp.price?.toLocaleString() || "N/A"}
+                          </div>
                         </div>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Key Factors */}
+              {valuationPack.key_factors && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Key Factors</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {valuationPack.key_factors.positive && valuationPack.key_factors.positive.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold text-green-600 mb-2">Positive Factors</div>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          {valuationPack.key_factors.positive.map((factor: string, idx: number) => (
+                            <li key={idx}>{factor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {valuationPack.key_factors.negative && valuationPack.key_factors.negative.length > 0 && (
+                      <div>
+                        <div className="text-sm font-semibold text-red-600 mb-2">Negative Factors</div>
+                        <ul className="list-disc list-inside space-y-1 text-sm">
+                          {valuationPack.key_factors.negative.map((factor: string, idx: number) => (
+                            <li key={idx}>{factor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Location Analysis */}
+              {valuationPack.location_analysis && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Location Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm whitespace-pre-wrap">{valuationPack.location_analysis}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Valuation Logic */}
+              {valuationPack.valuation_logic && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Valuation Logic & Reasoning</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm whitespace-pre-wrap">{valuationPack.valuation_logic}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recommendations */}
+              {valuationPack.recommendations && valuationPack.recommendations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Key Recommendations</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc list-inside space-y-2 text-sm">
+                      {valuationPack.recommendations.map((rec: string, idx: number) => (
+                        <li key={idx}>{rec}</li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               )}

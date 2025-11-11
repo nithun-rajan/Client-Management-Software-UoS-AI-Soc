@@ -53,6 +53,7 @@ def migrate_database():
             # Property table - Management notes and vendor_id
             ("properties", "management_notes", "TEXT"),
             ("properties", "vendor_id", "VARCHAR"),
+            ("properties", "managed_by_agent_id", "VARCHAR"),
             
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),

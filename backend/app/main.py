@@ -1,8 +1,13 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+import logging
+import json
 
 from app.core.database import Base, engine, get_db
 import app.models  # ensure all models are registered before table creation
@@ -27,6 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="🏢 UoS Scouting Challenge",
+    redirect_slashes=True,  # Allow both /api/v1/properties and /api/v1/properties/
     description="""
     ## 🚀 UoS Scouting Challenge API
     
@@ -86,6 +92,21 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Middleware to capture request body for validation error debugging
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        # Store body in request state for later use
+        if request.method == "POST" and "/valuations/generate" in str(request.url):
+            body = await request.body()
+            request.state.body = body
+            # Create a new request with the body
+            async def receive():
+                return {"type": "http.request", "body": body}
+            request._receive = receive
+        response = await call_next(request)
+        return response
+
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -93,6 +114,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Custom exception handler for validation errors (add after app creation)
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log validation errors for debugging"""
+    logger = logging.getLogger(__name__)
+    
+    # Try to get the body from request state (set by middleware) or directly
+    try:
+        if hasattr(request.state, 'body'):
+            body_bytes = request.state.body
+        else:
+            body_bytes = await request.body()
+        body_str = body_bytes.decode('utf-8') if body_bytes else 'empty'
+    except Exception as e:
+        body_str = f"Could not read body: {str(e)}"
+    
+    errors = exc.errors()
+    
+    # Print to console with clear formatting
+    print("\n" + "="*80)
+    print("VALIDATION ERROR DETECTED")
+    print("="*80)
+    print(f"Path: {request.url.path}")
+    print(f"Method: {request.method}")
+    print(f"Request Body: {body_str}")
+    print(f"Validation Errors:")
+    print(json.dumps(errors, indent=2))
+    print("="*80 + "\n")
+    
+    logger.error(f"Validation error on {request.url.path}: {errors}")
+    logger.error(f"Request body: {body_str}")
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": errors,
+            "body": body_str,
+            "message": "Validation failed. Check 'detail' for specific field errors."
+        }
+    )
 
 # Lazy import function for models
 def get_model_counts(db: Session):
@@ -276,3 +338,7 @@ app.include_router(sales.router, prefix="/api/v1")  # 🏠 Sales Progression Man
 app.include_router(workflows.router, prefix="/api/v1")  # 🔄 Workflow State Machine
 app.include_router(notifications.router, prefix="/api/v1")  # 🔔 Notifications
 app.include_router(auth.router, prefix="/api/v1")  # 🔐 Authentication (by Anthony)
+
+# Import and register valuations router
+from app.api.v1 import valuations
+app.include_router(valuations.router, prefix="/api/v1")  # 💰 AI Valuation Packs (by Ricky)

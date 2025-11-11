@@ -69,6 +69,7 @@ def create_viewing(viewing: ViewingCreate, db: Session = Depends(get_db)):
     }
 
 
+@router.get("")
 @router.get("/")
 def list_viewings(
     property_id: Optional[str] = None,

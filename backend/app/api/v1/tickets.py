@@ -39,6 +39,7 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
     db.refresh(db_ticket)
     return db_ticket
 
+@router.get("", response_model=List[TicketResponse])
 @router.get("/", response_model=List[TicketResponse])
 def list_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """

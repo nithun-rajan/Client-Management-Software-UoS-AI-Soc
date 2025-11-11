@@ -13,6 +13,18 @@ export function useProperties() {
   });
 }
 
+export function useMyProperties() {
+  return useQuery({
+    queryKey: ["properties", "my-properties"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/properties/my-properties");
+      return data as Property[];
+    },
+    // Only fetch if user is authenticated (has token)
+    enabled: !!localStorage.getItem("auth_token"),
+  });
+}
+
 export function useProperty(id: string) {
   return useQuery({
     queryKey: ["properties", id],
