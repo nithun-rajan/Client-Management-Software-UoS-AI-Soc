@@ -9,7 +9,7 @@ import json
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from app.core.config import settings
-from app.services.llm_service import LLMService
+from app.services.llm_service import LLMService, get_llm_service
 from app.models.property import Property
 from app.models.valuation import Valuation, ComparableSale
 from app.schemas.valuation import ValuationCreate, ComparableSaleCreate
