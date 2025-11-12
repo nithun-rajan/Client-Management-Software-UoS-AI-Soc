@@ -14,9 +14,6 @@ import {
   Calendar,
   Handshake,
   MessageSquare,
-  Sun,
-  Moon,
-  CloudSun,
 } from "lucide-react";
 import {
   Card,
@@ -28,62 +25,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useEvents } from "@/hooks/useEvents";
-import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import { formatDistanceToNow } from "date-fns";
 
-// Import dashboard widgets
-import ActiveListingsWidget from "@/components/dashboard/ActiveListingsWidget";
-import NewPropertiesWidget from "@/components/dashboard/NewPropertiesWidget";
-import PipelineValueWidget from "@/components/dashboard/PipelineValueWidget";
-import ApplicantFunnelWidget from "@/components/dashboard/ApplicantFunnelWidget";
-import UpcomingViewingsWidget from "@/components/dashboard/UpcomingViewingsWidget";
-import TasksDueTodayWidget from "@/components/dashboard/TasksDueTodayWidget";
-import MarketSnapshotWidget from "@/components/dashboard/MarketSnapshotWidget";
-
 export default function Dashboard() {
   const { data: kpis, isLoading } = useKPIs();
   const { data: events, isLoading: isLoadingEvents } = useEvents();
-  const { user } = useAuth();
   const [complianceOpen, setComplianceOpen] = useState(false);
-
-  // Get greeting and icon based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return { text: "Good Morning", icon: Sun, color: "text-yellow-500 dark:text-yellow-400" };
-    if (hour < 17) return { text: "Good Afternoon", icon: CloudSun, color: "text-orange-500 dark:text-orange-400" };
-    return { text: "Good Evening", icon: Moon, color: "text-blue-400 dark:text-blue-300" };
-  };
-
-  // Get user's first name or email
-  const getUserName = () => {
-    if (user?.first_name) return user.first_name;
-    if (user?.email) return user.email.split("@")[0];
-    return "there";
-  };
-
-  const greetingData = getGreeting();
-  const greeting = greetingData.text;
-  const GreetingIcon = greetingData.icon;
-  const iconColor = greetingData.color;
-  const userName = getUserName();
 
   if (isLoading) {
     return (
       <div>
         <Header title="Dashboard" />
         <div className="space-y-6 p-6">
-          {/* Greeting Banner */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <Skeleton className="h-12 w-64" />
-            </div>
-            <Skeleton className="h-6 w-48 mt-2 ml-[52px]" />
-          </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2].map((i) => (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-32" />
             ))}
           </div>
@@ -92,8 +49,49 @@ export default function Dashboard() {
     );
   }
 
-  // Only show average price KPI cards
   const kpiCards = [
+    {
+      title: "Properties for Letting",
+      icon: Building2,
+      value: kpis?.properties_letting?.total || kpis?.properties?.total || 0,
+      subtitle: `${kpis?.properties_letting?.available || kpis?.properties?.available || 0} available, ${kpis?.properties_letting?.let_by || kpis?.properties?.let_by || 0} let`,
+      gradient: "from-primary to-secondary",
+    },
+    {
+      title: "Properties for Sale",
+      icon: Building,
+      value: kpis?.properties_sale?.total || 0,
+      subtitle: `Avg: £${(kpis?.properties_sale?.avg_selling_price || 0).toLocaleString()}`,
+      gradient: "from-purple-500 to-pink-500 dark:from-purple-600 dark:to-pink-600",
+    },
+    {
+      title: "Tenants",
+      icon: Users,
+      value: kpis?.tenants?.total || kpis?.applicants?.total || 0,
+      subtitle: `${(kpis?.tenants?.qualification_rate || kpis?.applicants?.qualification_rate || 0).toFixed(0)}% qualified`,
+      gradient: "from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600",
+    },
+    {
+      title: "Buyers",
+      icon: User,
+      value: kpis?.buyers?.total || 0,
+      subtitle: "Active buyers",
+      gradient: "from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600",
+    },
+    {
+      title: "Landlords",
+      icon: UserCheck,
+      value: kpis?.landlords?.total || 0,
+      subtitle: `${(kpis?.landlords?.verification_rate || 0).toFixed(0)}% AML verified`,
+      gradient: "from-accent to-emerald-500 dark:from-teal-600 dark:to-emerald-600",
+    },
+    {
+      title: "Vendors",
+      icon: UserCircle,
+      value: kpis?.vendors?.total || 0,
+      subtitle: "Active vendors",
+      gradient: "from-indigo-500 to-blue-500 dark:from-indigo-600 dark:to-blue-600",
+    },
     {
       title: "Average Rent",
       icon: PoundSterling,
@@ -114,21 +112,8 @@ export default function Dashboard() {
     <div>
       <Header title="Dashboard" />
       <div className="space-y-6 p-6">
-        {/* Greeting Banner */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3">
-            <GreetingIcon className={`h-10 w-10 ${iconColor}`} />
-            <h1 className="text-4xl font-bold text-foreground">
-              {greeting}, {userName}!
-            </h1>
-          </div>
-          <p className="text-muted-foreground mt-2 ml-[52px]">
-            Here's your dashboard overview
-          </p>
-        </div>
-
-        {/* Top KPI Cards - Average Prices Only */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* KPI Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {kpiCards.map((card) => (
             <Card
               key={card.title}
@@ -147,138 +132,9 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-
-        {/* Dashboard Widgets - Top Row (Moved to top) */}
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-          <ApplicantFunnelWidget />
-          <div className="grid gap-6">
-            <UpcomingViewingsWidget />
-            <TasksDueTodayWidget />
-          </div>
-        </div>
-
-        {/* Dashboard Widgets - Row 1 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <ActiveListingsWidget />
-          <NewPropertiesWidget />
-          <PipelineValueWidget />
-        </div>
-
-        {/* Dashboard Widgets - Row 2 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <MarketSnapshotWidget />
-          {/* Coworkers Activity Widget */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
-                Coworkers Activity
-              </CardTitle>
-              <CardDescription>Recent activities from your team</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoadingEvents ? (
-                <>
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
-                </>
-              ) : events && events.length > 0 ? (
-                events.slice(0, 3).map((event) => {
-                  // Determine icon component based on entity type
-                  let IconComponent = Activity;
-                  if (event.entity_type === "property") {
-                    IconComponent = Building2;
-                  } else if (event.entity_type === "applicant") {
-                    IconComponent = Users;
-                  } else if (event.entity_type === "landlord") {
-                    IconComponent = UserCheck;
-                  } else if (event.entity_type === "vendor") {
-                    IconComponent = UserCircle;
-                  } else if (event.entity_type === "task") {
-                    IconComponent = Activity;
-                  } else if (event.entity_type === "viewing") {
-                    IconComponent = Calendar;
-                  } else if (event.entity_type === "offer") {
-                    IconComponent = Handshake;
-                  } else if (event.entity_type === "communication") {
-                    IconComponent = MessageSquare;
-                  }
-
-                  // Determine color classes based on entity type
-                  let bgColorClass = "bg-muted/10";
-                  let iconColorClass = "text-muted-foreground";
-                  if (event.entity_type === "property") {
-                    bgColorClass = "bg-primary/10";
-                    iconColorClass = "text-primary";
-                  } else if (event.entity_type === "applicant") {
-                    bgColorClass = "bg-blue-500/10";
-                    iconColorClass = "text-blue-500";
-                  } else if (event.entity_type === "landlord") {
-                    bgColorClass = "bg-accent/10";
-                    iconColorClass = "text-accent";
-                  } else if (event.entity_type === "vendor") {
-                    bgColorClass = "bg-indigo-500/10";
-                    iconColorClass = "text-indigo-500";
-                  } else if (event.entity_type === "task") {
-                    bgColorClass = "bg-orange-500/10";
-                    iconColorClass = "text-orange-500";
-                  } else if (event.entity_type === "viewing") {
-                    bgColorClass = "bg-cyan-500/10";
-                    iconColorClass = "text-cyan-500";
-                  } else if (event.entity_type === "offer") {
-                    bgColorClass = "bg-green-500/10";
-                    iconColorClass = "text-green-500";
-                  } else if (event.entity_type === "communication") {
-                    bgColorClass = "bg-purple-500/10";
-                    iconColorClass = "text-purple-500";
-                  }
-
-                  // Format event title
-                  const eventTitle = event.description 
-                    ? event.description
-                    : event.event
-                        .split(".")
-                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(" ");
-
-                  const timeAgo = formatDistanceToNow(new Date(event.timestamp), {
-                    addSuffix: true,
-                  });
-
-                  return (
-                    <div key={event.id} className="flex items-start gap-4">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bgColorClass}`}>
-                        <IconComponent className={`h-5 w-5 ${iconColorClass}`} />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{eventTitle}</p>
-                        {event.entity_name && (
-                          <p className="text-sm text-muted-foreground">
-                            {event.entity_name}
-                          </p>
-                        )}
-                        {event.user && (
-                          <p className="text-xs text-muted-foreground">
-                            by {event.user}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">{timeAgo}</p>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="py-8 text-center">
-                  <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No team activity</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity Widget */}
-          <Card className="shadow-card">
+        {/* Recent Activity */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="shadow-card md:col-span-2">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Latest updates across your portfolio</CardDescription>
@@ -291,7 +147,7 @@ export default function Dashboard() {
                   <Skeleton className="h-16" />
                 </>
               ) : events && events.length > 0 ? (
-                events.slice(0, 3).map((event) => {
+                events.slice(0, 10).map((event) => {
                   // Determine icon component based on entity type
                   let IconComponent = Activity;
                   if (event.entity_type === "property") {
@@ -312,7 +168,7 @@ export default function Dashboard() {
                     IconComponent = MessageSquare;
                   }
 
-                  // Determine color classes based on entity type
+                  // Determine color classes based on entity type (using full class names for Tailwind)
                   let bgColorClass = "bg-muted/10";
                   let iconColorClass = "text-muted-foreground";
                   if (event.entity_type === "property") {
@@ -341,7 +197,7 @@ export default function Dashboard() {
                     iconColorClass = "text-purple-500";
                   }
 
-                  // Format event title
+                  // Format event title - use description if available, otherwise format event name
                   const eventTitle = event.description 
                     ? event.description
                     : event.event
@@ -376,6 +232,45 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">No recent activity</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Quick Stats</CardTitle>
+              <CardDescription>This month's overview</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Properties for Letting</span>
+                <span className="text-2xl font-bold text-accent">
+                  {kpis?.properties_letting?.total || kpis?.properties?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Properties for Sale</span>
+                <span className="text-2xl font-bold text-primary">
+                  {kpis?.properties_sale?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Tenants</span>
+                <span className="text-2xl font-bold text-secondary">
+                  {kpis?.tenants?.total || kpis?.applicants?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Buyers</span>
+                <span className="text-2xl font-bold text-blue-500">
+                  {kpis?.buyers?.total || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Vendors</span>
+                <span className="text-2xl font-bold text-indigo-500">
+                  {kpis?.vendors?.total || 0}
+                </span>
+              </div>
             </CardContent>
           </Card>
         </div>
