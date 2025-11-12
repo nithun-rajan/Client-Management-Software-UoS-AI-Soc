@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Search, Users, Mail, Phone, TrendingUp, Clock, PoundSterling, Star, Home, UserCheck, Building2, Award, Activity } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -406,16 +407,18 @@ export default function Agents() {
                           </div>
                         ) : (
                           managedEntities.properties.map((prop) => (
-                            <Card key={prop.id} className="hover:shadow-sm transition-shadow">
-                              <CardContent className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-3">
-                                  <Home className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{prop.name}</p>
+                            <Link key={prop.id} to={`/properties/${prop.id}`} className="block">
+                              <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                                <CardContent className="flex items-center justify-between p-4">
+                                  <div className="flex items-center gap-3">
+                                    <Home className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="font-medium hover:text-primary transition-colors">{prop.name}</p>
+                                    </div>
                                   </div>
-                                </div>
-                              </CardContent>
-                            </Card>
+                                </CardContent>
+                              </Card>
+                            </Link>
                           ))
                         )}
                       </TabsContent>
@@ -431,17 +434,19 @@ export default function Agents() {
                           </div>
                         ) : (
                           managedEntities.applicants.map((applicant) => (
-                            <Card key={applicant.id} className="hover:shadow-sm transition-shadow">
-                              <CardContent className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-3">
-                                  <Users className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{applicant.name}</p>
-                                    <p className="text-xs text-muted-foreground">Tenant</p>
+                            <Link key={applicant.id} to={`/applicants/${applicant.id}`} className="block">
+                              <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                                <CardContent className="flex items-center justify-between p-4">
+                                  <div className="flex items-center gap-3">
+                                    <Users className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="font-medium hover:text-primary transition-colors">{applicant.name}</p>
+                                      <p className="text-xs text-muted-foreground">Tenant</p>
+                                    </div>
                                   </div>
-                                </div>
-                              </CardContent>
-                            </Card>
+                                </CardContent>
+                              </Card>
+                            </Link>
                           ))
                         )}
                       </TabsContent>
@@ -458,19 +463,21 @@ export default function Agents() {
                         ) : (
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {managedEntities.vendors.map((vendor) => (
-                              <Card key={vendor.id} className="hover:shadow-sm transition-shadow">
-                                <CardContent className="flex items-center gap-3 p-4">
-                                  <UserCheck className="h-5 w-5 text-muted-foreground" />
-                                  <div className="flex-1">
-                                    <span className="text-sm font-medium">{vendor.name}</span>
-                                    {vendor.property_count > 0 && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {vendor.property_count} {vendor.property_count === 1 ? "property" : "properties"}
-                                      </p>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
+                              <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="block">
+                                <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                                  <CardContent className="flex items-center gap-3 p-4">
+                                    <UserCheck className="h-5 w-5 text-muted-foreground" />
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium hover:text-primary transition-colors">{vendor.name}</span>
+                                      {vendor.property_count > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {vendor.property_count} {vendor.property_count === 1 ? "property" : "properties"}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </Link>
                             ))}
                           </div>
                         )}
@@ -487,17 +494,19 @@ export default function Agents() {
                           </div>
                         ) : (
                           managedEntities.buyers.map((buyer) => (
-                            <Card key={buyer.id} className="hover:shadow-sm transition-shadow">
-                              <CardContent className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-3">
-                                  <Users className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{buyer.name}</p>
-                                    <p className="text-xs text-muted-foreground">Buyer</p>
+                            <Link key={buyer.id} to={`/applicants/${buyer.id}`} className="block">
+                              <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                                <CardContent className="flex items-center justify-between p-4">
+                                  <div className="flex items-center gap-3">
+                                    <Users className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="font-medium hover:text-primary transition-colors">{buyer.name}</p>
+                                      <p className="text-xs text-muted-foreground">Buyer</p>
+                                    </div>
                                   </div>
-                                </div>
-                              </CardContent>
-                            </Card>
+                                </CardContent>
+                              </Card>
+                            </Link>
                           ))
                         )}
                       </TabsContent>
@@ -514,19 +523,21 @@ export default function Agents() {
                         ) : (
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {managedEntities.landlords.map((landlord) => (
-                              <Card key={landlord.id} className="hover:shadow-sm transition-shadow">
-                                <CardContent className="flex items-center gap-3 p-4">
-                                  <UserCheck className="h-5 w-5 text-muted-foreground" />
-                                  <div className="flex-1">
-                                    <span className="text-sm font-medium">{landlord.name}</span>
-                                    {landlord.property_count > 0 && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {landlord.property_count} {landlord.property_count === 1 ? "property" : "properties"}
-                                      </p>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
+                              <Link key={landlord.id} to={`/landlords/${landlord.id}`} className="block">
+                                <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                                  <CardContent className="flex items-center gap-3 p-4">
+                                    <UserCheck className="h-5 w-5 text-muted-foreground" />
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium hover:text-primary transition-colors">{landlord.name}</span>
+                                      {landlord.property_count > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {landlord.property_count} {landlord.property_count === 1 ? "property" : "properties"}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </Link>
                             ))}
                           </div>
                         )}
