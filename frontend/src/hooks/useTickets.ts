@@ -84,3 +84,18 @@ export function useDeleteTicket() {
   });
 }
 
+export function useMyTickets(filters?: { status?: string; urgency?: string; priority?: string }) {
+  return useQuery({
+    queryKey: ["tickets", "my", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append("status", filters.status);
+      if (filters?.urgency) params.append("urgency", filters.urgency);
+      if (filters?.priority) params.append("priority", filters.priority);
+      
+      const { data } = await api.get(`/api/v1/tickets/my-tickets?${params.toString()}`);
+      return data as Ticket[];
+    },
+  });
+}
+

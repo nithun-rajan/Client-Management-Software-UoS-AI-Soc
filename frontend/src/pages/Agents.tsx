@@ -102,18 +102,42 @@ export default function Agents() {
 
   // Get agent stats from API data
   const getAgentStats = (agent: Agent) => {
+    const askingPriceAchievement = typeof agent.stats?.asking_price_achievement === 'number' 
+      ? agent.stats.asking_price_achievement 
+      : typeof agent.stats?.asking_price_achievement === 'string'
+      ? parseFloat(agent.stats.asking_price_achievement)
+      : null;
+    
+    const daysOnMarketAvg = typeof agent.stats?.days_on_market_avg === 'number'
+      ? agent.stats.days_on_market_avg
+      : typeof agent.stats?.days_on_market_avg === 'string'
+      ? parseFloat(agent.stats.days_on_market_avg)
+      : null;
+    
+    const monthlyFees = typeof agent.stats?.monthly_fees === 'number'
+      ? agent.stats.monthly_fees
+      : typeof agent.stats?.monthly_fees === 'string'
+      ? parseFloat(agent.stats.monthly_fees)
+      : 0;
+    
+    const satisfactionScore = typeof agent.stats?.satisfaction_score === 'number'
+      ? agent.stats.satisfaction_score
+      : typeof agent.stats?.satisfaction_score === 'string'
+      ? parseFloat(agent.stats.satisfaction_score)
+      : null;
+
     return {
-      askingPrice: agent.stats.asking_price_achievement 
-        ? `${agent.stats.asking_price_achievement.toFixed(0)}%`
+      askingPrice: askingPriceAchievement !== null && !isNaN(askingPriceAchievement)
+        ? `${askingPriceAchievement.toFixed(0)}%`
         : "N/A",
-      daysOnMarket: agent.stats.days_on_market_avg 
-        ? `${agent.stats.days_on_market_avg.toFixed(0)}`
+      daysOnMarket: daysOnMarketAvg !== null && !isNaN(daysOnMarketAvg)
+        ? `${daysOnMarketAvg.toFixed(0)}`
         : "N/A",
-      monthlyFees: agent.stats.monthly_fees 
-        ? `£${(agent.stats.monthly_fees / 1000).toFixed(1)}k`
+      monthlyFees: monthlyFees !== null && !isNaN(monthlyFees) && monthlyFees > 0
+        ? `£${(monthlyFees / 1000).toFixed(1)}k`
         : "£0",
-      satisfaction: agent.stats.satisfaction_score 
-        ? agent.stats.satisfaction_score.toFixed(1)
+      satisfaction: satisfactionScore !== null && !isNaN(satisfactionScore)
+        ? satisfactionScore.toFixed(1)
         : "N/A",
     };
   };

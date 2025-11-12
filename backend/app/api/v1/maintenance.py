@@ -5,9 +5,11 @@ from typing import List, Optional
 from datetime import datetime, timezone
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.maintenance import MaintenanceIssue, MaintenanceStatus, MaintenancePriority, MaintenanceType
 from app.models.property import Property
 from app.models.tenancy import Tenancy
+from app.models.user import User
 from app.schemas.maintenance import MaintenanceCreate, MaintenanceUpdate, MaintenanceResponse
 
 router = APIRouter(prefix="/maintenance", tags=["maintenance"])
@@ -351,4 +353,32 @@ def get_maintenance_requires_attention(
     attention_issues = attention_issues[:limit]
     
     return [build_maintenance_response(issue) for issue in attention_issues]
+
+
+@router.get("/my-maintenance", response_model=List[MaintenanceResponse])
+def get_my_maintenance(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    priority: Optional[str] = Query(None, description="Filter by priority"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all maintenance issues managed by the current user"""
+    query = db.query(MaintenanceIssue).filter(MaintenanceIssue.managed_by == current_user.id)
+    
+    if status:
+        query = query.filter(MaintenanceIssue.status == status)
+    if priority:
+        query = query.filter(MaintenanceIssue.priority == priority)
+    
+    query = query.order_by(
+        MaintenanceIssue.is_emergency.desc(),
+        MaintenanceIssue.priority.desc(),
+        MaintenanceIssue.reported_date.desc()
+    )
+    
+    maintenance_issues = query.offset(skip).limit(limit).all()
+    
+    return [build_maintenance_response(issue) for issue in maintenance_issues]
 

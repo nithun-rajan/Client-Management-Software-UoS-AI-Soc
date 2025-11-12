@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.task import Task
+from app.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
-from typing import List, Optional
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -29,6 +30,7 @@ def list_tasks(
     status: Optional[str] = Query(None),
     priority: Optional[str] = Query(None),
     tenancy_id: Optional[str] = Query(None),
+    assigned_to: Optional[str] = Query(None, description="Filter by assigned_to (user name)"),
     db: Session = Depends(get_db)
 ):
     """List all tasks with optional filtering"""
@@ -41,8 +43,35 @@ def list_tasks(
         query = query.filter(Task.priority == priority)
     if tenancy_id:
         query = query.filter(Task.tenancy_id == tenancy_id)
+    if assigned_to:
+        # Filter by assigned_to name (case-insensitive partial match)
+        query = query.filter(Task.assigned_to.ilike(f"%{assigned_to}%"))
     
-    tasks = query.offset(skip).limit(limit).all()
+    tasks = query.order_by(Task.due_date.asc().nulls_last(), Task.created_at.desc()).offset(skip).limit(limit).all()
+    return tasks
+
+
+@router.get("/my-tasks", response_model=list[TaskResponse])
+def get_my_tasks(
+    skip: int = Query(0, ge=0), 
+    limit: int = Query(100, ge=1, le=1000), 
+    status: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all tasks assigned to the current user (by name)"""
+    user_name = f"{current_user.first_name} {current_user.last_name}"
+    
+    query = db.query(Task).filter(Task.assigned_to == user_name)
+    
+    if status:
+        query = query.filter(Task.status == status)
+    if priority:
+        query = query.filter(Task.priority == priority)
+    
+    # Order by: due date (ascending, nulls last), then by created date (newest first)
+    tasks = query.order_by(Task.due_date.asc().nulls_last(), Task.created_at.desc()).offset(skip).limit(limit).all()
     return tasks
 
 @router.get("/{task_id}", response_model=TaskResponse)

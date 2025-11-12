@@ -60,39 +60,6 @@ export default function Applicants() {
 
   const matchingMutation = usePropertyMatching(5, 50);
 
-  const handleFindMatches = async (applicantId: string) => {
-    setSelectedApplicantId(applicantId);
-    try {
-      const result = await matchingMutation.mutateAsync(applicantId);
-      if (result.matches.length > 0) {
-        setMatchesDialogOpen(true);
-      }
-    } catch (error) {
-      // Error is already handled by the mutation's onError
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div>
-        <Header title="Tenants" />
-        <div className="p-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-64" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  const matchData = matchingMutation.data;
-
   // Filter applicants that are tenants (willing_to_rent = true)
   const tenants = useMemo(() => applicants?.filter((a: any) => a.willing_to_rent !== false) || [], [applicants]);
 
@@ -131,6 +98,39 @@ export default function Applicants() {
       tenant.rent_budget_max?.toString().includes(query)
     ));
   }, [filteredByTab, searchQuery]);
+
+  const matchData = matchingMutation.data;
+
+  const handleFindMatches = async (applicantId: string) => {
+    setSelectedApplicantId(applicantId);
+    try {
+      const result = await matchingMutation.mutateAsync(applicantId);
+      if (result.matches.length > 0) {
+        setMatchesDialogOpen(true);
+      }
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+    }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  };
+
+  if (isLoading) {
+    return (
+      <div>
+        <Header title="Tenants" />
+        <div className="p-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-64" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

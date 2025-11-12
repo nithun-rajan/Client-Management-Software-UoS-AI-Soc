@@ -880,26 +880,15 @@ def main():
         db.commit()
         print("[OK] Linked vendors to properties-for-sale")
 
-        # Assign properties to landlords
-        print("\n[*] Assigning properties to landlords...")
-        for i, property in enumerate(properties_rent):
-            # Assign each property to a random landlord
-            landlord = random.choice(landlords)
-            property.landlord_id = landlord.id
-        
-        db.commit()
-        print("[OK] Properties assigned to landlords")
-
-        # Create test user for login (agent.test@example.com)
+        # Create test user for login (agent.test@example.com) BEFORE assignments
         print("\n" + "="*60)
         print("[*] Creating test user for login...")
         print("="*60)
         
         try:
-            # Use the same organization that was created for agents (or create it if it doesn't exist)
+            # Use the same organization that was created for agents
             test_org = db.query(Organization).filter(Organization.name == "UoS Scouting Challenge").first()
             if not test_org:
-                # Fallback to any existing organization
                 test_org = db.query(Organization).first()
                 if not test_org:
                     test_org = Organization(name="UoS Scouting Challenge")
@@ -929,25 +918,131 @@ def main():
             else:
                 print(f"[OK] Test agent already exists: {test_agent.email}")
                 print(f"     Organization: {test_org.name}")
-            
-            # Assign some applicants to test agent
-            if tenants:
-                assigned_count = 0
-                for applicant in tenants[:3]:  # Assign first 3
-                    if not applicant.assigned_agent_id:
-                        applicant.assigned_agent_id = test_agent.id
-                        applicant.notes = f"Test assignment to {test_agent.first_name} {test_agent.last_name}"
-                        assigned_count += 1
-                db.commit()
-                if assigned_count > 0:
-                    print(f"[OK] Assigned {assigned_count} applicants to test agent")
-            
-            print("[OK] Test user setup complete")
         except Exception as e:
             print(f"[WARNING] Could not create test user: {e}")
             import traceback
             traceback.print_exc()
-            print("   You can create it manually by running: python create_test_data.py")
+            test_agent = None
+
+        # Assign all created data to agents
+        print("\n" + "="*60)
+        print("[*] Assigning data to agents...")
+        print("="*60)
+        
+        # Get all agents (including test agent)
+        all_agents = db.query(User).filter(
+            User.role == Role.AGENT,
+            User.is_active == True
+        ).all()
+        
+        if all_agents:
+            # Sort agents by name for consistent assignment
+            all_agents = sorted(all_agents, key=lambda a: (a.first_name or "", a.last_name or ""))
+            
+            # Split agents into sales and lettings teams
+            if len(all_agents) >= 6:
+                sales_agents = all_agents[:4]
+                lettings_agents = all_agents[4:]
+            else:
+                mid = (len(all_agents) + 1) // 2
+                sales_agents = all_agents[:mid]
+                lettings_agents = all_agents[mid:]
+            
+            # Ensure at least one agent in each team
+            if not sales_agents and lettings_agents:
+                sales_agents.append(lettings_agents.pop(0))
+            if not lettings_agents and sales_agents:
+                lettings_agents.append(sales_agents.pop(0))
+            
+            print(f"Sales Team ({len(sales_agents)} agents):")
+            for agent in sales_agents:
+                print(f"  - {agent.first_name} {agent.last_name} ({agent.email})")
+            
+            print(f"\nLettings Team ({len(lettings_agents)} agents):")
+            for agent in lettings_agents:
+                print(f"  - {agent.first_name} {agent.last_name} ({agent.email})")
+            
+            # 1. Assign Properties to agents (managed_by)
+            print(f"\n[*] Assigning properties to agents...")
+            all_properties_for_assign = properties_rent + properties_sale
+            for i, property in enumerate(all_properties_for_assign):
+                # Distribute properties evenly across all agents
+                agent = all_agents[i % len(all_agents)]
+                property.managed_by = agent.id
+            db.commit()
+            print(f"[OK] Assigned {len(all_properties_for_assign)} properties to agents")
+            
+            # 2. Assign Vendors to sales agents (managed_by)
+            print(f"\n[*] Assigning vendors to sales agents...")
+            for i, vendor in enumerate(vendors):
+                if sales_agents:
+                    agent = sales_agents[i % len(sales_agents)]
+                    vendor.managed_by = agent.id
+            db.commit()
+            print(f"[OK] Assigned {len(vendors)} vendors to sales agents")
+            
+            # 3. Assign Buyers to sales agents (assigned_agent_id)
+            print(f"\n[*] Assigning buyers to sales agents...")
+            for i, buyer in enumerate(buyers):
+                if sales_agents:
+                    agent = sales_agents[i % len(sales_agents)]
+                    buyer.assigned_agent_id = agent.id
+            db.commit()
+            print(f"[OK] Assigned {len(buyers)} buyers to sales agents")
+            
+            # 4. Assign Landlords to lettings agents (managed_by)
+            print(f"\n[*] Assigning landlords to lettings agents...")
+            for i, landlord in enumerate(landlords):
+                if lettings_agents:
+                    agent = lettings_agents[i % len(lettings_agents)]
+                    landlord.managed_by = agent.id
+            db.commit()
+            print(f"[OK] Assigned {len(landlords)} landlords to lettings agents")
+            
+            # 5. Assign Tenants/Applicants to lettings agents (assigned_agent_id)
+            print(f"\n[*] Assigning tenants to lettings agents...")
+            for i, tenant in enumerate(tenants):
+                if lettings_agents:
+                    agent = lettings_agents[i % len(lettings_agents)]
+                    tenant.assigned_agent_id = agent.id
+            db.commit()
+            print(f"[OK] Assigned {len(tenants)} tenants to lettings agents")
+            
+            # 6. Assign Tasks to agents (assigned_to - using agent name)
+            print(f"\n[*] Assigning tasks to agents...")
+            unassigned_tasks = [t for t in tasks if not t.assigned_to]
+            for i, task in enumerate(unassigned_tasks):
+                agent = all_agents[i % len(all_agents)]
+                agent_name = f"{agent.first_name} {agent.last_name}"
+                task.assigned_to = agent_name
+            db.commit()
+            print(f"[OK] Assigned {len(unassigned_tasks)} tasks to agents")
+            
+            print(f"\n[OK] All data assigned to agents!")
+            
+            # Verify test agent assignments
+            if test_agent:
+                test_agent_properties = db.query(Property).filter(Property.managed_by == test_agent.id).count()
+                test_agent_landlords = db.query(Landlord).filter(Landlord.managed_by == test_agent.id).count()
+                test_agent_vendors = db.query(Vendor).filter(Vendor.managed_by == test_agent.id).count()
+                test_agent_tenants = db.query(Applicant).filter(
+                    Applicant.assigned_agent_id == test_agent.id,
+                    Applicant.willing_to_rent == True,
+                    Applicant.buyer_type.is_(None)
+                ).count()
+                test_agent_buyers = db.query(Applicant).filter(
+                    Applicant.assigned_agent_id == test_agent.id,
+                    ((Applicant.willing_to_buy == True) | (Applicant.buyer_type.isnot(None)))
+                ).count()
+                test_agent_tasks = db.query(Task).filter(Task.assigned_to == f"{test_agent.first_name} {test_agent.last_name}").count()
+                
+                print(f"\n[OK] Test agent ({test_agent.email}) assignments:")
+                print(f"     Properties: {test_agent_properties}")
+                print(f"     Landlords: {test_agent_landlords}")
+                print(f"     Vendors: {test_agent_vendors}")
+                print(f"     Tenants: {test_agent_tenants}")
+                print(f"     Buyers: {test_agent_buyers}")
+                print(f"     Tasks: {test_agent_tasks}")
         
         # Summary
         print("\n" + "="*60)

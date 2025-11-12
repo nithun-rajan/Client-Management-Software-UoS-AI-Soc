@@ -120,3 +120,16 @@ export function useDeleteOffer() {
     },
   });
 }
+
+export function useMyOffers(filters?: { status?: string }) {
+  return useQuery({
+    queryKey: ["offers", "my", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append("status", filters.status);
+      
+      const { data } = await api.get(`/api/v1/offers/my-offers?${params.toString()}`);
+      return (data.offers || data) as Offer[];
+    },
+  });
+}

@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLandlords, useDeleteLandlord, useUpdateLandlord } from "@/hooks/useLandlords";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
@@ -69,50 +70,6 @@ export default function Landlords() {
     }
   };
 
-  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedLandlord) return;
-    
-    const formData = new FormData(e.currentTarget);
-    try {
-      await updateLandlord.mutateAsync({
-        id: selectedLandlord.id,
-        full_name: formData.get("full_name") as string,
-        email: formData.get("email") as string,
-        phone: formData.get("phone") as string || undefined,
-        address: formData.get("address") as string || undefined,
-      });
-      setEditOpen(false);
-      setSelectedLandlord(null);
-    } catch (error) {
-      // Error toast is handled by the hook
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div>
-        <Header title="Landlords" />
-        <div className="p-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-48" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   // Get team agent IDs
   const teamAgentIds = teamAgents?.map(a => a.id) || [];
   
@@ -144,6 +101,50 @@ export default function Landlords() {
       landlord.status?.toLowerCase().includes(query)
     ));
   }, [filteredByTab, searchQuery]);
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedLandlord) return;
+    
+    const formData = new FormData(e.currentTarget);
+    try {
+      await updateLandlord.mutateAsync({
+        id: selectedLandlord.id,
+        full_name: formData.get("full_name") as string,
+        email: formData.get("email") as string,
+        phone: formData.get("phone") as string || undefined,
+        address: formData.get("address") as string || undefined,
+      });
+      setEditOpen(false);
+      setSelectedLandlord(null);
+    } catch (error) {
+      // Error toast is handled by the hook
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (isLoading) {
+    return (
+      <div>
+        <Header title="Landlords" />
+        <div className="p-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

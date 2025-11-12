@@ -100,6 +100,83 @@ export default function Properties() {
     }
   };
 
+  // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
+  const propertiesForLetting = useMemo(() => {
+    return properties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [properties]);
+
+  // Filter my properties for letting
+  const myPropertiesForLetting = useMemo(() => {
+    return myProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [myProperties]);
+
+  // Filter team properties for letting
+  const teamPropertiesForLetting = useMemo(() => {
+    return teamProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [teamProperties]);
+
+  // Filter available properties for letting
+  const availablePropertiesForLetting = useMemo(() => {
+    return availableProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [availableProperties]);
+
+  // Filter properties based on active tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "my-properties") {
+      // Use backend endpoint for my properties
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-me") {
+      // Use backend endpoint for managed by me
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-team") {
+      // Use backend endpoint for team properties
+      return teamPropertiesForLetting;
+    } else if (activeTab === "available") {
+      // Use backend endpoint for available properties
+      return availablePropertiesForLetting;
+    }
+    // "all" tab - return all properties
+    return propertiesForLetting;
+  }, [propertiesForLetting, myPropertiesForLetting, teamPropertiesForLetting, availablePropertiesForLetting, activeTab]);
+
+  // Apply filters and search
+  const filteredProperties = useMemo(() => {
+    let filtered = filteredByTab;
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((property) => {
+        return (
+          property.address_line1?.toLowerCase().includes(query) ||
+          property.city?.toLowerCase().includes(query) ||
+          property.postcode?.toLowerCase().includes(query) ||
+          property.property_type?.toLowerCase().includes(query) ||
+          property.bedrooms?.toString().includes(query) ||
+          property.bathrooms?.toString().includes(query) ||
+          property.rent?.toString().includes(query)
+        );
+      });
+    }
+    
+    return filtered;
+  }, [filteredByTab, searchQuery]);
+
+  // Calculate counts for each tab (using backend data)
+  const allCount = propertiesForLetting.length;
+  const myPropertiesCount = myPropertiesForLetting.length;
+  const managedByMeCount = myPropertiesForLetting.length;
+  const managedByTeamCount = teamPropertiesForLetting.length;
+  const availableCount = availablePropertiesForLetting.length;
+
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -125,21 +202,6 @@ export default function Properties() {
       });
     }
   };
-
-  if (isLoading || (activeTab === "my-properties" && isLoadingMyProperties) || (activeTab === "managed-by-me" && isLoadingMyProperties) || (activeTab === "managed-by-team" && isLoadingTeamProperties) || (activeTab === "available" && isLoadingAvailableProperties)) {
-    return (
-      <div>
-        <Header title="Properties for Letting" />
-        <div className="p-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-64" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Helper function to normalize photo URLs
   const normalizePhotoUrl = (url: string): string => {
@@ -251,82 +313,20 @@ export default function Properties() {
     toast({ title: "Success", description: "Properties exported to CSV" });
   };
 
-  // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
-  const propertiesForLetting = useMemo(() => {
-    return properties?.filter(
-      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-    ) || [];
-  }, [properties]);
-
-  // Filter my properties for letting
-  const myPropertiesForLetting = useMemo(() => {
-    return myProperties?.filter(
-      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-    ) || [];
-  }, [myProperties]);
-
-  // Filter team properties for letting
-  const teamPropertiesForLetting = useMemo(() => {
-    return teamProperties?.filter(
-      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-    ) || [];
-  }, [teamProperties]);
-
-  // Filter available properties for letting
-  const availablePropertiesForLetting = useMemo(() => {
-    return availableProperties?.filter(
-      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-    ) || [];
-  }, [availableProperties]);
-
-  // Filter properties based on active tab
-  const filteredByTab = useMemo(() => {
-    if (activeTab === "my-properties") {
-      // Use backend endpoint for my properties
-      return myPropertiesForLetting;
-    } else if (activeTab === "managed-by-me") {
-      // Use backend endpoint for managed by me
-      return myPropertiesForLetting;
-    } else if (activeTab === "managed-by-team") {
-      // Use backend endpoint for team properties
-      return teamPropertiesForLetting;
-    } else if (activeTab === "available") {
-      // Use backend endpoint for available properties
-      return availablePropertiesForLetting;
-    }
-    // "all" tab - return all properties
-    return propertiesForLetting;
-  }, [propertiesForLetting, myPropertiesForLetting, teamPropertiesForLetting, availablePropertiesForLetting, activeTab]);
-
-  // Apply filters and search
-  const filteredProperties = useMemo(() => {
-    let filtered = filteredByTab;
-    
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((property) => {
-        return (
-          property.address_line1?.toLowerCase().includes(query) ||
-          property.city?.toLowerCase().includes(query) ||
-          property.postcode?.toLowerCase().includes(query) ||
-          property.property_type?.toLowerCase().includes(query) ||
-          property.bedrooms?.toString().includes(query) ||
-          property.bathrooms?.toString().includes(query) ||
-          property.rent?.toString().includes(query)
-        );
-      });
-    }
-    
-    return filtered;
-  }, [filteredByTab, searchQuery]);
-
-  // Calculate counts for each tab (using backend data)
-  const allCount = propertiesForLetting.length;
-  const myPropertiesCount = myPropertiesForLetting.length;
-  const managedByMeCount = myPropertiesForLetting.length;
-  const managedByTeamCount = teamPropertiesForLetting.length;
-  const availableCount = availablePropertiesForLetting.length;
+  if (isLoading || (activeTab === "my-properties" && isLoadingMyProperties) || (activeTab === "managed-by-me" && isLoadingMyProperties) || (activeTab === "managed-by-team" && isLoadingTeamProperties) || (activeTab === "available" && isLoadingAvailableProperties)) {
+    return (
+      <div>
+        <Header title="Properties for Letting" />
+        <div className="p-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-64" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
