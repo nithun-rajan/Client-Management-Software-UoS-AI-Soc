@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Building2,
+  User,
+  UserCheck,
   Bed,
   Bath,
   Eye,
@@ -13,7 +15,6 @@ import {
   Download,
   Search,
   X,
-  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,8 @@ import { Input } from "@/components/ui/input";
 import { getFlatOrUnitNumber } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
 
 export default function PropertiesForSale() {
   const { data: properties, isLoading } = useProperties();
@@ -50,8 +51,47 @@ export default function PropertiesForSale() {
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [managedByMe, setManagedByMe] = useState(false);
-  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Filter properties that are for sale (have sales_status set and vendor_id, no landlord_id)
+  const propertiesForSale = useMemo(() => properties?.filter(
+    (p) => p.sales_status && p.sales_status.trim() !== "" && p.vendor_id && !p.landlord_id
+  ) || [], [properties]);
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return propertiesForSale.filter((property: any) => property.managed_by === user?.id);
+    } else if (activeTab === "managed-by-team") {
+      return propertiesForSale.filter((property: any) => property.managed_by && teamAgentIds.includes(property.managed_by));
+    }
+    return propertiesForSale;
+  }, [propertiesForSale, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = propertiesForSale.length;
+  const managedByMeCount = propertiesForSale.filter((p: any) => p.managed_by === user?.id).length;
+  const managedByTeamCount = propertiesForSale.filter((p: any) => p.managed_by && teamAgentIds.includes(p.managed_by)).length;
+
+  // Apply search filter
+  const filteredProperties = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((property: any) => (
+      property.address_line1?.toLowerCase().includes(query) ||
+      property.city?.toLowerCase().includes(query) ||
+      property.postcode?.toLowerCase().includes(query) ||
+      property.property_type?.toLowerCase().includes(query) ||
+      property.bedrooms?.toString().includes(query) ||
+      property.bathrooms?.toString().includes(query) ||
+      property.asking_price?.toString().includes(query) ||
+      property.sales_status?.toLowerCase().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
 
   const handleGenerateValuationPack = async (property: any) => {
     setSelectedProperty(property);
@@ -100,38 +140,6 @@ export default function PropertiesForSale() {
     );
   }
 
-  // Filter properties that are for sale (have sales_status set and vendor_id, no landlord_id)
-  const propertiesForSale = properties?.filter(
-    (p) => p.sales_status && p.sales_status.trim() !== "" && p.vendor_id && !p.landlord_id
-  ) || [];
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-
-  // Apply filters and search
-  const filteredProperties = propertiesForSale.filter((property) => {
-    // Managed by Me filter
-    if (managedByMe && property.managed_by !== user?.id) return false;
-    
-    // Managed by My Team filter
-    if (managedByMyTeam && (!property.managed_by || !teamAgentIds.includes(property.managed_by))) return false;
-    
-    // Search filter
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      property.address_line1?.toLowerCase().includes(query) ||
-      property.city?.toLowerCase().includes(query) ||
-      property.postcode?.toLowerCase().includes(query) ||
-      property.property_type?.toLowerCase().includes(query) ||
-      property.bedrooms?.toString().includes(query) ||
-      property.bathrooms?.toString().includes(query) ||
-      property.asking_price?.toString().includes(query) ||
-      property.sales_status?.toLowerCase().includes(query)
-    );
-  });
-
   const handleRequestPhoto = (property: any) => {
     toast({
       title: "Request Sent",
@@ -143,8 +151,8 @@ export default function PropertiesForSale() {
     <div>
       <Header title="Properties for Sale" />
       <div className="p-6">
-        {/* Search Bar and Filters */}
-        <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -169,29 +177,24 @@ export default function PropertiesForSale() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-me"
-                checked={managedByMe}
-                onCheckedChange={(checked) => setManagedByMe(checked === true)}
-              />
-              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
-                Managed by Me
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-team"
-                checked={managedByMyTeam}
-                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
-              />
-              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
-                Managed by My Team
-              </Label>
-            </div>
-          </div>
         </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Properties ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="mb-6 flex justify-end">
           <Button onClick={() => {}} variant="outline">
@@ -330,10 +333,10 @@ export default function PropertiesForSale() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title={managedByMe || managedByMyTeam ? "No properties found with this filter" : "No properties for sale yet"}
-            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Properties with sales status will appear here"}
-            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Property"}
-            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
+            title={searchQuery || activeTab !== "all" ? "No properties found" : "No properties for sale yet"}
+            description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Properties with sales status will appear here"}
+            actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Property"}
+            onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
           />
         )}
       </div>

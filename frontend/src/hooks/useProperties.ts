@@ -34,6 +34,9 @@ export function useCreateProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "my-properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "team"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "available"] });
       toast.success("Property created successfully");
     },
     onError: (error: any) => {
@@ -52,6 +55,9 @@ export function useUpdateProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "my-properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "team"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "available"] });
       toast.success("Property updated successfully");
     },
     onError: (error: any) => {
@@ -69,10 +75,53 @@ export function useDeleteProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "my-properties"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "team"] });
+      queryClient.invalidateQueries({ queryKey: ["properties", "available"] });
       toast.success("Property deleted successfully");
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || "Failed to delete property");
+    },
+  });
+}
+
+export function useMyProperties() {
+  return useQuery({
+    queryKey: ["properties", "my-properties"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/properties/my-properties");
+      return data as Property[];
+    },
+  });
+}
+
+export function useTeamProperties(teamAgentIds: string[]) {
+  return useQuery({
+    queryKey: ["properties", "team", teamAgentIds],
+    queryFn: async () => {
+      // Fetch properties for each team agent and combine
+      const promises = teamAgentIds.map(agentId =>
+        api.get(`/api/v1/properties?managed_by=${agentId}`)
+      );
+      const results = await Promise.all(promises);
+      // Combine and deduplicate properties
+      const allProperties = results.flatMap(result => result.data as Property[]);
+      const uniqueProperties = Array.from(
+        new Map(allProperties.map(p => [p.id, p])).values()
+      );
+      return uniqueProperties;
+    },
+    enabled: teamAgentIds.length > 0,
+  });
+}
+
+export function useAvailableProperties() {
+  return useQuery({
+    queryKey: ["properties", "available"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/search/properties?status=available");
+      return data as Property[];
     },
   });
 }

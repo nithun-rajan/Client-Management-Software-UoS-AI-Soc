@@ -35,7 +35,7 @@ class AgentAvailabilityCreate(BaseModel):
     start_time: time
     end_time: time
     is_available: bool = True
-    recurrence_type: str = Field(default="weekly", regex="^(weekly|biweekly|monthly)$")
+    recurrence_type: str = Field(default="weekly", pattern="^(weekly|biweekly|monthly)$")
     valid_from: date
     valid_to: Optional[date] = None
 

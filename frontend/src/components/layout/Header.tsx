@@ -48,9 +48,10 @@ import {
 
 interface HeaderProps {
   title: string;
+  hideQuickAdd?: boolean;
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, hideQuickAdd = false }: HeaderProps) {
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [landlordOpen, setLandlordOpen] = useState(false);
   const [applicantOpen, setApplicantOpen] = useState(false);
@@ -262,13 +263,14 @@ export default function Header({ title }: HeaderProps) {
       <h1 className="text-2xl font-bold">{title}</h1>
 
         <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="default" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Quick Add
-              </Button>
-            </DropdownMenuTrigger>
+          {!hideQuickAdd && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Quick Add
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setPropertyOpen(true)}>
                 + New Property
@@ -287,6 +289,7 @@ export default function Header({ title }: HeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
 
                   {/* Live Bell */}
         <DropdownMenu>

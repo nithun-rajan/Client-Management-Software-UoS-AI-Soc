@@ -13,7 +13,7 @@ from app.schemas.calendar import (
     ViewingScheduleRuleCreate
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/calendar", tags=["calendar"])
 
 
 @router.post(

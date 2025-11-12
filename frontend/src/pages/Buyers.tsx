@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   ShoppingBag,
+  User,
+  UserCheck,
   Mail,
   Phone,
   Bed,
@@ -12,7 +14,6 @@ import {
   AlertCircle,
   Search,
   X,
-  UserCheck,
 } from "lucide-react";
 import {
   Card,
@@ -41,8 +42,8 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
 
 export default function Buyers() {
   const navigate = useNavigate();
@@ -52,10 +53,49 @@ export default function Buyers() {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [managedByMe, setManagedByMe] = useState(false);
-  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   const matchingMutation = usePropertyMatching(5, 50);
+
+  // Filter applicants that are buyers (willing_to_buy = true)
+  const buyers = useMemo(() => applicants?.filter((a: any) => a.willing_to_buy) || [], [applicants]);
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return buyers.filter((buyer: any) => buyer.assigned_agent_id === user?.id);
+    } else if (activeTab === "managed-by-team") {
+      return buyers.filter((buyer: any) => buyer.assigned_agent_id && teamAgentIds.includes(buyer.assigned_agent_id));
+    }
+    return buyers;
+  }, [buyers, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = buyers.length;
+  const managedByMeCount = buyers.filter((b: any) => b.assigned_agent_id === user?.id).length;
+  const managedByTeamCount = buyers.filter((b: any) => b.assigned_agent_id && teamAgentIds.includes(b.assigned_agent_id)).length;
+
+  // Apply search filter
+  const filteredBuyers = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((buyer: any) => (
+      buyer.first_name?.toLowerCase().includes(query) ||
+      buyer.last_name?.toLowerCase().includes(query) ||
+      buyer.email?.toLowerCase().includes(query) ||
+      buyer.phone?.includes(query) ||
+      buyer.preferred_locations?.toLowerCase().includes(query) ||
+      buyer.status?.toLowerCase().includes(query) ||
+      buyer.mortgage_status?.toLowerCase().includes(query) ||
+      buyer.buyer_type?.toLowerCase().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
+  
+  const matchData = matchingMutation.data;
 
   const handleFindMatches = async (buyerId: string) => {
     setSelectedBuyerId(buyerId);
@@ -67,6 +107,10 @@ export default function Buyers() {
     } catch (error) {
       // Error is already handled by the mutation's onError
     }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
 
   if (isLoading) {
@@ -84,48 +128,12 @@ export default function Buyers() {
     );
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  // Filter applicants that are buyers (willing_to_buy = true)
-  const buyers = applicants?.filter((a: any) => a.willing_to_buy) || [];
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-
-  // Apply filters and search
-  const filteredBuyers = buyers.filter((buyer: any) => {
-    // Managed by Me filter
-    if (managedByMe && buyer.assigned_agent_id !== user?.id) return false;
-    
-    // Managed by My Team filter
-    if (managedByMyTeam && (!buyer.assigned_agent_id || !teamAgentIds.includes(buyer.assigned_agent_id))) return false;
-    
-    // Search filter
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      buyer.first_name?.toLowerCase().includes(query) ||
-      buyer.last_name?.toLowerCase().includes(query) ||
-      buyer.email?.toLowerCase().includes(query) ||
-      buyer.phone?.includes(query) ||
-      buyer.preferred_locations?.toLowerCase().includes(query) ||
-      buyer.status?.toLowerCase().includes(query) ||
-      buyer.mortgage_status?.toLowerCase().includes(query) ||
-      buyer.buyer_type?.toLowerCase().includes(query)
-    );
-  });
-  
-  const matchData = matchingMutation.data;
-
   return (
     <div>
       <Header title="Buyers" />
       <div className="p-6">
-        {/* Search Bar and Filters */}
-        <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -150,29 +158,24 @@ export default function Buyers() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-me"
-                checked={managedByMe}
-                onCheckedChange={(checked) => setManagedByMe(checked === true)}
-              />
-              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
-                Managed by Me
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-team"
-                checked={managedByMyTeam}
-                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
-              />
-              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
-                Managed by My Team
-              </Label>
-            </div>
-          </div>
         </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Buyers ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredBuyers.map((buyer) => (
@@ -272,10 +275,10 @@ export default function Buyers() {
         {filteredBuyers.length === 0 && (
           <EmptyState
             icon={ShoppingBag}
-            title={managedByMe || managedByMyTeam ? "No buyers found with this filter" : "No buyers yet"}
-            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your buyer database by adding your first buyer"}
-            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Buyer"}
-            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
+            title={searchQuery || activeTab !== "all" ? "No buyers found" : "No buyers yet"}
+            description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your buyer database by adding your first buyer"}
+            actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Buyer"}
+            onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
           />
         )}
       </div>

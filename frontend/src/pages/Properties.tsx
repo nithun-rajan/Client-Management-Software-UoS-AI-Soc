@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProperties } from "@/hooks/useProperties";
+import { useProperties, useMyProperties, useTeamProperties, useAvailableProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
@@ -49,13 +49,22 @@ import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
   const { user } = useAuth();
   const { data: teamAgents } = useMyTeamAgents();
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  const { data: myProperties, isLoading: isLoadingMyProperties, refetch: refetchMyProperties } = useMyProperties();
+  const { data: teamProperties, isLoading: isLoadingTeamProperties, refetch: refetchTeamProperties } = useTeamProperties(teamAgentIds);
+  const { data: availableProperties, isLoading: isLoadingAvailableProperties, refetch: refetchAvailableProperties } = useAvailableProperties();
+  
+  const refetchAll = () => {
+    refetch();
+    refetchMyProperties();
+    refetchTeamProperties();
+    refetchAvailableProperties();
+  };
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -65,8 +74,6 @@ export default function Properties() {
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [managedByMe, setManagedByMe] = useState(false);
-  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -83,7 +90,7 @@ export default function Properties() {
       await api.delete(`/api/v1/properties/${selectedProperty.id}/`);
       toast({ title: "Success", description: "Property deleted successfully" });
       setDeleteOpen(false);
-      refetch();
+      refetchAll();
     } catch (error) {
       toast({
         title: "Error",
@@ -109,7 +116,7 @@ export default function Properties() {
       });
       toast({ title: "Success", description: "Property updated successfully" });
       setEditOpen(false);
-      refetch();
+      refetchAll();
     } catch (error) {
       toast({
         title: "Error",
@@ -119,7 +126,7 @@ export default function Properties() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || (activeTab === "my-properties" && isLoadingMyProperties) || (activeTab === "managed-by-me" && isLoadingMyProperties) || (activeTab === "managed-by-team" && isLoadingTeamProperties) || (activeTab === "available" && isLoadingAvailableProperties)) {
     return (
       <div>
         <Header title="Properties for Letting" />
@@ -162,7 +169,7 @@ export default function Properties() {
         title: "Success",
         description: "Valuation pack generated successfully",
       });
-      refetch();
+      refetchAll();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -219,35 +226,49 @@ export default function Properties() {
     ) || [];
   }, [properties]);
 
+  // Filter my properties for letting
+  const myPropertiesForLetting = useMemo(() => {
+    return myProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [myProperties]);
+
+  // Filter team properties for letting
+  const teamPropertiesForLetting = useMemo(() => {
+    return teamProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [teamProperties]);
+
+  // Filter available properties for letting
+  const availablePropertiesForLetting = useMemo(() => {
+    return availableProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [availableProperties]);
+
   // Filter properties based on active tab
   const filteredByTab = useMemo(() => {
     if (activeTab === "my-properties") {
-      // Filter by current user's managed properties
-      return propertiesForLetting.filter((p) => p.managed_by === user?.id);
+      // Use backend endpoint for my properties
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-me") {
+      // Use backend endpoint for managed by me
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-team") {
+      // Use backend endpoint for team properties
+      return teamPropertiesForLetting;
     } else if (activeTab === "available") {
-      // Filter by available status
-      return propertiesForLetting.filter((p) => p.status === "available");
+      // Use backend endpoint for available properties
+      return availablePropertiesForLetting;
     }
     // "all" tab - return all properties
     return propertiesForLetting;
-  }, [propertiesForLetting, activeTab, user?.id]);
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  }, [propertiesForLetting, myPropertiesForLetting, teamPropertiesForLetting, availablePropertiesForLetting, activeTab]);
 
   // Apply filters and search
   const filteredProperties = useMemo(() => {
     let filtered = filteredByTab;
-    
-    // Managed by Me filter
-    if (managedByMe) {
-      filtered = filtered.filter((p) => p.managed_by === user?.id);
-    }
-    
-    // Managed by My Team filter
-    if (managedByMyTeam) {
-      filtered = filtered.filter((p) => p.managed_by && teamAgentIds.includes(p.managed_by));
-    }
     
     // Search filter
     if (searchQuery) {
@@ -266,38 +287,21 @@ export default function Properties() {
     }
     
     return filtered;
-  }, [filteredByTab, managedByMe, managedByMyTeam, searchQuery, user?.id, teamAgentIds]);
+  }, [filteredByTab, searchQuery]);
 
-  // Calculate counts for each tab
+  // Calculate counts for each tab (using backend data)
   const allCount = propertiesForLetting.length;
-  const myPropertiesCount = propertiesForLetting.filter((p) => p.managed_by === user?.id).length;
-  const availableCount = propertiesForLetting.filter((p) => p.status === "available").length;
+  const myPropertiesCount = myPropertiesForLetting.length;
+  const managedByMeCount = myPropertiesForLetting.length;
+  const managedByTeamCount = teamPropertiesForLetting.length;
+  const availableCount = availablePropertiesForLetting.length;
 
   return (
     <div>
       <Header title="Properties for Letting" />
       <div className="p-6">
-        {/* Filter Tabs */}
+        {/* Search Bar */}
         <div className="mb-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="all">
-                All Properties ({allCount})
-              </TabsTrigger>
-              <TabsTrigger value="my-properties">
-                <User className="mr-2 h-4 w-4" />
-                My Properties ({myPropertiesCount})
-              </TabsTrigger>
-              <TabsTrigger value="available">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Available ({availableCount})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Search Bar and Filters */}
-        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -322,28 +326,33 @@ export default function Properties() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-me"
-                checked={managedByMe}
-                onCheckedChange={(checked) => setManagedByMe(checked === true)}
-              />
-              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
-                Managed by Me
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-team"
-                checked={managedByMyTeam}
-                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
-              />
-              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
-                Managed by My Team
-              </Label>
-            </div>
-          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="all">
+                All Properties ({allCount})
+              </TabsTrigger>
+              <TabsTrigger value="my-properties">
+                <User className="mr-2 h-4 w-4" />
+                My Properties ({myPropertiesCount})
+              </TabsTrigger>
+              <TabsTrigger value="managed-by-me">
+                <User className="mr-2 h-4 w-4" />
+                Managed by Me ({managedByMeCount})
+              </TabsTrigger>
+              <TabsTrigger value="managed-by-team">
+                <UserCheck className="mr-2 h-4 w-4" />
+                Managed by My Team ({managedByTeamCount})
+              </TabsTrigger>
+              <TabsTrigger value="available">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Available ({availableCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="mb-6 flex justify-end">
@@ -477,10 +486,10 @@ export default function Properties() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title={managedByMe || managedByMyTeam ? "No properties found with this filter" : "No properties for letting yet"}
-            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Get started by adding your first property for letting to begin managing your portfolio"}
-            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Property"}
-            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
+            title={searchQuery ? "No properties found" : "No properties for letting yet"}
+            description={searchQuery ? "Try adjusting your search to see more results" : "Get started by adding your first property for letting to begin managing your portfolio"}
+            actionLabel={searchQuery ? undefined : "+ Add Property"}
+            onAction={searchQuery ? undefined : () => {}}
           />
         )}
       </div>

@@ -10,6 +10,8 @@ Implements automated viewing scheduling based on blueprint requirements:
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, time, date
 from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.core.database import get_db
 from app.models.calendar import AgentAvailability, PropertyViewingSlot, ViewingScheduleRule
 from app.models.viewing import Viewing
 from app.models.property import Property
@@ -54,6 +56,9 @@ class CalendarService:
             # Select the best slot (earliest available that matches preferences)
             best_slot = self._select_best_slot(available_slots, applicant)
             
+            if not best_slot:
+                return {"success": False, "error": "No suitable slot found"}
+            
             # Create viewing appointment
             viewing = Viewing(
                 property_id=property_id,
@@ -69,14 +74,32 @@ class CalendarService:
             self.db.refresh(viewing)
             
             # Send automatic confirmations if enabled
-            if await self._should_auto_confirm(property_id):
+            auto_confirmed = await self._should_auto_confirm(property_id)
+            if auto_confirmed:
                 await self._send_auto_confirmation(viewing)
+            
+            # Convert viewing to dict for response
+            viewing_dict = {
+                "id": viewing.id,
+                "property_id": viewing.property_id,
+                "applicant_id": viewing.applicant_id,
+                "scheduled_date": viewing.scheduled_date.isoformat() if hasattr(viewing.scheduled_date, 'isoformat') else str(viewing.scheduled_date),
+                "duration_minutes": viewing.duration_minutes,
+                "status": viewing.status,
+                "assigned_agent": viewing.assigned_agent
+            }
             
             return {
                 "success": True,
-                "viewing": viewing,
-                "slot_selected": best_slot,
-                "auto_confirmed": await self._should_auto_confirm(property_id)
+                "viewing": viewing_dict,
+                "slot_selected": {
+                    "datetime": best_slot['datetime'].isoformat() if hasattr(best_slot['datetime'], 'isoformat') else str(best_slot['datetime']),
+                    "agent_id": best_slot.get('agent_id'),
+                    "agent_name": best_slot.get('agent_name', ''),
+                    "duration_minutes": best_slot.get('duration_minutes', 30),
+                    "property_id": best_slot.get('property_id')
+                },
+                "auto_confirmed": auto_confirmed
             }
             
         except Exception as e:
@@ -98,8 +121,15 @@ class CalendarService:
             (ViewingScheduleRule.property_id.is_(None))
         ).first()
         
+        # Create default rules object if none exist
         if not rules:
-            rules = ViewingScheduleRule()  # Default rules
+            from types import SimpleNamespace
+            rules = SimpleNamespace(
+                min_advance_hours=24,
+                max_advance_days=14,
+                slot_duration_minutes=30,
+                buffer_between_viewings=15
+            )
         
         # Calculate date range for search
         start_date = datetime.now() + timedelta(hours=rules.min_advance_hours)
@@ -127,18 +157,45 @@ class CalendarService:
     
     async def _get_available_agents(self, property_id: str, start_date: datetime, end_date: datetime) -> List[Dict]:
         """Get agents available for viewings in the date range"""
-        # This would integrate with your user/agent management system
-        # For now, return mock data
-        return [
-            {
-                "agent_id": "agent_1",
-                "name": "John Smith",
-                "availability": self._get_agent_availability("agent_1", start_date, end_date)
-            }
-        ]
+        # Get agents from the database (users with agent role or assigned to property)
+        from app.models.user import User
+        from app.models.property import Property
+        
+        # Try to get property's managed_by agent first
+        property_obj = self.db.query(Property).filter(Property.id == property_id).first()
+        agents = []
+        
+        if property_obj and property_obj.managed_by:
+            agent = self.db.query(User).filter(User.id == property_obj.managed_by).first()
+            if agent:
+                agents.append({
+                    "agent_id": agent.id,
+                    "name": f"{agent.first_name or ''} {agent.last_name or ''}".strip() or agent.email,
+                    "availability": self._get_agent_availability(agent.id, start_date, end_date)
+                })
+        
+        # If no agent found, get any active user as fallback
+        if not agents:
+            fallback_agent = self.db.query(User).filter(User.is_active == True).first()
+            if fallback_agent:
+                agents.append({
+                    "agent_id": fallback_agent.id,
+                    "name": f"{fallback_agent.first_name or ''} {fallback_agent.last_name or ''}".strip() or fallback_agent.email,
+                    "availability": self._get_agent_availability(fallback_agent.id, start_date, end_date)
+                })
+        
+        # If still no agents, return mock data
+        if not agents:
+            agents.append({
+                "agent_id": "default",
+                "name": "Default Agent",
+                "availability": self._get_agent_availability("default", start_date, end_date)
+            })
+        
+        return agents
     
     async def _generate_day_slots(self, slot_date: date, available_agents: List[Dict], 
-                                property_id: str, rules: ViewingScheduleRule) -> List[Dict]:
+                                property_id: str, rules) -> List[Dict]:
         """Generate available slots for a specific day"""
         slots = []
         
@@ -168,25 +225,31 @@ class CalendarService:
     
     async def _is_slot_available(self, property_id: str, agent_id: str, slot_datetime: datetime) -> bool:
         """Check if a time slot is available (no existing viewings)"""
-        # Check for property conflicts
+        # Check for property conflicts (within 30 minutes of slot time)
+        slot_start = slot_datetime
+        slot_end = slot_datetime + timedelta(minutes=30)
+        
         property_conflict = self.db.query(Viewing).filter(
             Viewing.property_id == property_id,
-            Viewing.scheduled_date == slot_datetime,
+            Viewing.scheduled_date >= slot_start,
+            Viewing.scheduled_date < slot_end,
             Viewing.status.in_(["scheduled", "confirmed"])
         ).first()
         
         if property_conflict:
             return False
         
-        # Check for agent conflicts
-        agent_conflict = self.db.query(Viewing).filter(
-            Viewing.assigned_agent == agent_id,
-            Viewing.scheduled_date == slot_datetime,
-            Viewing.status.in_(["scheduled", "confirmed"])
-        ).first()
-        
-        if agent_conflict:
-            return False
+        # Check for agent conflicts (if agent_id is valid)
+        if agent_id and agent_id != "default":
+            agent_conflict = self.db.query(Viewing).filter(
+                Viewing.assigned_agent == agent_id,
+                Viewing.scheduled_date >= slot_start,
+                Viewing.scheduled_date < slot_end,
+                Viewing.status.in_(["scheduled", "confirmed"])
+            ).first()
+            
+            if agent_conflict:
+                return False
         
         return True
     
@@ -219,9 +282,9 @@ class CalendarService:
         """Send automatic confirmation for scheduled viewing"""
         # This would integrate with your messaging service
         # For now, just update the viewing record
-        viewing.confirmation_sent = True
         viewing.status = "confirmed"
         self.db.commit()
+        self.db.refresh(viewing)
     
     def _get_agent_availability(self, agent_id: str, start_date: datetime, end_date: datetime) -> Dict:
         """Get agent availability for date range (mock implementation)"""
@@ -273,11 +336,6 @@ class CalendarService:
 
 
 # Service instance management
-_calendar_service = None
-
-def get_calendar_service(db: Session) -> CalendarService:
-    """Get calendar service instance"""
-    global _calendar_service
-    if _calendar_service is None:
-        _calendar_service = CalendarService(db)
-    return _calendar_service
+def get_calendar_service(db: Session = Depends(get_db)):
+    """Get calendar service instance - dependency function for FastAPI"""
+    return CalendarService(db)

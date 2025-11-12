@@ -222,10 +222,33 @@ def get_my_properties(
     """
     Get properties managed by the current authenticated user
     
-    CRM Feature: "My Properties" - Shows which properties are managed by which user
+    CRM Feature: "My Properties" - Shows which properties are managed by which user.
+    Includes properties where:
+    - Property.managed_by == current_user.id, OR
+    - Property's landlord.managed_by == current_user.id, OR
+    - Property's vendor.managed_by == current_user.id
     """
+    from sqlalchemy import or_
+    
+    # Get landlord IDs managed by current user
+    managed_landlord_ids = [landlord.id for landlord in db.query(Landlord.id).filter(Landlord.managed_by == current_user.id).all()]
+    
+    # Get vendor IDs managed by current user
+    managed_vendor_ids = [vendor.id for vendor in db.query(Vendor.id).filter(Vendor.managed_by == current_user.id).all()]
+    
+    # Query properties where:
+    # 1. Property.managed_by == current_user.id, OR
+    # 2. Property's landlord is managed by current_user, OR
+    # 3. Property's vendor is managed by current_user
+    filters = [Property.managed_by == current_user.id]
+    
+    if managed_landlord_ids:
+        filters.append(Property.landlord_id.in_(managed_landlord_ids))
+    if managed_vendor_ids:
+        filters.append(Property.vendor_id.in_(managed_vendor_ids))
+    
     properties = db.query(Property)\
-        .filter(Property.managed_by == current_user.id)\
+        .filter(or_(*filters))\
         .order_by(Property.created_at.desc())\
         .offset(skip)\
         .limit(limit)\
