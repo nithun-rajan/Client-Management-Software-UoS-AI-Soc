@@ -176,7 +176,6 @@ def list_expiring_properties(db: Session = Depends(get_db)):
     result = []
     for p in expiring_properties:
         result.append(_get_property_response_with_compliance(p, db))
->>>>>>> 1beb198f49eb490ec287d983f2a37961dc5bab61
     return result
 
 @router.get("/my-properties", response_model=list[PropertyResponse])
