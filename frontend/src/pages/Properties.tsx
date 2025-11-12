@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -47,10 +46,14 @@ import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
   const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -59,6 +62,8 @@ export default function Properties() {
   const [valuationPackOpen, setValuationPackOpen] = useState(false);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -209,8 +214,18 @@ export default function Properties() {
     (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
   ) || [];
 
-  // Filter properties based on search query
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredProperties = propertiesForLetting.filter((property) => {
+    // Managed by Me filter
+    if (managedByMe && property.managed_by !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!property.managed_by || !teamAgentIds.includes(property.managed_by))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -229,8 +244,8 @@ export default function Properties() {
     <div>
       <Header title="Properties for Letting" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -254,6 +269,28 @@ export default function Properties() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -388,10 +425,10 @@ export default function Properties() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="No properties for letting yet"
-            description="Get started by adding your first property for letting to begin managing your portfolio"
-            actionLabel="+ Add Property"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No properties found with this filter" : "No properties for letting yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Get started by adding your first property for letting to begin managing your portfolio"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Property"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

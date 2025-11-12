@@ -31,16 +31,22 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Landlord } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Landlords() {
   const { data: landlords, isLoading } = useLandlords();
   const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const deleteLandlord = useDeleteLandlord();
   const updateLandlord = useUpdateLandlord();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (landlord: Landlord) => {
     setSelectedLandlord(landlord);
@@ -107,8 +113,18 @@ export default function Landlords() {
       .slice(0, 2);
   };
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Apply filters and search
   const filteredLandlords = landlords?.filter((landlord: Landlord) => {
+    // Managed by Me filter
+    if (managedByMe && landlord.managed_by !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!landlord.managed_by || !teamAgentIds.includes(landlord.managed_by))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -125,8 +141,8 @@ export default function Landlords() {
     <div>
       <Header title="Landlords" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -150,6 +166,28 @@ export default function Landlords() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -232,10 +270,10 @@ export default function Landlords() {
         {filteredLandlords.length === 0 && (
           <EmptyState
             icon={UserCheck}
-            title="No landlords yet"
-            description="Start building your network by adding your first landlord"
-            actionLabel="+ Add Landlord"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No landlords found with this filter" : "No landlords yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your network by adding your first landlord"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Landlord"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

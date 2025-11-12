@@ -185,7 +185,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
                 tabs.push({ value: "landlords", label: "Landlords" });
               }
               if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
-                tabs.push({ value: "applicants", label: "Applicants" });
+                tabs.push({ value: "applicants", label: "Tenants" });
               }
               tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
               return tabs.map((t) => (
@@ -226,33 +226,33 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
           {/* VENDORS */}
           {managedEntities?.vendors && managedEntities.vendors.length > 0 && (
-            <TabsContent value="vendors" className="mt-4">
+            <TabsContent value="vendors" className="mt-4 space-y-3">
               {managedLoading ? (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
                     <Skeleton key={i} className="h-16" />
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {managedEntities.vendors.map((vendor) => (
-                    <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="block">
-                      <Card className="hover:shadow-sm transition-shadow cursor-pointer">
-                        <CardContent className="flex items-center gap-3 p-4">
+                managedEntities.vendors.map((vendor) => (
+                  <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="block">
+                    <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
                           <UserCheck className="h-5 w-5 text-muted-foreground" />
-                          <div className="flex-1">
-                            <span className="text-sm font-medium hover:text-primary transition-colors">{vendor.name}</span>
+                          <div>
+                            <p className="font-medium hover:text-primary transition-colors">{vendor.name}</p>
                             {vendor.property_count > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
                                 {vendor.property_count} {vendor.property_count === 1 ? "property" : "properties"}
                               </p>
                             )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
               )}
             </TabsContent>
           )}
@@ -319,7 +319,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
             </TabsContent>
           )}
 
-          {/* APPLICANTS */}
+          {/* TENANTS */}
           {managedEntities?.applicants && managedEntities.applicants.length > 0 && (
             <TabsContent value="applicants" className="mt-4 space-y-3">
               {managedLoading ? (

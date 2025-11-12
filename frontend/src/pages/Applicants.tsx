@@ -43,14 +43,20 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Applicants() {
   const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
   const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -90,8 +96,18 @@ export default function Applicants() {
   // Filter applicants that are tenants (willing_to_rent = true)
   const tenants = applicants?.filter((a: any) => a.willing_to_rent !== false) || [];
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredTenants = tenants.filter((tenant: any) => {
+    // Managed by Me filter
+    if (managedByMe && tenant.assigned_agent_id !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!tenant.assigned_agent_id || !teamAgentIds.includes(tenant.assigned_agent_id))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -112,8 +128,8 @@ export default function Applicants() {
     <div>
       <Header title="Tenants" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -137,6 +153,28 @@ export default function Applicants() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -234,10 +272,10 @@ export default function Applicants() {
           {filteredTenants.length === 0 && (
             <EmptyState
               icon={Users}
-              title="No tenants yet"
-              description="Start building your tenant database by adding your first tenant"
-              actionLabel="+ Add Tenant"
-              onAction={() => {}}
+              title={managedByMe || managedByMyTeam ? "No tenants found with this filter" : "No tenants yet"}
+              description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your tenant database by adding your first tenant"}
+              actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Tenant"}
+              onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
             />
           )}
       </div>

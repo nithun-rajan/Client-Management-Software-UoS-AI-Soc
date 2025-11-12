@@ -40,14 +40,20 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Buyers() {
   const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
   const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -85,8 +91,18 @@ export default function Buyers() {
   // Filter applicants that are buyers (willing_to_buy = true)
   const buyers = applicants?.filter((a: any) => a.willing_to_buy) || [];
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredBuyers = buyers.filter((buyer: any) => {
+    // Managed by Me filter
+    if (managedByMe && buyer.assigned_agent_id !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!buyer.assigned_agent_id || !teamAgentIds.includes(buyer.assigned_agent_id))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -108,8 +124,8 @@ export default function Buyers() {
     <div>
       <Header title="Buyers" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -133,6 +149,28 @@ export default function Buyers() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -234,10 +272,10 @@ export default function Buyers() {
         {filteredBuyers.length === 0 && (
           <EmptyState
             icon={ShoppingBag}
-            title="No buyers yet"
-            description="Start building your buyer database by adding your first buyer"
-            actionLabel="+ Add Buyer"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No buyers found with this filter" : "No buyers yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your buyer database by adding your first buyer"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Buyer"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>
