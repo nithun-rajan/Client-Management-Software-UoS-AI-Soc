@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+import os
 
 from app.core.database import Base, engine, get_db
 import app.models  # ensure all models are registered before table creation
@@ -280,3 +282,10 @@ app.include_router(auth.router, prefix="/api/v1")  # 🔐 Authentication (by Ant
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")  # 🔧 Maintenance Management
 app.include_router(valuations.router, prefix="/api/v1")  # 💰 Valuation Management
+
+# Mount static files directory for uploaded files
+# Get the backend directory (parent of app directory)
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+uploads_dir = os.path.join(backend_dir, "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
