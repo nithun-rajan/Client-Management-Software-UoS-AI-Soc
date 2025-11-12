@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X, Upload, Trash2, ChevronUp, ChevronDown, Pencil, Check, X as XIcon, MoveUp, MoveDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
@@ -389,6 +389,12 @@ export default function PhotoGallery({
         if (!open) setIsEditing(false);
       }}>
         <DialogContent className="max-w-7xl w-full h-[90vh] p-0 bg-black/95 border-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Property Photo Gallery</DialogTitle>
+            <DialogDescription>
+              Viewing photo {currentIndex + 1} of {displayPhotos.length} for this property
+            </DialogDescription>
+          </DialogHeader>
           <div className="relative w-full h-full flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 text-white z-10">

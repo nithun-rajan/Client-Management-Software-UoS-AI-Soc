@@ -140,44 +140,12 @@ export default function PropertiesForSale() {
     );
   }
 
-<<<<<<< HEAD
   const handleRequestPhoto = (property: any) => {
     toast({
       title: "Request Sent",
       description: `Photo upload request sent to vendor for ${property.address_line1}`,
     });
-=======
-  // Filter properties that are for sale (have sales_status set and vendor_id, no landlord_id)
-  const propertiesForSale = properties?.filter(
-    (p) => p.sales_status && p.sales_status.trim() !== "" && p.vendor_id && !p.landlord_id
-  ) || [];
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-
-  // Apply filters and search
-  const filteredProperties = propertiesForSale.filter((property) => {
-    // Managed by Me filter
-    if (managedByMe && property.managed_by !== user?.id) return false;
-    
-    // Managed by My Team filter
-    if (managedByMyTeam && (!property.managed_by || !teamAgentIds.includes(property.managed_by))) return false;
-    
-    // Search filter
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      property.address_line1?.toLowerCase().includes(query) ||
-      property.city?.toLowerCase().includes(query) ||
-      property.postcode?.toLowerCase().includes(query) ||
-      property.property_type?.toLowerCase().includes(query) ||
-      property.bedrooms?.toString().includes(query) ||
-      property.bathrooms?.toString().includes(query) ||
-      property.asking_price?.toString().includes(query) ||
-      property.sales_status?.toLowerCase().includes(query)
-    );
-  });
+  };
 
   // Helper function to normalize photo URLs
   const normalizePhotoUrl = (url: string): string => {
@@ -216,7 +184,6 @@ export default function PropertiesForSale() {
   // Handler for main photo update
   const handleMainPhotoUpdate = async (propertyId: string, url: string) => {
     refetch();
->>>>>>> origin/pivzavod-4
   };
 
   return (
