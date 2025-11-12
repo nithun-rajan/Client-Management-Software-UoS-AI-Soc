@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export interface Viewing {
   id: string;
@@ -16,15 +18,68 @@ export interface Viewing {
   property?: {
     id: string;
     address: string;
-    rent: number;
-    bedrooms: number;
+    rent?: number;
+    bedrooms?: number;
   };
   applicant?: {
     id: string;
     name: string;
-    email: string;
-    phone: string;
+    email?: string;
+    phone?: string;
   };
+}
+
+// React Query hooks
+export function useViewingsQuery(filters?: {
+  property_id?: string;
+  applicant_id?: string;
+  status?: string;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ['viewings', filters],
+    queryFn: async () => {
+      const { data } = await api.get('/api/v1/viewings/', { params: filters });
+      return (data.viewings || data) as Viewing[];
+    },
+  });
+}
+
+export function useViewing(id: string) {
+  return useQuery({
+    queryKey: ['viewings', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/viewings/${id}`);
+      return data as Viewing;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpcomingViewings(days: number = 7) {
+  return useQuery({
+    queryKey: ['viewings', 'upcoming', days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/v1/viewings/', { params: { limit: 100 } });
+      const viewings = (data.viewings || data) as Viewing[];
+      const now = new Date();
+      const futureDate = new Date(now);
+      futureDate.setDate(futureDate.getDate() + days);
+      
+      // Filter viewings scheduled in the next N days and not cancelled
+      return viewings.filter((viewing) => {
+        const scheduledDate = new Date(viewing.scheduled_date);
+        return (
+          scheduledDate >= now &&
+          scheduledDate <= futureDate &&
+          viewing.status !== 'cancelled' &&
+          viewing.status !== 'completed'
+        );
+      }).sort((a, b) => 
+        new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+      );
+    },
+  });
 }
 
 export const useViewings = () => {
