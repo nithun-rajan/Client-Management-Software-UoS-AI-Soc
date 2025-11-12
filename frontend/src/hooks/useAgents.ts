@@ -65,3 +65,30 @@ export function useAgent(agentId: string) {
   });
 }
 
+export interface ManagedEntity {
+  id: string;
+  name: string;
+  property_count: number;
+}
+
+export interface AgentManagedEntities {
+  vendors: ManagedEntity[];
+  buyers: ManagedEntity[];
+  landlords: ManagedEntity[];
+  applicants: ManagedEntity[];
+  properties: ManagedEntity[];
+}
+
+export function useAgentManagedEntities(agentId: string) {
+  return useQuery({
+    queryKey: ["agent", agentId, "managed"],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/agents/${agentId}/managed`);
+      return data as AgentManagedEntities;
+    },
+    enabled: !!agentId,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
