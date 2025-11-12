@@ -14,8 +14,9 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  User,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -45,9 +47,11 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
+  const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -56,6 +60,7 @@ export default function Properties() {
   const [valuationPackOpen, setValuationPackOpen] = useState(false);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -202,30 +207,71 @@ export default function Properties() {
   };
 
   // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
-  const propertiesForLetting = properties?.filter(
-    (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-  ) || [];
+  const propertiesForLetting = useMemo(() => {
+    return properties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [properties]);
+
+  // Filter properties based on active tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "my-properties") {
+      // Filter by current user's managed properties
+      return propertiesForLetting.filter((p) => p.managed_by === user?.id);
+    } else if (activeTab === "available") {
+      // Filter by available status
+      return propertiesForLetting.filter((p) => p.status === "available");
+    }
+    // "all" tab - return all properties
+    return propertiesForLetting;
+  }, [propertiesForLetting, activeTab, user?.id]);
 
   // Filter properties based on search query
-  const filteredProperties = propertiesForLetting.filter((property) => {
-    if (!searchQuery) return true;
+  const filteredProperties = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
     
     const query = searchQuery.toLowerCase();
-    return (
-      property.address_line1?.toLowerCase().includes(query) ||
-      property.city?.toLowerCase().includes(query) ||
-      property.postcode?.toLowerCase().includes(query) ||
-      property.property_type?.toLowerCase().includes(query) ||
-      property.bedrooms?.toString().includes(query) ||
-      property.bathrooms?.toString().includes(query) ||
-      property.rent?.toString().includes(query)
-    );
-  }) || [];
+    return filteredByTab.filter((property) => {
+      return (
+        property.address_line1?.toLowerCase().includes(query) ||
+        property.city?.toLowerCase().includes(query) ||
+        property.postcode?.toLowerCase().includes(query) ||
+        property.property_type?.toLowerCase().includes(query) ||
+        property.bedrooms?.toString().includes(query) ||
+        property.bathrooms?.toString().includes(query) ||
+        property.rent?.toString().includes(query)
+      );
+    });
+  }, [filteredByTab, searchQuery]);
+
+  // Calculate counts for each tab
+  const allCount = propertiesForLetting.length;
+  const myPropertiesCount = propertiesForLetting.filter((p) => p.managed_by === user?.id).length;
+  const availableCount = propertiesForLetting.filter((p) => p.status === "available").length;
 
   return (
     <div>
       <Header title="Properties for Letting" />
       <div className="p-6">
+        {/* Filter Tabs */}
+        <div className="mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="all">
+                All Properties ({allCount})
+              </TabsTrigger>
+              <TabsTrigger value="my-properties">
+                <User className="mr-2 h-4 w-4" />
+                My Properties ({myPropertiesCount})
+              </TabsTrigger>
+              <TabsTrigger value="available">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Available ({availableCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">
