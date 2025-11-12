@@ -18,6 +18,7 @@ from .maintenance import MaintenanceIssue
 from .sales import SalesProgression, SalesOffer
 from .notification import Notification
 from .tickets import Ticket
+from .calendar import AgentAvailability, PropertyViewingSlot, ViewingScheduleRule, ViewingConflict
 
 __all__ = [
     "Applicant",
@@ -41,5 +42,9 @@ __all__ = [
     "SalesOffer",
     "Notification",
     "Ticket",
+    "AgentAvailability",
+    "PropertyViewingSlot",
+    "ViewingScheduleRule",
+    "ViewingConflict",
 ]
 
