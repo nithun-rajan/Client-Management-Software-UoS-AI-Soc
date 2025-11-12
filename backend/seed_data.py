@@ -347,7 +347,7 @@ def create_vendors(db: Session, count: int = 8):
     print(f"[OK] Created {count} vendors")
     return vendors
 
-def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, count: int = 30):
+def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, agents: list = None, count: int = 30):
     """Create diverse tasks with different priorities, statuses, and assignments"""
     print(f"\n[*] Creating {count} tasks...")
     
@@ -403,6 +403,11 @@ def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, 
     
     # Collect all assignable people
     assignable_people = []
+    
+    # Add agents (using first_name + last_name) - agents should be assignable
+    if agents:
+        for agent in agents:
+            assignable_people.append(f"{agent.first_name} {agent.last_name}")
     
     # Add landlords (using full_name)
     for landlord in landlords:
@@ -842,8 +847,8 @@ def main():
         buyers = create_buyers(db, count=10)
         vendors = create_vendors(db, count=8)
         
-        # Create diverse tasks
-        tasks = create_tasks(db, landlords, vendors, tenants, count=30)
+        # Create diverse tasks (including tasks assigned to agents)
+        tasks = create_tasks(db, landlords, vendors, tenants, agents=agents, count=30)
         
         # Create diverse tickets
         all_properties = properties_rent + properties_sale

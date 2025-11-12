@@ -107,16 +107,18 @@ export default function Tasks() {
     setShowUserSuggestions(false);
   };
   
-  // Combined list of assignable people (users + landlords + vendors + applicants/tenants/buyers)
+  // Combined list of assignable people (users + agents + landlords + vendors + applicants/tenants/buyers)
   const getAllAssignablePeople = () => {
-    const people: Array<{ id: string; name: string; type: "user" | "landlord" | "vendor" | "applicant" }> = [];
+    const people: Array<{ id: string; name: string; type: "user" | "agent" | "landlord" | "vendor" | "applicant" }> = [];
     
-    // Add users
+    // Add users (including agents)
     users?.forEach((user) => {
+      // Check if user is an agent
+      const isAgent = user.role === "agent";
       people.push({
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
-        type: "user"
+        type: isAgent ? "agent" : "user"
       });
     });
     
@@ -272,7 +274,8 @@ export default function Tasks() {
       case "applicant":
         return `/applicants/${person.id}`;
       case "user":
-        // Users don't have a detail page, return null
+      case "agent":
+        // Users and agents don't have detail pages, return null
         return null;
       default:
         return null;

@@ -72,9 +72,31 @@ def get_tasks_by_priority(priority: str, db: Session = Depends(get_db)):
 #get by uid
 @router.get("/assigned/{user_id}", response_model=list[TaskResponse])
 def get_tasks_assigned_to_user(user_id: str, db: Session = Depends(get_db)):
-    """Get all tasks assigned to a specific user"""
+    """Get all tasks assigned to a specific user (by user ID)"""
     tasks = db.query(Task).filter(Task.assigned_to == user_id).all()
     return tasks
+
+#get by assigned name (full name)
+@router.get("/assigned-to/{assigned_name:path}", response_model=list[TaskResponse])
+def get_tasks_assigned_to_name(assigned_name: str, db: Session = Depends(get_db)):
+    """Get all tasks assigned to a specific person by their full name"""
+    # URL decode the name in case it was encoded
+    from urllib.parse import unquote
+    decoded_name = unquote(assigned_name)
+    
+    # Query tasks - try exact match first, then case-insensitive
+    tasks = db.query(Task).filter(
+        (Task.assigned_to == decoded_name) | 
+        (Task.assigned_to.ilike(f"%{decoded_name}%"))
+    ).all()
+    
+    # Filter to exact matches (case-insensitive) to avoid partial matches
+    exact_tasks = [
+        task for task in tasks 
+        if task.assigned_to and task.assigned_to.strip().lower() == decoded_name.strip().lower()
+    ]
+    
+    return exact_tasks
 
 
 @router.put("/{task_id}", response_model=TaskResponse)
