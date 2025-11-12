@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db
-from app.models import Property, Applicant, MatchHistory, PropertyMatch
+from app.models import Property, Applicant, MatchHistory
 """from app.models.property import Property
 from app.models.applicant import Applicant
 from app.models.match_history import MatchHistory"""
@@ -520,7 +520,7 @@ async def send_matches_to_applicant(
         db.flush()  # Get ID without commit
         
         # Generate booking link
-        from app.services.public_booking_service import get_public_booking_service
+        from app.services.calendar_public_booking_service import get_public_booking_service
         booking_service = get_public_booking_service(db)
         booking_result = await booking_service.generate_booking_link(match_record.id)
         
