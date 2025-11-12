@@ -84,6 +84,7 @@ class PropertyResponse(PropertyBase):
     managed_by: str | None = None
     management_type: str | None = None
     management_notes: str | None = None
+    managed_by_name: str | None = None  # Full name of agent managing the landlord/vendor
 
     # COMPLIANCE DATES
     epc_expiry: date | None = None # Energy Performance Certificate.

@@ -49,6 +49,7 @@ export interface Property {
   managed_by?: string;
   management_type?: string;
   management_notes?: string;
+  managed_by_name?: string;  // Full name of agent managing the landlord/vendor
   created_at: string;
   updated_at?: string;
 }
@@ -68,6 +69,8 @@ export interface Landlord {
   notes?: string;
   last_contacted_at?: string;
   landlord_complete_info?: boolean;
+  managed_by?: string;
+  managed_by_name?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -99,6 +102,8 @@ export interface Vendor {
   instructed_property_id?: string;
   vendor_complete_info?: boolean;
   last_contacted_at?: string;
+  managed_by?: string;
+  managed_by_name?: string;
   // Optional fields that may not be in model yet
   id_document_type?: string;
   proof_of_address_type?: string;
@@ -139,6 +144,8 @@ export interface Applicant {
   willing_to_buy?: boolean;
   buyer_questions_answered?: boolean;
   tenant_questions_answered?: boolean;
+  assigned_agent_id?: string;
+  managed_by_name?: string;
   last_contacted_at?: string;
   created_at: string;
   updated_at?: string;

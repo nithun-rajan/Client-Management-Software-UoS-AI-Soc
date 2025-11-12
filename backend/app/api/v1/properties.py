@@ -40,6 +40,31 @@ router = APIRouter(prefix="/properties", tags=["properties"])
 
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
+def enrich_property_response(property: Property, db: Session) -> dict:
+    """Enrich property response with managed_by and managed_by_name from landlord or vendor"""
+    response_dict = PropertyResponse.model_validate(property).model_dump()
+    
+    # Get managed_by from landlord or vendor
+    agent_id = None
+    if property.landlord_id:
+        landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+        if landlord and landlord.managed_by:
+            agent_id = landlord.managed_by
+    elif property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor and vendor.managed_by:
+            agent_id = vendor.managed_by
+    
+    # Set managed_by in response if we found an agent
+    if agent_id:
+        response_dict["managed_by"] = agent_id
+        # Get agent name
+        agent = db.query(User).filter(User.id == agent_id).first()
+        if agent:
+            response_dict["managed_by_name"] = f"{agent.first_name or ''} {agent.last_name or ''}".strip()
+    
+    return response_dict
+
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db)
@@ -98,7 +123,8 @@ def create_property(
             pass
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(db_property)
+    response_dict = enrich_property_response(db_property, db)
+    response = PropertyResponse(**response_dict)
     if db_property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == db_property.landlord_id).first()
         if landlord:
@@ -154,7 +180,15 @@ def list_properties(
     result = []
     
     for property in properties:
-        result.append(_get_property_response_with_compliance(property, db))
+        # Use compliance helper and enrich with managed_by info
+        response = _get_property_response_with_compliance(property, db)
+        # Enrich with managed_by information from landlord/vendor
+        response_dict = enrich_property_response(property, db)
+        if response_dict.get("managed_by"):
+            response.managed_by = response_dict["managed_by"]
+        if response_dict.get("managed_by_name"):
+            response.managed_by_name = response_dict["managed_by_name"]
+        result.append(response)
         
     return result
 
@@ -199,7 +233,8 @@ def get_my_properties(
     
     result = []
     for property in properties:
-        response = PropertyResponse.model_validate(property)
+        response_dict = enrich_property_response(property, db)
+        response = PropertyResponse(**response_dict)
         # Include landlord information if property has a landlord
         if property.landlord_id:
             landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -226,10 +261,14 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(property)
     
-    response = PropertyResponse.model_validate(property)
-    # Compliance Checks
-    response.is_compliant = property.is_compliant
-    response.expiring_documents = property.expiring_documents
+    # Use compliance helper and enrich with managed_by info
+    response = _get_property_response_with_compliance(property, db)
+    # Enrich with managed_by information from landlord/vendor
+    response_dict = enrich_property_response(property, db)
+    if response_dict.get("managed_by"):
+        response.managed_by = response_dict["managed_by"]
+    if response_dict.get("managed_by_name"):
+        response.managed_by_name = response_dict["managed_by_name"]
     # Include landlord information if property has a landlord
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -275,7 +314,8 @@ def update_property(
     db.refresh(property)
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(property)
+    response_dict = enrich_property_response(property, db)
+    response = PropertyResponse(**response_dict)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
         if landlord:
@@ -319,7 +359,8 @@ def patch_property(
     db.refresh(property)
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(property)
+    response_dict = enrich_property_response(property, db)
+    response = PropertyResponse(**response_dict)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
         if landlord:

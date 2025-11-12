@@ -13,6 +13,7 @@ import {
   Download,
   Search,
   X,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,15 +35,23 @@ import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { getFlatOrUnitNumber } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function PropertiesForSale() {
   const { data: properties, isLoading } = useProperties();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const { toast } = useToast();
   const [valuationPackOpen, setValuationPackOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleGenerateValuationPack = async (property: any) => {
     setSelectedProperty(property);
@@ -96,8 +105,18 @@ export default function PropertiesForSale() {
     (p) => p.sales_status && p.sales_status.trim() !== "" && p.vendor_id && !p.landlord_id
   ) || [];
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredProperties = propertiesForSale.filter((property) => {
+    // Managed by Me filter
+    if (managedByMe && property.managed_by !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!property.managed_by || !teamAgentIds.includes(property.managed_by))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -124,8 +143,8 @@ export default function PropertiesForSale() {
     <div>
       <Header title="Properties for Sale" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -149,6 +168,28 @@ export default function PropertiesForSale() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -221,9 +262,24 @@ export default function PropertiesForSale() {
                       </p>
                     )}
                   </div>
-                  <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
-                    {property.property_type}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
+                      {property.property_type}
+                    </span>
+                    {property.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {property.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -274,10 +330,10 @@ export default function PropertiesForSale() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="No properties for sale yet"
-            description="Properties with sales status will appear here"
-            actionLabel="+ Add Property"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No properties found with this filter" : "No properties for sale yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Properties with sales status will appear here"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Property"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

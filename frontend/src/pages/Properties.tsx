@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
   User,
+  UserCheck,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -48,10 +48,14 @@ import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
   const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -61,6 +65,8 @@ export default function Properties() {
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -226,23 +232,41 @@ export default function Properties() {
     return propertiesForLetting;
   }, [propertiesForLetting, activeTab, user?.id]);
 
-  // Filter properties based on search query
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredProperties = useMemo(() => {
-    if (!searchQuery) return filteredByTab;
+    let filtered = filteredByTab;
     
-    const query = searchQuery.toLowerCase();
-    return filteredByTab.filter((property) => {
-      return (
-        property.address_line1?.toLowerCase().includes(query) ||
-        property.city?.toLowerCase().includes(query) ||
-        property.postcode?.toLowerCase().includes(query) ||
-        property.property_type?.toLowerCase().includes(query) ||
-        property.bedrooms?.toString().includes(query) ||
-        property.bathrooms?.toString().includes(query) ||
-        property.rent?.toString().includes(query)
-      );
-    });
-  }, [filteredByTab, searchQuery]);
+    // Managed by Me filter
+    if (managedByMe) {
+      filtered = filtered.filter((p) => p.managed_by === user?.id);
+    }
+    
+    // Managed by My Team filter
+    if (managedByMyTeam) {
+      filtered = filtered.filter((p) => p.managed_by && teamAgentIds.includes(p.managed_by));
+    }
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((property) => {
+        return (
+          property.address_line1?.toLowerCase().includes(query) ||
+          property.city?.toLowerCase().includes(query) ||
+          property.postcode?.toLowerCase().includes(query) ||
+          property.property_type?.toLowerCase().includes(query) ||
+          property.bedrooms?.toString().includes(query) ||
+          property.bathrooms?.toString().includes(query) ||
+          property.rent?.toString().includes(query)
+        );
+      });
+    }
+    
+    return filtered;
+  }, [filteredByTab, managedByMe, managedByMyTeam, searchQuery, user?.id, teamAgentIds]);
 
   // Calculate counts for each tab
   const allCount = propertiesForLetting.length;
@@ -272,8 +296,8 @@ export default function Properties() {
           </Tabs>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -297,6 +321,28 @@ export default function Properties() {
                 <X className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -365,9 +411,24 @@ export default function Properties() {
                       </p>
                     )}
                   </div>
-                  <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
-                    {property.property_type}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
+                      {property.property_type}
+                    </span>
+                    {property.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {property.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -416,10 +477,10 @@ export default function Properties() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="No properties for letting yet"
-            description="Get started by adding your first property for letting to begin managing your portfolio"
-            actionLabel="+ Add Property"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No properties found with this filter" : "No properties for letting yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Get started by adding your first property for letting to begin managing your portfolio"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Property"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

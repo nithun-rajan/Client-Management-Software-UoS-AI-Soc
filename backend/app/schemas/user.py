@@ -31,4 +31,16 @@ class UserRead(UserBase):
     is_active: bool
     organization_id: uuid.UUID
     branch_id: uuid.UUID | None
+    agent_profile: dict | None = None  # Agent profile settings
+
+# Agent profile update schema
+class AgentProfileUpdate(AppBaseModel):
+    name: str | None = None
+    title: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    office: str | None = None
+    qualifications: str | None = None
+    avatarUrl: str | None = None
+    kpis: dict | None = None
 

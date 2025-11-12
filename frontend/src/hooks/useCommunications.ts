@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import api from "@/lib/api";
 
 const API_URL = "http://localhost:8000/api/v1";
 
@@ -194,4 +196,27 @@ export function useCommunications() {
     getLandlordCommunications,
     getApplicantCommunications,
   };
+}
+
+// React Query hooks for dashboard
+export function useUnreadCommunications(limit: number = 10) {
+  return useQuery({
+    queryKey: ["communications", "unread", limit],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/messaging", {
+        params: { is_read: false, limit },
+      });
+      return data as Communication[];
+    },
+  });
+}
+
+export function useCommunicationStats() {
+  return useQuery({
+    queryKey: ["communications", "stats"],
+    queryFn: async () => {
+      const { data } = await api.get("/api/v1/messaging/stats/summary");
+      return data as CommunicationStats;
+    },
+  });
 }

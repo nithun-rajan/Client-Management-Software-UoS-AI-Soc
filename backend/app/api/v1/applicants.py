@@ -1,5 +1,5 @@
 
-from typing import List, Optional, Optional
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -17,6 +17,15 @@ router = APIRouter(prefix="/applicants", tags=["applicants"])
 
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def enrich_applicant_response(applicant: Applicant, db: Session) -> dict:
+    """Enrich applicant response with managed_by_name"""
+    response_dict = ApplicantResponse.model_validate(applicant).model_dump()
+    if applicant.assigned_agent_id:
+        agent = db.query(User).filter(User.id == applicant.assigned_agent_id).first()
+        if agent:
+            response_dict["managed_by_name"] = f"{agent.first_name or ''} {agent.last_name or ''}".strip()
+    return response_dict
 
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
@@ -72,7 +81,7 @@ def create_applicant(
             # Don't fail the request if notification fails
             pass
     
-    return db_applicant
+    return ApplicantResponse(**enrich_applicant_response(db_applicant, db))
 
 @router.get("/", response_model=List[ApplicantResponse])
 def list_applicants(
@@ -89,7 +98,7 @@ def list_applicants(
         query = query.filter(Applicant.assigned_agent_id == assigned_agent_id)
     
     applicants = query.order_by(Applicant.last_contacted_at.desc().nulls_last(), Applicant.created_at.desc()).offset(skip).limit(limit).all()
-    return applicants
+    return [ApplicantResponse(**enrich_applicant_response(a, db)) for a in applicants]
 
 @router.get("/my-applicants", response_model=List[ApplicantResponse])
 def get_my_applicants(
@@ -114,7 +123,7 @@ def get_my_applicants(
         .limit(limit)\
         .all()
     
-    return applicants
+    return [ApplicantResponse(**enrich_applicant_response(a, db)) for a in applicants]
 
 @router.get("/{applicant_id}", response_model=ApplicantResponse)
 def get_applicant(applicant_id: str, db: Session = Depends(get_db)):
@@ -122,7 +131,7 @@ def get_applicant(applicant_id: str, db: Session = Depends(get_db)):
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
     if not applicant:
         raise HTTPException(status_code=404, detail="Applicant not found")
-    return applicant
+    return ApplicantResponse(**enrich_applicant_response(applicant, db))
 
 @router.put("/{applicant_id}", response_model=ApplicantResponse)
 def update_applicant(
@@ -140,7 +149,7 @@ def update_applicant(
 
     db.commit()
     db.refresh(applicant)
-    return applicant
+    return ApplicantResponse(**enrich_applicant_response(applicant, db))
 
 @router.delete("/{applicant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_applicant(applicant_id: str, db: Session = Depends(get_db)):
@@ -181,7 +190,7 @@ def search_buyers(
         query = query.filter(Applicant.has_property_to_sell == has_property_to_sell)
     
     buyers = query.offset(skip).limit(limit).all()
-    return buyers
+    return [ApplicantResponse(**enrich_applicant_response(b, db)) for b in buyers]
 
 @router.get("/{applicant_id}/financial", response_model=ApplicantResponse)
 def get_applicant_financial_details(applicant_id: str, db: Session = Depends(get_db)):
@@ -189,7 +198,7 @@ def get_applicant_financial_details(applicant_id: str, db: Session = Depends(get
     applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
     if not applicant:
         raise HTTPException(status_code=404, detail="Applicant not found")
-    return applicant
+    return ApplicantResponse(**enrich_applicant_response(applicant, db))
 
 @router.put("/{applicant_id}/financial", response_model=ApplicantResponse)
 def update_applicant_financial_details(
@@ -219,7 +228,7 @@ def update_applicant_financial_details(
     
     db.commit()
     db.refresh(applicant)
-    return applicant
+    return ApplicantResponse(**enrich_applicant_response(applicant, db))
 
 @router.get("/search/ready-to-buy", response_model=List[ApplicantResponse])
 def get_ready_to_buy_applicants(
@@ -237,7 +246,7 @@ def get_ready_to_buy_applicants(
         )
     ).offset(skip).limit(limit).all()
     
-    return ready_buyers
+    return [ApplicantResponse(**enrich_applicant_response(b, db)) for b in ready_buyers]
 
 @router.put("/{applicant_id}/aml-status", response_model=ApplicantResponse)
 def update_applicant_aml_status(
@@ -258,7 +267,7 @@ def update_applicant_aml_status(
     
     db.commit()
     db.refresh(applicant)
-    return applicant
+    return ApplicantResponse(**enrich_applicant_response(applicant, db))
 
 @router.get("/chain-free/buyers", response_model=List[ApplicantResponse])
 def get_chain_free_buyers(
@@ -272,7 +281,7 @@ def get_chain_free_buyers(
         Applicant.buyer_type.isnot(None)
     ).offset(skip).limit(limit).all()
     
-    return chain_free_buyers
+    return [ApplicantResponse(**enrich_applicant_response(b, db)) for b in chain_free_buyers]
 
 
 @router.post("/sales", response_model=ApplicantResponse, status_code=status.HTTP_201_CREATED)
@@ -292,7 +301,7 @@ def create_sales_buyer(applicant_data: ApplicantCreate, db: Session = Depends(ge
     db.add(db_applicant)
     db.commit()
     db.refresh(db_applicant)
-    return db_applicant
+    return ApplicantResponse(**enrich_applicant_response(db_applicant, db))
 
 
 @router.get("/sales/matching/{property_id}", response_model=List[ApplicantResponse])
@@ -335,4 +344,4 @@ def find_matching_buyers(
     )
     
     matching_buyers = query.offset(skip).limit(limit).all()
-    return matching_buyers
+    return [ApplicantResponse(**enrich_applicant_response(b, db)) for b in matching_buyers]

@@ -30,15 +30,23 @@ import Header from "@/components/layout/Header";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Landlord } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Landlords() {
   const { data: landlords, isLoading } = useLandlords();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const deleteLandlord = useDeleteLandlord();
   const updateLandlord = useUpdateLandlord();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (landlord: Landlord) => {
     setSelectedLandlord(landlord);
@@ -105,8 +113,18 @@ export default function Landlords() {
       .slice(0, 2);
   };
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Apply filters and search
   const filteredLandlords = landlords?.filter((landlord: Landlord) => {
+    // Managed by Me filter
+    if (managedByMe && landlord.managed_by !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!landlord.managed_by || !teamAgentIds.includes(landlord.managed_by))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -123,8 +141,8 @@ export default function Landlords() {
     <div>
       <Header title="Landlords" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -149,6 +167,28 @@ export default function Landlords() {
               </Button>
             )}
           </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -158,27 +198,44 @@ export default function Landlords() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
-                    {getInitials(landlord.full_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-lg font-semibold">
-                      {landlord.full_name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      {landlord.aml_verified ? (
-                        <Badge className="gap-1 bg-accent text-white">
-                          <CheckCircle className="h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
+                      {getInitials(landlord.full_name)}
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-semibold">
+                        {landlord.full_name}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        {landlord.aml_verified ? (
+                          <Badge className="gap-1 bg-accent text-white">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {landlord.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {landlord.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -213,10 +270,10 @@ export default function Landlords() {
         {filteredLandlords.length === 0 && (
           <EmptyState
             icon={UserCheck}
-            title="No landlords yet"
-            description="Start building your network by adding your first landlord"
-            actionLabel="+ Add Landlord"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No landlords found with this filter" : "No landlords yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your network by adding your first landlord"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Landlord"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

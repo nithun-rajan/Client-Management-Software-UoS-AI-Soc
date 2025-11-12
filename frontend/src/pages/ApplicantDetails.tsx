@@ -18,6 +18,7 @@ import {
   Pencil,
   Trash2,
   Edit,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
 import NotesSection from "@/components/shared/NotesSection";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +58,7 @@ export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
@@ -287,18 +290,33 @@ export default function ApplicantDetails() {
             {/* Contact Info + Property Requirements Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
-                    {getInitials(applicant.first_name, applicant.last_name)}
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl">
-                      {applicant.first_name || ""} {applicant.last_name || ""}
-                    </CardTitle>
-                    <div className="mt-2 flex items-center gap-2">
-                      {applicant.status && <StatusBadge status={applicant.status} />}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
+                      {getInitials(applicant.first_name, applicant.last_name)}
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-2xl">
+                        {applicant.first_name || ""} {applicant.last_name || ""}
+                      </CardTitle>
+                      <div className="mt-2 flex items-center gap-2">
+                        {applicant.status && <StatusBadge status={applicant.status} />}
+                      </div>
                     </div>
                   </div>
+                  {applicant.assigned_agent_id === user?.id ? (
+                    <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Managed by Me
+                    </Badge>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                      <UserCheck className="h-4 w-4" />
+                      <span className="text-right whitespace-nowrap">
+                        Managed by: {applicant.managed_by_name || "Unassigned"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

@@ -15,6 +15,7 @@ import {
   Calendar,
   Search,
   X,
+  UserCheck,
 } from "lucide-react";
 import {
   Card,
@@ -41,13 +42,21 @@ import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Applicants() {
   const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -87,8 +96,18 @@ export default function Applicants() {
   // Filter applicants that are tenants (willing_to_rent = true)
   const tenants = applicants?.filter((a: any) => a.willing_to_rent !== false) || [];
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Apply filters and search
   const filteredTenants = tenants.filter((tenant: any) => {
+    // Managed by Me filter
+    if (managedByMe && tenant.assigned_agent_id !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!tenant.assigned_agent_id || !teamAgentIds.includes(tenant.assigned_agent_id))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -109,8 +128,8 @@ export default function Applicants() {
     <div>
       <Header title="Tenants" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -135,6 +154,28 @@ export default function Applicants() {
               </Button>
             )}
           </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -144,15 +185,32 @@ export default function Applicants() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
-                    {getInitials(applicant.first_name, applicant.last_name)}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
+                      {getInitials(applicant.first_name, applicant.last_name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold">
+                        {applicant.first_name} {applicant.last_name}
+                      </h3>
+                      <StatusBadge status={applicant.status} className="mt-1" />
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold">
-                      {applicant.first_name} {applicant.last_name}
-                    </h3>
-                    <StatusBadge status={applicant.status} className="mt-1" />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {applicant.assigned_agent_id === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {applicant.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -214,10 +272,10 @@ export default function Applicants() {
           {filteredTenants.length === 0 && (
             <EmptyState
               icon={Users}
-              title="No tenants yet"
-              description="Start building your tenant database by adding your first tenant"
-              actionLabel="+ Add Tenant"
-              onAction={() => {}}
+              title={managedByMe || managedByMyTeam ? "No tenants found with this filter" : "No tenants yet"}
+              description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your tenant database by adding your first tenant"}
+              actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Tenant"}
+              onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
             />
           )}
       </div>

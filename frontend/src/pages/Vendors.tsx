@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Search,
   X,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,16 +33,24 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Vendor } from "@/types";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Vendors() {
   const { data: vendors, isLoading } = useVendors();
   const { data: properties } = useProperties();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const deleteVendor = useDeleteVendor();
   const updateVendor = useUpdateVendor();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [managedByMe, setManagedByMe] = useState(false);
+  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
 
   const handleEdit = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -109,8 +118,18 @@ export default function Vendors() {
     return parts.join(" ");
   };
 
-  // Apply search
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Apply filters and search
   const filteredVendors = vendors?.filter((vendor: Vendor) => {
+    // Managed by Me filter
+    if (managedByMe && vendor.managed_by !== user?.id) return false;
+    
+    // Managed by My Team filter
+    if (managedByMyTeam && (!vendor.managed_by || !teamAgentIds.includes(vendor.managed_by))) return false;
+    
+    // Search filter
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -130,8 +149,8 @@ export default function Vendors() {
     <div>
       <Header title="Vendors" />
       <div className="p-6">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search Bar and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -156,6 +175,28 @@ export default function Vendors() {
               </Button>
             )}
           </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-me"
+                checked={managedByMe}
+                onCheckedChange={(checked) => setManagedByMe(checked === true)}
+              />
+              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
+                Managed by Me
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="managed-by-team"
+                checked={managedByMyTeam}
+                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
+              />
+              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
+                Managed by My Team
+              </Label>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -165,39 +206,56 @@ export default function Vendors() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
-                    {getInitials(vendor.first_name, vendor.last_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-lg font-semibold">
-                      {getFullName(vendor)}
-                    </h3>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <StatusBadge status={vendor.status} />
-                      {vendor.aml_status === "verified" ? (
-                        <Badge className="gap-1 bg-accent text-white">
-                          <CheckCircle className="h-3 w-3" />
-                          AML Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          AML Pending
-                        </Badge>
-                      )}
-                      {vendor.vendor_complete_info ? (
-                        <Badge className="gap-1 bg-green-500 text-white">
-                          <CheckCircle className="h-3 w-3" />
-                          Complete Info
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Incomplete Info
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
+                      {getInitials(vendor.first_name, vendor.last_name)}
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-semibold">
+                        {getFullName(vendor)}
+                      </h3>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <StatusBadge status={vendor.status} />
+                        {vendor.aml_status === "verified" ? (
+                          <Badge className="gap-1 bg-accent text-white">
+                            <CheckCircle className="h-3 w-3" />
+                            AML Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            AML Pending
+                          </Badge>
+                        )}
+                        {vendor.vendor_complete_info ? (
+                          <Badge className="gap-1 bg-green-500 text-white">
+                            <CheckCircle className="h-3 w-3" />
+                            Complete Info
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Incomplete Info
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {vendor.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {vendor.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -232,10 +290,10 @@ export default function Vendors() {
         {filteredVendors.length === 0 && (
           <EmptyState
             icon={Store}
-            title="No vendors yet"
-            description="Start building your sales network by adding your first vendor"
-            actionLabel="+ Add Vendor"
-            onAction={() => {}}
+            title={managedByMe || managedByMyTeam ? "No vendors found with this filter" : "No vendors yet"}
+            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your sales network by adding your first vendor"}
+            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Vendor"}
+            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
           />
         )}
       </div>

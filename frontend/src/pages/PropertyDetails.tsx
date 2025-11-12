@@ -20,6 +20,7 @@ import {
   Handshake,
   AlertTriangle,
   Plus,
+  UserCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ import {
   useTransitionStatus,
 } from "@/hooks/useWorkflows";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import PropertyPipeline from "@/components/pipeline/PropertyPipeline";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
@@ -70,6 +72,7 @@ export default function PropertyDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [transitionDialogOpen, setTransitionDialogOpen] = useState(false);
   const [selectedTransition, setSelectedTransition] = useState<string | null>(
     null
@@ -291,15 +294,30 @@ export default function PropertyDetails() {
                   </div>
                 )}
               </div>
-              {property.rent && (
-                <div className="text-right">
-                  <div className="flex items-center gap-2 text-3xl font-bold text-primary">
-                    <PoundSterling className="h-8 w-8" />
-                    {property.rent.toLocaleString()}
+              <div className="flex flex-col items-end gap-2">
+                {property.rent && (
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 text-3xl font-bold text-primary">
+                      <PoundSterling className="h-8 w-8" />
+                      {property.rent.toLocaleString()}
+                    </div>
+                    <p className="text-sm text-muted-foreground">per calendar month</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">per calendar month</p>
-                </div>
-              )}
+                )}
+                {property.managed_by === user?.id ? (
+                  <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                    <UserCheck className="h-4 w-4 mr-1" />
+                    Managed by Me
+                  </Badge>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                    <UserCheck className="h-4 w-4" />
+                    <span className="text-right whitespace-nowrap">
+                      Managed by: {property.managed_by_name || "Unassigned"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
         </Card>

@@ -20,6 +20,22 @@ from pydantic import BaseModel
 from typing import Optional as Opt, Union
 
 
+class ManagedEntity(BaseModel):
+    """Basic info about a managed entity"""
+    id: str
+    name: str
+    property_count: int = 0  # For vendors/landlords, how many properties they have
+
+
+class AgentManagedEntities(BaseModel):
+    """Entities managed by an agent"""
+    vendors: List[ManagedEntity] = []
+    buyers: List[ManagedEntity] = []
+    landlords: List[ManagedEntity] = []
+    applicants: List[ManagedEntity] = []
+    properties: List[ManagedEntity] = []
+
+
 class AgentStats(BaseModel):
     """Agent performance statistics"""
     properties_count: int = 0
@@ -168,25 +184,49 @@ def calculate_agent_stats(agent_id: str, db: Session) -> AgentStats:
 
 
 def get_agent_team(agent_id: str, db: Session) -> str:
-    """Determine agent team based on their properties"""
+    """Determine agent team based on their properties and assignments"""
     # Check if agent has more sales properties or lettings properties
-    sales_count = db.query(Property)\
+    sales_prop_count = db.query(Property)\
         .filter(Property.managed_by == agent_id)\
         .filter(Property.vendor_id.isnot(None))\
         .count()
     
-    lettings_count = db.query(Property)\
+    lettings_prop_count = db.query(Property)\
         .filter(Property.managed_by == agent_id)\
         .filter(Property.landlord_id.isnot(None))\
         .count()
     
-    if sales_count > lettings_count:
+    # Check vendors/buyers vs landlords/applicants assignments
+    vendor_count = db.query(Vendor).filter(Vendor.managed_by == agent_id).count()
+    buyer_count = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        (
+            (Applicant.buyer_type.isnot(None)) |
+            (Applicant.willing_to_buy == True)
+        )
+    ).count()
+    
+    landlord_count = db.query(Landlord).filter(Landlord.managed_by == agent_id).count()
+    applicant_count = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        Applicant.willing_to_rent == True,
+        Applicant.buyer_type.is_(None)  # Not a buyer
+    ).count()
+    
+    # Calculate totals
+    sales_total = sales_prop_count + vendor_count + buyer_count
+    lettings_total = lettings_prop_count + landlord_count + applicant_count
+    
+    if sales_total > lettings_total:
         return "Sales Team"
-    elif lettings_count > sales_count:
+    elif lettings_total > sales_total:
         return "Lettings Team"
     else:
-        # Default or mixed
-        return "Lettings Team"  # Default
+        # Default or mixed - if no assignments, default to Lettings Team
+        if sales_total == 0 and lettings_total == 0:
+            return "Lettings Team"
+        # If equal, prefer Sales Team (since we want 3 sales, 3 lettings)
+        return "Sales Team" if sales_total > 0 else "Lettings Team"
 
 
 def get_agent_position(agent_id: str, db: Session) -> str:
@@ -313,4 +353,95 @@ def get_agent_stats_endpoint(
         raise HTTPException(status_code=404, detail="Agent not found")
     
     return calculate_agent_stats(agent_id, db)
+
+
+@router.get("/{agent_id}/managed", response_model=AgentManagedEntities)
+def get_agent_managed_entities(
+    agent_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all entities (vendors, buyers, landlords, applicants, properties) managed by an agent
+    """
+    agent = db.query(User).filter(User.id == agent_id).filter(User.role == Role.AGENT).first()
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    result = AgentManagedEntities()
+    
+    # Get vendors managed by this agent
+    vendors = db.query(Vendor).filter(Vendor.managed_by == agent_id).all()
+    for vendor in vendors:
+        property_count = db.query(Property).filter(Property.vendor_id == vendor.id).count()
+        result.vendors.append(ManagedEntity(
+            id=vendor.id,
+            name=f"{vendor.first_name} {vendor.last_name}".strip(),
+            property_count=property_count
+        ))
+    
+    # Get buyers (applicants with buyer_type or willing_to_buy) managed by this agent
+    buyers = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        (
+            (Applicant.buyer_type.isnot(None)) |
+            (Applicant.willing_to_buy == True)
+        )
+    ).all()
+    for buyer in buyers:
+        result.buyers.append(ManagedEntity(
+            id=buyer.id,
+            name=f"{buyer.first_name} {buyer.last_name}".strip(),
+            property_count=0
+        ))
+    
+    # Get landlords managed by this agent
+    landlords = db.query(Landlord).filter(Landlord.managed_by == agent_id).all()
+    for landlord in landlords:
+        property_count = db.query(Property).filter(Property.landlord_id == landlord.id).count()
+        result.landlords.append(ManagedEntity(
+            id=landlord.id,
+            name=landlord.full_name,
+            property_count=property_count
+        ))
+    
+    # Get applicants/tenants (willing to rent, not buyers) managed by this agent
+    applicants = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        Applicant.willing_to_rent == True,
+        Applicant.buyer_type.is_(None)  # Not a buyer
+    ).all()
+    for applicant in applicants:
+        result.applicants.append(ManagedEntity(
+            id=applicant.id,
+            name=f"{applicant.first_name} {applicant.last_name}".strip(),
+            property_count=0
+        ))
+    
+    # Get properties managed by this agent (through landlord or vendor)
+    # Properties are managed if their landlord or vendor is managed by this agent
+    landlord_ids = [l.id for l in landlords]
+    vendor_ids = [v.id for v in vendors]
+    
+    properties = []
+    if landlord_ids:
+        landlord_properties = db.query(Property).filter(Property.landlord_id.in_(landlord_ids)).all()
+        properties.extend(landlord_properties)
+    if vendor_ids:
+        vendor_properties = db.query(Property).filter(Property.vendor_id.in_(vendor_ids)).all()
+        properties.extend(vendor_properties)
+    
+    # Remove duplicates
+    seen_property_ids = set()
+    for prop in properties:
+        if prop.id not in seen_property_ids:
+            seen_property_ids.add(prop.id)
+            address = prop.address_line1 or prop.address or prop.city or "Unknown"
+            result.properties.append(ManagedEntity(
+                id=prop.id,
+                name=address,
+                property_count=0
+            ))
+    
+    return result
 

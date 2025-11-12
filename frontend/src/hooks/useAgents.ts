@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface AgentStats {
   properties_count: number;
@@ -60,6 +61,62 @@ export function useAgent(agentId: string) {
       return data as Agent;
     },
     enabled: !!agentId,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface ManagedEntity {
+  id: string;
+  name: string;
+  property_count: number;
+}
+
+export interface AgentManagedEntities {
+  vendors: ManagedEntity[];
+  buyers: ManagedEntity[];
+  landlords: ManagedEntity[];
+  applicants: ManagedEntity[];
+  properties: ManagedEntity[];
+}
+
+export function useAgentManagedEntities(agentId: string) {
+  return useQuery({
+    queryKey: ["agent", agentId, "managed"],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/agents/${agentId}/managed`);
+      return data as AgentManagedEntities;
+    },
+    enabled: !!agentId,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useMyManagedEntities() {
+  return useQuery({
+    queryKey: ["me", "managed"],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/auth/me/managed`);
+      return data as AgentManagedEntities;
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useMyTeamAgents() {
+  const { user } = useAuth();
+  const { data: agentData } = useAgent(user?.id || "");
+  
+  return useQuery({
+    queryKey: ["agents", "team", agentData?.team],
+    queryFn: async () => {
+      if (!agentData?.team) return [];
+      const { data } = await api.get(`/api/v1/agents/?team=${encodeURIComponent(agentData.team)}`);
+      return (data || []) as Agent[];
+    },
+    enabled: !!agentData?.team && !!user?.id,
     retry: 1,
     staleTime: 5 * 60 * 1000,
   });
