@@ -14,6 +14,7 @@ import {
   FileText,
   CheckCircle,
   AlertCircle,
+  UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -319,9 +320,17 @@ export default function Properties() {
                       </p>
                     )}
                   </div>
-                  <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
-                    {property.property_type}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
+                      {property.property_type}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      <span className="text-right whitespace-nowrap">
+                        {property.managed_by_name || "Unassigned"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">

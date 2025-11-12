@@ -20,6 +20,7 @@ import {
   Handshake,
   AlertTriangle,
   Plus,
+  UserCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -291,15 +292,23 @@ export default function PropertyDetails() {
                   </div>
                 )}
               </div>
-              {property.rent && (
-                <div className="text-right">
-                  <div className="flex items-center gap-2 text-3xl font-bold text-primary">
-                    <PoundSterling className="h-8 w-8" />
-                    {property.rent.toLocaleString()}
+              <div className="flex flex-col items-end gap-2">
+                {property.rent && (
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 text-3xl font-bold text-primary">
+                      <PoundSterling className="h-8 w-8" />
+                      {property.rent.toLocaleString()}
+                    </div>
+                    <p className="text-sm text-muted-foreground">per calendar month</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">per calendar month</p>
+                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                  <UserCheck className="h-4 w-4" />
+                  <span className="text-right whitespace-nowrap">
+                    Managed by: {property.managed_by_name || "Unassigned"}
+                  </span>
                 </div>
-              )}
+              </div>
             </div>
           </CardHeader>
         </Card>

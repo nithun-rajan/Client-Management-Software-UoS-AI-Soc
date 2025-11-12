@@ -20,6 +20,29 @@ router = APIRouter(prefix="/properties", tags=["properties"])
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
+def enrich_property_response(property: Property, db: Session) -> dict:
+    """Enrich property response with managed_by_name from landlord or vendor"""
+    response_dict = PropertyResponse.model_validate(property).model_dump()
+    
+    # Get managed_by from landlord or vendor
+    agent_id = None
+    if property.landlord_id:
+        landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+        if landlord and landlord.managed_by:
+            agent_id = landlord.managed_by
+    elif property.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
+        if vendor and vendor.managed_by:
+            agent_id = vendor.managed_by
+    
+    # Get agent name if agent_id exists
+    if agent_id:
+        agent = db.query(User).filter(User.id == agent_id).first()
+        if agent:
+            response_dict["managed_by_name"] = f"{agent.first_name or ''} {agent.last_name or ''}".strip()
+    
+    return response_dict
+
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db)
@@ -78,7 +101,8 @@ def create_property(
             pass
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(db_property)
+    response_dict = enrich_property_response(db_property, db)
+    response = PropertyResponse(**response_dict)
     if db_property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == db_property.landlord_id).first()
         if landlord:
@@ -137,7 +161,8 @@ def list_properties(
         if property.status is None:
             property.status = PropertyStatus.AVAILABLE
         
-        response = PropertyResponse.model_validate(property)
+        response_dict = enrich_property_response(property, db)
+        response = PropertyResponse(**response_dict)
         # Include landlord information if property has a landlord
         if property.landlord_id:
             landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -183,7 +208,8 @@ def get_my_properties(
     
     result = []
     for property in properties:
-        response = PropertyResponse.model_validate(property)
+        response_dict = enrich_property_response(property, db)
+        response = PropertyResponse(**response_dict)
         # Include landlord information if property has a landlord
         if property.landlord_id:
             landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -210,7 +236,8 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(property)
     
-    response = PropertyResponse.model_validate(property)
+    response_dict = enrich_property_response(property, db)
+    response = PropertyResponse(**response_dict)
     # Include landlord information if property has a landlord
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
@@ -256,7 +283,8 @@ def update_property(
     db.refresh(property)
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(property)
+    response_dict = enrich_property_response(property, db)
+    response = PropertyResponse(**response_dict)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
         if landlord:
@@ -300,7 +328,8 @@ def patch_property(
     db.refresh(property)
     
     # Include landlord or vendor information in response
-    response = PropertyResponse.model_validate(property)
+    response_dict = enrich_property_response(property, db)
+    response = PropertyResponse(**response_dict)
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
         if landlord:

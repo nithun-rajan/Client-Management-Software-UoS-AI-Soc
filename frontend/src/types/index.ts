@@ -49,6 +49,7 @@ export interface Property {
   managed_by?: string;
   management_type?: string;
   management_notes?: string;
+  managed_by_name?: string;  // Full name of agent managing the landlord/vendor
   created_at: string;
   updated_at?: string;
 }
