@@ -116,7 +116,8 @@ class WorkflowManager:
                 "register_security_deposit",  # Page 32: 3.4
                 "sign_tenancy_agreement",  # Page 32: 3.5
                 "execute_move_in",  # Page 33: 5.1
-                "trigger_compliance_tasks"
+                "trigger_compliance_tasks",
+                "execute_generate_inventory_document"
             ],
 
             # Applicant transitions
@@ -405,13 +406,14 @@ class WorkflowManager:
         from app.models.tenancy import Tenancy
         from app.models.task import Task
         from app.models.enums import TaskStatus, TaskPriority
+        from app.services.referencing_service import start_referencing
 
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
             # Create task to start referencing (Goodlord API integration would go here)
             task = Task(
                 title="Start Referencing Process",
-                description="Start referencing process via Goodlord API or manual process. Collect references from employer and previous landlord.",
+                description="Start referencing process via API or manual process. Collect references from employer and previous landlord.",
                 status=TaskStatus.TODO,
                 priority=TaskPriority.HIGH,
                 related_entity_type="tenancy",
@@ -421,6 +423,24 @@ class WorkflowManager:
             )
             db.add(task)
             print(f"Created task to start referencing for tenancy {entity_id}")
+
+            try:
+                # 2. Attempt the full automation
+                reference_id = await start_referencing(tenancy)
+            
+                # 3. SUCCESS: Update the tenancy and the task
+                tenancy.reference_status = "pending" #
+                db.add(tenancy)
+            
+                task.status = TaskStatus.COMPLETED
+                task.priority = TaskPriority.LOW
+                task.description = f"Successfully submitted for referencing. Ref ID: {reference_id}"
+            
+                print(f"Successfully started referencing for tenancy {entity_id}")
+
+            except Exception as e:
+                # 4. FAILURE: Update the task with the error
+                print(f"ERROR: Failed to start referencing: {e}")
 
     async def execute_store_reference_docs(self, domain: Domain, entity_id: str, db):
         """Store reference documents - Page 31: 2.4"""
@@ -472,7 +492,8 @@ class WorkflowManager:
         from app.models.document import Document, DocumentType
         from app.schemas.documents import DocumentCreate
         from app.models.tenancy import Tenancy
-        from app.models.tasks import Task
+        from app.models.task import Task
+        from app.models.enums import TaskStatus, TaskPriority
         
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
 
@@ -545,7 +566,91 @@ class WorkflowManager:
 
             except Exception as e:
                 print(f"❌ ERROR: Failed to generate AST: {e}")
+    
+    async def execute_generate_inventory_document(self, domain: Domain, entity_id: str, db: Session):
+        """Generates a blank inventory check-in document"""
+        
+        # --- Import models and schemas *inside* the function ---
+        from app.models.tenancy import Tenancy
+        from app.models.task import Task
+        from app.models.document import Document, DocumentType
+        from app.schemas.documents import DocumentCreate
+        from app.api.v1.documents import upload_file_to_cloud
+        import jinja2
+        from weasyprint import HTML
+        from sqlalchemy.orm import joinedload
+        from app.models.enums import TaskStatus, TaskPriority
+        
+        # --- Eager load relationships ---
+        tenancy = db.query(Tenancy).options(
+            joinedload(Tenancy.property),
+            joinedload(Tenancy.applicant)
+        ).filter(Tenancy.id == entity_id).first()
 
+        if not tenancy:
+            print(f"ERROR: Tenancy {entity_id} not found for inventory generation.")
+            return
+
+        # 1. Create a task to track this
+        task = Task(
+            title="Generate Move-In Inventory Document",
+            description="Generating inventory template for agent...",
+            status=TaskStatus.TODO,
+            priority=TaskPriority.MEDIUM,
+            related_entity_type="tenancy",
+            related_entity_id=entity_id,
+            tenancy_id=entity_id
+        )
+        db.add(task)
+
+        try:
+            if not tenancy.property:
+                raise Exception("Property not found. Cannot generate inventory.")
+
+            # 2. Load HTML template
+            template_loader = jinja2.FileSystemLoader(searchpath="app/templates")
+            template_env = jinja2.Environment(loader=template_loader)
+            template = template_env.get_template("inventory_template.html") # <-- New template
+
+            # 3. Fill template context
+            context = {
+                "property_address": tenancy.property.address,
+                "bedrooms": tenancy.property.bedrooms,
+                "bathrooms": tenancy.property.bathrooms,
+                "move_in_date": tenancy.start_date.strftime("%d %B %Y")
+                # ... (any other fields your template needs)
+            }
+            html_out = template.render(context)
+
+            # 4. Convert HTML → PDF
+            pdf_bytes = HTML(string=html_out).write_pdf()
+            file_name = f"Inventory_{tenancy.property.address.replace(' ', '_')}.pdf"
+
+            # 5. Upload to cloud
+            file_path = upload_file_to_cloud(file_name, pdf_bytes)
+
+            # 6. Use the DocumentCreate schema to save it
+            doc_create = DocumentCreate(
+                title=file_name,
+                document_type=DocumentType.INVENTORY, #
+                file_url=file_path,
+                file_name=file_name,
+                file_size=len(pdf_bytes),
+                mime_type="application/pdf",
+                tenancy_id=tenancy.id,
+                uploaded_by_user_id="system"
+            )
+            db_document = Document(**doc_create.model_dump())
+            db.add(db_document)
+
+            # 7. Update task to
+            task.status = TaskStatus.COMPLETED
+            task.priority = TaskPriority.LOW
+            task.description = f"Successfully generated inventory document: {file_name}"
+            print(f"✅ Successfully generated inventory: {file_name}")
+
+        except Exception as e:
+            print(f"❌ ERROR: Failed to generate inventory: {e}")
 
     async def execute_send_statutory_documents(self, domain: Domain, entity_id: str, db):
         """Send statutory documents - Page 31: 3.2"""
@@ -593,6 +698,7 @@ class WorkflowManager:
         from app.models.tenancy import Tenancy
         from app.models.task import Task
         from app.models.enums import TaskStatus, TaskPriority
+        from app.services.deposit_service import register_deposit
 
         tenancy = db.query(Tenancy).filter(Tenancy.id == entity_id).first()
         if tenancy:
@@ -607,6 +713,25 @@ class WorkflowManager:
                 due_date=datetime.now(timezone.utc) + timedelta(days=14)
             )
             db.add(task)
+
+            try:
+                # 2. Attempt the full automation
+                registration_id = await register_deposit(tenancy)
+        
+                # 3. SUCCESS: Update the tenancy and the task
+                tenancy.deposit_scheme_ref = registration_id
+                tenancy.security_deposit_registered = True
+                db.add(tenancy)
+        
+                task.status = TaskStatus.COMPLETED
+                task.priority = TaskPriority.LOW
+                task.description = f"Successfully registered deposit. Ref: {registration_id}"
+        
+                print(f"Successfully registered deposit for tenancy {entity_id}")
+
+            except Exception as e:
+                # 4. FAILURE: Update the task with the error
+                print(f"ERROR: Failed to register deposit: {e}")
 
     async def execute_sign_tenancy_agreement(self, domain: Domain, entity_id: str, db):
         """Sign tenancy agreement - Page 32: 3.5"""
@@ -643,7 +768,19 @@ class WorkflowManager:
                 property_obj.let_date = datetime.now(timezone.utc)
 
                 # Create move-in tasks
-                task1 = Task(
+                # Task 4.1: Arrange professional clean
+                task_clean = Task(
+                    title="Arrange Professional Clean",
+                    description=f"Confirm pre-tenancy professional clean is complete for {property_obj.address_line1}.",
+                    status=TaskStatus.TODO,
+                    priority=TaskPriority.MEDIUM,
+                    related_entity_type="tenancy",
+                    related_entity_id=entity_id,
+                    tenancy_id=entity_id,
+                    due_date=datetime.now(timezone.utc) # Should be done by move-in day
+                )
+
+                task_inventory = Task(
                     title="Complete Move-In Inspection",
                     description=f"Complete move-in inspection and inventory check for property {property_obj.address_line1}",
                     status=TaskStatus.TODO,
@@ -653,7 +790,20 @@ class WorkflowManager:
                     tenancy_id=entity_id,
                     due_date=datetime.now(timezone.utc) + timedelta(days=1)
                 )
-                task2 = Task(
+                
+                # Task 4.3: Utility & Council Tax notification
+                task_utilities = Task(
+                    title="Notify Utilities & Council Tax",
+                    description=f"Notify suppliers (gas, electric, water) and council tax of new tenant move-in.",
+                    status=TaskStatus.TODO,
+                    priority=TaskPriority.MEDIUM,
+                    related_entity_type="tenancy",
+                    related_entity_id=entity_id,
+                    tenancy_id=entity_id,
+                    due_date=datetime.now(timezone.utc) + timedelta(days=3)
+                )
+
+                task_keys = Task(
                     title="Hand Over Keys",
                     description="Hand over keys to tenant and complete move-in checklist.",
                     status=TaskStatus.TODO,
@@ -663,8 +813,50 @@ class WorkflowManager:
                     tenancy_id=entity_id,
                     due_date=datetime.now(timezone.utc)
                 )
-                db.add(task1)
-                db.add(task2)
+                
+                # Task 4.5: Final progression checklist
+                task_checklist = Task(
+                    title="Complete Final Progression Checklist",
+                    description="Final check: All docs signed, monies paid, keys handed over, systems updated.",
+                    status=TaskStatus.TODO,
+                    priority=TaskPriority.MEDIUM,
+                    related_entity_type="tenancy",
+                    related_entity_id=entity_id,
+                    tenancy_id=entity_id,
+                    due_date=datetime.now(timezone.utc) + timedelta(days=1)
+                )
+
+                # 5.4a: Schedule first rent payment
+                task_rent = Task(
+                    title="Confirm First Rent Payment Received",
+                    description=f"Confirm first rent payment of £{tenancy.rent_amount or 'N/A'} has been received and standing order is set up.",
+                    status=TaskStatus.TODO,
+                    priority=TaskPriority.HIGH,
+                    related_entity_type="tenancy",
+                    related_entity_id=entity_id,
+                    tenancy_id=entity_id,
+                    due_date=tenancy.start_date + timedelta(days=1) # Due 1 day after move-in
+                )
+
+                # 5.4b: Schedule management tasks
+                task_inspection = Task(
+                    title="Schedule First Management Inspection",
+                    description=f"Schedule first quarterly management inspection for {property_obj.address_line1}.",
+                    status=TaskStatus.TODO,
+                    priority=TaskPriority.MEDIUM,
+                    related_entity_type="tenancy",
+                    related_entity_id=entity_id,
+                    tenancy_id=entity_id,
+                    due_date=tenancy.start_date + timedelta(days=90) # Due in 90 days
+                )
+
+                db.add(task_clean)
+                db.add(task_inventory)
+                db.add(task_utilities)
+                db.add(task_keys)
+                db.add(task_checklist)
+                db.add(task_rent)
+                db.add(task_inspection)
                 print(f"Created move-in tasks for tenancy {entity_id}")
 
     async def execute_update_applicant_status(self, domain: Domain, entity_id: str, db):

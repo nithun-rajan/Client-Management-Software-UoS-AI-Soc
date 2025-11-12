@@ -50,6 +50,12 @@ class TenancyUpdate(AppBaseModel):
     reference_status: Optional[str] = None
     right_to_rent_status: Optional[str] = None
     # --- END OF ADDITION ---
+    # For Task 3.2:
+    statutory_documents_sent: Optional[bool] = None
+    # For Task 3.5:
+    tenancy_agreement_sent: Optional[bool] = None
+    tenancy_agreement_signed: Optional[bool] = None
+    # --- END OF ADDITION ---
     deposit_scheme: Optional[str] = None
     deposit_scheme_ref: Optional[str] = None
     notice_period_days: Optional[int] = None

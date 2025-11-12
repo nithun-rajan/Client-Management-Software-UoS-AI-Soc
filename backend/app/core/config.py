@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: Optional[str] = None
     DEFAULT_FROM_EMAIL: Optional[str] = None
 
+    # Referencing service
+    REFERENCING_API_KEY : Optional[str] = None
+    REFERENCING_API_URL : Optional[str] = None
+
+    # Deposit service
+    DEPOSIT_API_KEY : Optional[str] = None
+    DEPOSIT_API_URL : Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")  # NEW WAY
 
 
