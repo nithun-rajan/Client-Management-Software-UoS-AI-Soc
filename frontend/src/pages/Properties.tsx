@@ -138,6 +138,8 @@ export default function Properties() {
         postcode: property.postcode,
         property_type: property.property_type,
         bedrooms: property.bedrooms,
+        property_id: property.id,
+        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
       });
       setValuationPack(response.data.data);
       setValuationPackOpen(true);
@@ -605,7 +607,9 @@ export default function Properties() {
               )}
 
               {/* Area Statistics */}
-              {valuationPack.area_statistics && (
+              {valuationPack.area_statistics && 
+               valuationPack.area_statistics.total_sales > 0 && 
+               valuationPack.area_statistics.average_price > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Area Statistics</CardTitle>
@@ -615,16 +619,21 @@ export default function Properties() {
                       <div>
                         <div className="text-sm text-muted-foreground">Total Sales</div>
                         <div className="text-lg font-semibold">
-                          {valuationPack.area_statistics.total_sales || "N/A"}
+                          {valuationPack.area_statistics.total_sales.toLocaleString()}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Average Price</div>
                         <div className="text-lg font-semibold">
-                          £{valuationPack.area_statistics.average_price?.toLocaleString() || "N/A"}
+                          £{valuationPack.area_statistics.average_price.toLocaleString()}
                         </div>
                       </div>
                     </div>
+                    {valuationPack.area_statistics.time_period && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        {valuationPack.area_statistics.time_period}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -644,3 +653,4 @@ export default function Properties() {
     </div>
   );
 }
+

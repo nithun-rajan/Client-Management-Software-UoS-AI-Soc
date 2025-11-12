@@ -11,6 +11,9 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Calendar,
+  Handshake,
+  MessageSquare,
 } from "lucide-react";
 import {
   Card,
@@ -144,29 +147,63 @@ export default function Dashboard() {
                   <Skeleton className="h-16" />
                 </>
               ) : events && events.length > 0 ? (
-                events.slice(0, 5).map((event) => {
-                  const eventIcon =
-                    event.entity_type === "property"
-                      ? Building2
-                      : event.entity_type === "applicant"
-                        ? Users
-                        : event.entity_type === "landlord"
-                          ? UserCheck
-                          : Activity;
+                events.slice(0, 10).map((event) => {
+                  // Determine icon component based on entity type
+                  let IconComponent = Activity;
+                  if (event.entity_type === "property") {
+                    IconComponent = Building2;
+                  } else if (event.entity_type === "applicant") {
+                    IconComponent = Users;
+                  } else if (event.entity_type === "landlord") {
+                    IconComponent = UserCheck;
+                  } else if (event.entity_type === "vendor") {
+                    IconComponent = UserCircle;
+                  } else if (event.entity_type === "task") {
+                    IconComponent = Activity;
+                  } else if (event.entity_type === "viewing") {
+                    IconComponent = Calendar;
+                  } else if (event.entity_type === "offer") {
+                    IconComponent = Handshake;
+                  } else if (event.entity_type === "communication") {
+                    IconComponent = MessageSquare;
+                  }
 
-                  const eventColor =
-                    event.entity_type === "property"
-                      ? "accent"
-                      : event.entity_type === "applicant"
-                        ? "primary"
-                        : event.entity_type === "landlord"
-                          ? "accent"
-                          : "secondary";
+                  // Determine color classes based on entity type (using full class names for Tailwind)
+                  let bgColorClass = "bg-muted/10";
+                  let iconColorClass = "text-muted-foreground";
+                  if (event.entity_type === "property") {
+                    bgColorClass = "bg-primary/10";
+                    iconColorClass = "text-primary";
+                  } else if (event.entity_type === "applicant") {
+                    bgColorClass = "bg-blue-500/10";
+                    iconColorClass = "text-blue-500";
+                  } else if (event.entity_type === "landlord") {
+                    bgColorClass = "bg-accent/10";
+                    iconColorClass = "text-accent";
+                  } else if (event.entity_type === "vendor") {
+                    bgColorClass = "bg-indigo-500/10";
+                    iconColorClass = "text-indigo-500";
+                  } else if (event.entity_type === "task") {
+                    bgColorClass = "bg-orange-500/10";
+                    iconColorClass = "text-orange-500";
+                  } else if (event.entity_type === "viewing") {
+                    bgColorClass = "bg-cyan-500/10";
+                    iconColorClass = "text-cyan-500";
+                  } else if (event.entity_type === "offer") {
+                    bgColorClass = "bg-green-500/10";
+                    iconColorClass = "text-green-500";
+                  } else if (event.entity_type === "communication") {
+                    bgColorClass = "bg-purple-500/10";
+                    iconColorClass = "text-purple-500";
+                  }
 
-                  const eventTitle = event.event
-                    .split(".")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
+                  // Format event title - use description if available, otherwise format event name
+                  const eventTitle = event.description 
+                    ? event.description
+                    : event.event
+                        .split(".")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ");
 
                   const timeAgo = formatDistanceToNow(new Date(event.timestamp), {
                     addSuffix: true,
@@ -174,14 +211,16 @@ export default function Dashboard() {
 
                   return (
                     <div key={event.id} className="flex items-start gap-4">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full bg-${eventColor}/10`}
-                      ></div>
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bgColorClass}`}>
+                        <IconComponent className={`h-5 w-5 ${iconColorClass}`} />
+                      </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{eventTitle}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {event.entity_type} #{event.entity_id}
-                        </p>
+                        {event.entity_name && (
+                          <p className="text-sm text-muted-foreground">
+                            {event.entity_name}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                       </div>
                     </div>

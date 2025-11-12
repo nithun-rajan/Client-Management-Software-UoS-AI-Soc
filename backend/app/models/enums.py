@@ -29,12 +29,20 @@ class ApplicantStatus(str, Enum):
     ARCHIVED = "archived"
 
 class TenancyStatus(str, Enum):
-    """Tenancy status"""
+    """Tenancy status - includes workflow progression states"""
+    # Basic statuses
     PENDING = "pending"
     ACTIVE = "active"
     EXPIRED = "expired"
     TERMINATED = "terminated"
     RENEWED = "renewed"
+    # Workflow progression statuses (from workflows.py)
+    DRAFT = "draft"
+    OFFER_ACCEPTED = "offer_accepted"
+    REFERENCING = "referencing"
+    REFERENCED = "referenced"  # After referencing is complete
+    DOCUMENTATION = "legal_docs"  # Legal documents stage
+    MOVE_IN_PREP = "ready_to_move_in"  # Ready to move in
 
 class DocumentType(str, Enum):
     """Document types"""

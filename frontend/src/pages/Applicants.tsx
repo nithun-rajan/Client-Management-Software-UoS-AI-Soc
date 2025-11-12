@@ -40,9 +40,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Applicants() {
+  const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
@@ -372,7 +373,14 @@ export default function Applicants() {
                       <Button size="sm" variant="outline">
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setMatchesDialogOpen(false);
+                          navigate(`/properties/${match.property_id}`);
+                        }}
+                      >
                         View Property
                       </Button>
                     </CardFooter>
