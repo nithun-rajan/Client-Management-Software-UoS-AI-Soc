@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime
 
@@ -11,7 +11,7 @@ from app.models.applicant import Applicant
 from app.models.property import Property
 
 # Import necessary schemas
-from app.schemas.tenancy import TenancyCreate, TenancyResponse, TenancyUpdate
+from app.schemas.tenancy import TenancyCreate, TenancyResponse, TenancyUpdate, PreTenancyStatementResponse, StatementLineItem
 
 # Import Enums for status transitions
 from app.models.enums import TenancyStatus, ApplicantStatus, PropertyStatus
@@ -134,6 +134,69 @@ def get_tenancy(tenancy_id: str, db: Session = Depends(get_db)):
     if not tenancy:
         raise HTTPException(status_code=404, detail="Tenancy not found")
     return tenancy
+
+@router.get("/{tenancy_id}/pre-tenancy-statement", response_model=PreTenancyStatementResponse)
+def get_pre_tenancy_statement(tenancy_id: str, db: Session = Depends(get_db)):
+    """
+    Generate a pre-tenancy statement of funds due before move-in.
+    
+    This calculates: (First Month's Rent + Security Deposit) - Holding Deposit
+    """
+    # Eagerly load the related property and applicant for efficiency
+    # This prevents lazy-loading errors and is much faster.
+    tenancy = db.query(Tenancy).options(
+        joinedload(Tenancy.property),
+        joinedload(Tenancy.applicant)
+    ).filter(Tenancy.id == tenancy_id).first()
+    
+    if not tenancy:
+        raise HTTPException(status_code=404, detail="Tenancy not found")
+    
+    if not tenancy.property:
+        raise HTTPException(status_code=404, detail="Property not found for this tenancy")
+        
+    if not tenancy.applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found for this tenancy")
+
+    # --- Start Calculation Logic ---
+    line_items: List[StatementLineItem] = []
+    
+    # Get values from the tenancy model
+    rent = tenancy.rent_amount or 0.0
+    deposit = tenancy.deposit_amount or 0.0
+    holding_deposit = tenancy.holding_deposit_amount or 0.0
+
+    # 1. First Month's Rent
+    line_items.append(StatementLineItem(description="First Month's Rent", amount=rent))
+    
+    # 2. Security Deposit
+    line_items.append(StatementLineItem(description="Security Deposit", amount=deposit))
+    
+    # 3. Holding Deposit (as a credit, so it's negative)
+    if holding_deposit > 0:
+        line_items.append(StatementLineItem(description="Less Holding Deposit Paid", amount=-holding_deposit))
+
+    # Calculate final total
+    total_due = (rent + deposit) - holding_deposit
+    
+    # --- Format the Response ---
+    tenant_name = f"{tenancy.applicant.first_name} {tenancy.applicant.last_name}"
+    
+    prop = tenancy.property
+    # Use property.address (assuming it's a field) or build it
+    property_address = getattr(prop, 'address', f"{prop.address_line1}, {prop.city}, {prop.postcode}")
+
+    notes = f"Total due before move-in on {tenancy.start_date}. This is calculated as (First Month's Rent + Security Deposit) - Holding Deposit."
+
+    return PreTenancyStatementResponse(
+        tenancy_id=tenancy.id,
+        tenant_name=tenant_name,
+        property_address=property_address,
+        start_date=tenancy.start_date,
+        line_items=line_items,
+        total_amount_due=round(total_due, 2),
+        notes=notes
+    )
 
 @router.put("/{tenancy_id}", response_model=TenancyResponse)
 def update_tenancy(

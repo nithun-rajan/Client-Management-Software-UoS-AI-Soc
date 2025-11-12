@@ -58,6 +58,18 @@ class Applicant(BaseModel):
     
     # Buyer registration questions
     buyer_questions_answered = Column(Boolean, default=False)  # Flag indicating if buyer answered registration questions
+
+    # --- ADD THESE NEW COMPLIANCE COLUMNS ---
+    
+    # Anti-Money Laundering (AML) Tracking
+    aml_check_status = Column(String, default='not_started') # e.g., not_started, pending, pass, fail
+    aml_check_date = Column(Date, nullable=True)
+    
+    # Guardianship Tracking
+    is_guardianship_required = Column(Boolean, default=False)
+    guardianship_details = Column(Text, nullable=True)
+    
+    # --- END OF ADDITION ---
     
     # Tenant registration questions
     tenant_questions_answered = Column(Boolean, default=False)  # Flag indicating if tenant answered registration questions
