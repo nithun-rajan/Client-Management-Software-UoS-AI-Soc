@@ -38,7 +38,7 @@ class Viewing(BaseModel):
     # Follow-up
     follow_up_required = Column(Boolean, default=False)
     follow_up_notes = Column(Text, nullable=True)
-    
+
     # Relationships
     property = relationship("Property", backref="viewings")
     applicant = relationship("Applicant", backref="viewings")
