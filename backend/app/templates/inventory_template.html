@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Inventory & Schedule of Condition</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0 auto;
+            padding: 2rem;
+            max-width: 1000px;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 2.5rem;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 4px solid #333;
+            font-size: 2.5em;
+            padding-bottom: 20px;
+            margin-top: 0;
+        }
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 2rem;
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        .header-grid div {
+            padding: 10px;
+        }
+        .header-grid strong {
+            display: block;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+        .notes-col {
+            width: 40%;
+        }
+        .condition-col {
+            width: 25%;
+        }
+        .photo-col {
+            width: 100px;
+            text-align: center;
+        }
+        .item-col {
+            width: 25%;
+        }
+        .signature-box {
+            margin-top: 4rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+        .signature-field {
+            border-bottom: 1px solid #999;
+            height: 40px;
+            margin-top: 4rem;
+        }
+        .signature-box p {
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+            color: #555;
+        }
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.8em;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Property Inventory</h1>
+    <h2>Schedule of Condition</h2>
+
+    <div class="header-grid">
+        <div>
+            <strong>Property Address:</strong>
+            {{ property_address | default('____________________') }}
+        </div>
+        <div>
+            <strong>Tenancy Start Date:</strong>
+            {{ move_in_date | default('____________________') }}
+        </div>
+        <div>
+            <strong>Tenant(s):</strong>
+            {{ tenant_name | default('____________________') }}
+        </div>
+        <div>
+            <strong>Landlord/Agent:</strong>
+            UoS Lettings Agency
+        </div>
+    </div>
+
+    <p>This document details the condition of the property and its contents at the start of the tenancy. It is the tenant's responsibility to check this inventory and report any discrepancies in writing within 7 days.</p>
+
+    <h3>General, Meters & Keys</h3>
+    <table>
+        <thead>
+            <tr>
+                <th class="item-col">Item</th>
+                <th class="condition-col">Condition</th>
+                <th class="photo-col">Photo</th>
+                <th class="notes-col">Tenant Notes / Agreement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Gas Meter Reading:</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Electric Meter Reading:</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Water Meter Reading:</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Smoke Alarm(s)</td>
+                <td>Tested & Working</td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Carbon Monoxide Alarm(s)</td>
+                <td>Tested & Working</td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Keys (Front Door)</td>
+                <td>__ sets</td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Keys (Other)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Kitchen</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Condition</th>
+                <th>Photo</th>
+                <th>Tenant Notes / Agreement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Walls & Ceiling</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Floor / Flooring</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Light Fittings</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sockets & Switches</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Window(s) & Blinds</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Doors & Handles</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Radiator(s)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Worktops</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Cupboards / Drawers</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sink & Taps</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Oven</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Hob</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Extractor Fan</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Fridge / Freezer</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Washing Machine</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            </tbody>
+    </table>
+
+    <h2>Living Room</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Condition</th>
+                <th>Photo</th>
+                <th>Tenant Notes / Agreement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Walls & Ceiling</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Floor / Flooring</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Light Fittings</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sockets & Switches</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Window(s) & Curtains</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Doors & Handles</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Radiator(s)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sofa(s)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Coffee Table</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            </tbody>
+    </table>
+
+    <h2>Bedroom 1</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Condition</th>
+                <th>Photo</th>
+                <th>Tenant Notes / Agreement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Walls & Ceiling</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Floor / Flooring</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Light Fittings</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sockets & Switches</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Window(s) & Blinds</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Doors & Handles</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Radiator(s)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Bed Frame</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Mattress</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Wardrobe</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Desk & Chair</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            </tbody>
+    </table>
+
+    <h2>Bathroom</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Condition</th>
+                <th>Photo</th>
+                <th>Tenant Notes / Agreement</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Walls & Ceiling</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Floor / Flooring</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Light Fittings</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Window(s)</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Doors & Handles</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Toilet & Seat</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Sink & Taps</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Bath / Shower & Taps</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Shower Screen / Curtain</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Extractor Fan</td>
+                <td></td>
+                <td>&#9744;</td>
+                <td></td>
+            </tr>
+            </tbody>
+    </table>
+
+    <div class="signature-box">
+        <div>
+            <p>I (the Tenant) confirm that this inventory is a true and accurate record of the condition of the property at the start of my tenancy. I agree to report any discrepancies within 7 days.</p>
+            <div class="signature-field"></div>
+            <p>Tenant Signature: {{ tenant_name | default('____________________') }}</p>
+            <p>Date: {{ move_in_date | default('____________________') }}</p>
+        </div>
+        <div>
+            <p>I (the Landlord/Agent) confirm that this inventory is a true and accurate record of the condition of the property at the start of the tenancy.</p>
+            <div class="signature-field"></div>
+            <p>Landlord/Agent Signature: ____________________</p>
+            <p>Date: {{ move_in_date | default('____________________') }}</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Page 1 of 1</p>
+    </footer>
+
+</body>
+</html>
