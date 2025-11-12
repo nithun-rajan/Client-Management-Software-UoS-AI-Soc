@@ -1,5 +1,3 @@
-
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -13,11 +11,33 @@ from app.models.user import User
 from app.models.enums import PropertyStatus
 from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, LandlordInfo, VendorInfo
 from app.services.notification_service import notify
+from typing import Optional, Dict, Any
 
+
+
+def _get_property_response_with_compliance(property_model: Property, db: Session) -> PropertyResponse:
+
+    # Get the base dictionary and attach computed fields
+    response_data = property_model.__dict__.copy()
+    response_data['is_compliant'] = property_model.is_compliant
+    response_data['expiring_documents'] = property_model.expiring_documents
+    response = PropertyResponse.model_validate(response_data)
+    
+    # Manually attach Landlord/Vendor info
+    if property_model.landlord_id:
+        landlord = db.query(Landlord).filter(Landlord.id == property_model.landlord_id).first()
+        if landlord:
+            response.landlord = LandlordInfo.model_validate(landlord)
+    
+    if property_model.vendor_id:
+        vendor = db.query(Vendor).filter(Vendor.id == property_model.vendor_id).first()
+        if vendor:
+            response.vendor = VendorInfo.model_validate(vendor)
+            
+    return response
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
-# OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 def get_optional_user(
@@ -111,7 +131,7 @@ def list_properties(
     """List all properties with landlord information. Optionally filter by landlord_id or managed_by."""
     query = db.query(Property)
     
-    # Filter by landlord_id if provided
+    
     if landlord_id:
         query = query.filter(Property.landlord_id == landlord_id)
     
@@ -132,34 +152,31 @@ def list_properties(
             db.refresh(property)
     
     result = []
+    
     for property in properties:
-        # Ensure status is never None (should be fixed above, but double-check)
-        if property.status is None:
-            property.status = PropertyStatus.AVAILABLE
+        result.append(_get_property_response_with_compliance(property, db))
         
-        response = PropertyResponse.model_validate(property)
-        # Include landlord information if property has a landlord
-        if property.landlord_id:
-            landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
-            if landlord:
-                response.landlord = LandlordInfo(
-                    id=landlord.id,
-                    full_name=landlord.full_name,
-                    email=landlord.email,
-                    phone=landlord.phone
-                )
-        # Include vendor information if property has a vendor
-        if property.vendor_id:
-            vendor = db.query(Vendor).filter(Vendor.id == property.vendor_id).first()
-            if vendor:
-                response.vendor = VendorInfo(
-                    id=vendor.id,
-                    first_name=vendor.first_name,
-                    last_name=vendor.last_name,
-                    email=vendor.email,
-                    primary_phone=vendor.primary_phone
-                )
-        result.append(response)
+    return result
+
+@router.get("/compliance/expiring", response_model=list[PropertyResponse], tags=["compliance"])
+def list_expiring_properties(db: Session = Depends(get_db)):
+    """
+    Retrieves properties with expired compliance documents by checking the model's computed properties.
+    """
+    
+    # Fetch all properties 
+    properties = db.query(Property).all()
+    expiring_properties = []
+    
+    for p in properties:
+        if not p.is_compliant or p.expiring_documents:
+            expiring_properties.append(p)
+            
+    # Convert the models to the schema format including the computed properties
+    result = []
+    for p in expiring_properties:
+        result.append(_get_property_response_with_compliance(p, db))
+>>>>>>> 1beb198f49eb490ec287d983f2a37961dc5bab61
     return result
 
 @router.get("/my-properties", response_model=list[PropertyResponse])
@@ -211,6 +228,9 @@ def get_property(property_id: str, db: Session = Depends(get_db)):
         db.refresh(property)
     
     response = PropertyResponse.model_validate(property)
+    # Compliance Checks
+    response.is_compliant = property.is_compliant
+    response.expiring_documents = property.expiring_documents
     # Include landlord information if property has a landlord
     if property.landlord_id:
         landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()

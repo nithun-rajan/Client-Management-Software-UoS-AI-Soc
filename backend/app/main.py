@@ -4,25 +4,100 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 
-from app.core.database import Base, engine, get_db
-import app.models  # ensure all models are registered before table creation
-from app.api.v1 import properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations
-from app.models import Property, Landlord, Applicant
+import threading
+import time
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Any, Optional
 
-# REMOVE these direct model imports - they cause circular imports
-# from .models.property import Property
-# from .models.landlord import Landlord  
-# from .models.applicant import Applicant
+from app.core.database import Base, engine, get_db, SessionLocal
+import app.models  # ensure all models are registered before table creation
+from app.models import Property, User, Landlord, Applicant
+from app.api.v1 import properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations
+
+
+
+# Thread ControLl
+SHOULD_RUN_TASKS = True 
+CHECK_INTERVAL_SECONDS = 60 * 60 * 24
+EXPIRY_THRESHOLD = 30 
+
+def notify(
+    db: Session,
+    user_id: Optional[int],
+    title: str,
+    body: str,
+    type: str,
+    priority: str
+):
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    print(f"📢 [NOTIFICATION LOG] @ {timestamp}")
+    print(f"TO USER ID: {user_id or 'N/A'}")
+    print(f"PRIORITY: {priority.upper()} | TYPE: {type}")
+    print(f"TITLE: {title}")
+    print(f"BODY: {body}")
+
+
+def run_daily_compliance_check():
+    """Background job: checks all property compliance documents for expiry."""
+    print(f"--- Running daily compliance check @ {datetime.utcnow()} ---")
+    
+    db: Session = SessionLocal()
+    
+    try:
+        properties: List[Property] = db.query(Property).all()
+        
+        
+        for property in properties:
+            expiring_docs = property.expiring_documents 
+            
+            if expiring_docs:
+                doc_list = ", ".join([doc['type'] for doc in expiring_docs])
+                
+            
+                print(f"📢 [COMPLIANCE ALERT] Property: {property.address} - Documents expiring: {doc_list}")
+        
+        
+        print(f"--- Compliance check complete. {len(properties)} properties checked. ---")
+        
+    except Exception as e:
+        print(f"❌ ERROR running compliance check task: {e}")
+    finally:
+        db.close()
+        
+
+def run_schedule():
+    """Thread target loop: continuously runs the compliance check."""
+    global SHOULD_RUN_TASKS
+    print(f"Background scheduler initialized. Check interval: {CHECK_INTERVAL_SECONDS}s")
+    
+    # Run once immediately on startup
+    run_daily_compliance_check()
+
+    while SHOULD_RUN_TASKS:
+        time.sleep(CHECK_INTERVAL_SECONDS)
+        run_daily_compliance_check()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    print("🚀 Creating database tables...")
+    global SHOULD_RUN_TASKS
+    
+    # STARTUP LOGIC
+    print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database ready")
+    print("Database ready")
+    
+    # Start the background compliance checker thread
+    thread = threading.Thread(target=run_schedule, daemon=True)
+    thread.start()
+    print("✅ Background compliance checker thread started.")
+    
     yield
-    # Shutdown
-    print("👋 Shutting down...")
+    
+    # SHUTDOWN 
+    print("Shutting down background tasks...")
+    SHOULD_RUN_TASKS = False 
+    print("Shutting down Uvicorn...")
 
 
 app = FastAPI(
@@ -110,7 +185,7 @@ def get_model_counts(db: Session):
         
         return property_count, landlord_count, applicant_count
     except Exception as e:
-        print(f"⚠️ Model count error (tables might not exist yet): {e}")
+        print(f"Model count error (tables might not exist yet): {e}")
         return 0, 0, 0  # Return zeros if tables don't exist yet
 
 @app.get("/", response_class=HTMLResponse)

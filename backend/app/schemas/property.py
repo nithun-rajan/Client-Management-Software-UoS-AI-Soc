@@ -1,4 +1,6 @@
 from pydantic import ConfigDict, Field
+from typing import Optional, List, Dict, Any
+from datetime import date 
 
 from app.models.enums import PropertyStatus
 
@@ -17,6 +19,12 @@ class PropertyCreate(PropertyBase):
     city: str
     landlord_id: str | None = None
     vendor_id: str | None = None
+
+    # COMPLIANCE DATES
+    epc_expiry: date | None = None # Energy Performance Certificate.
+    gas_cert_expiry: date | None = None # gas_cert_expiry.
+    eicr_expiry: date | None = None # Electrical Installation Condition Report.
+    hmolicence_expiry: date | None = None # HMO status.
 
 class PropertyUpdate(AppBaseModel):
     address: str | None = None
@@ -37,6 +45,12 @@ class PropertyUpdate(AppBaseModel):
     managed_by: str | None = None
     management_type: str | None = None
     management_notes: str | None = None
+
+    # COMPLIANCE DATES
+    epc_expiry: date | None = None # Energy Performance Certificate.
+    gas_cert_expiry: date | None = None # gas_cert_expiry.
+    eicr_expiry: date | None = None # Electrical Installation Condition Report.
+    hmolicence_expiry: date | None = None # HMO status.
 
 class LandlordInfo(AppBaseModel):
     """Basic landlord information for property responses"""
@@ -70,3 +84,13 @@ class PropertyResponse(PropertyBase):
     managed_by: str | None = None
     management_type: str | None = None
     management_notes: str | None = None
+
+    # COMPLIANCE DATES
+    epc_expiry: date | None = None # Energy Performance Certificate.
+    gas_cert_expiry: date | None = None # gas_cert_expiry.
+    eicr_expiry: date | None = None # Electrical Installation Condition Report.
+    hmolicence_expiry: date | None = None # HMO status.
+
+    # COMPUTED COMPLIANCE FIELDS 
+    is_compliant: bool = Field(description="Computed property: True if all documents are valid.")
+    expiring_documents: List[Dict[str, Any]] = Field(description="Computed property: List of documents expiring soon or expired.")

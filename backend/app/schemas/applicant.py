@@ -26,6 +26,13 @@ class ApplicantBase(AppBaseModel):
     willing_to_buy: bool = False
     buyer_questions_answered: bool = False
     tenant_questions_answered: bool = False
+    # --- ADD NEW COMPLIANCE FIELDS HERE ---
+    # We add them here so they are part of Create and Response
+    aml_check_status: str | None = "not_started" # Match model default
+    aml_check_date: date | None = None
+    is_guardianship_required: bool = False # Match model default
+    guardianship_details: str | None = None
+    # --- END OF ADDITION ---
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -121,6 +128,13 @@ class ApplicantUpdate(AppBaseModel):
     assigned_agent_id: str | None = None
     last_contacted_at: datetime | None = None
     notes: str | None = None
+    # --- ADD NEW COMPLIANCE FIELDS HERE ---
+    # We add them here as Optional so they can be updated
+    aml_check_status: str | None = None
+    aml_check_date: date | None = None
+    is_guardianship_required: bool | None = None
+    guardianship_details: str | None = None
+    # --- END OF ADDITION --
 
 
     # Sales buyer specific fields
