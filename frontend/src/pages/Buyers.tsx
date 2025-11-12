@@ -39,10 +39,12 @@ import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Buyers() {
   const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
+  const { user } = useAuth();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -166,11 +168,20 @@ export default function Buyers() {
                       <StatusBadge status={buyer.status} className="mt-1" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                    <UserCheck className="h-3.5 w-3.5" />
-                    <span className="text-right whitespace-nowrap">
-                      {buyer.managed_by_name || "Unassigned"}
-                    </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {buyer.assigned_agent_id === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {buyer.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>

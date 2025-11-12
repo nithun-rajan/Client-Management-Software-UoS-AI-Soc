@@ -62,6 +62,9 @@ def migrate_database():
             # Vendor table - Contact tracking and agent assignment
             ("vendors", "last_contacted_at", "DATETIME"),
             ("vendors", "managed_by", "VARCHAR"),
+            
+            # User table - agent profile settings
+            ("users", "agent_profile", "TEXT"),  # SQLite stores JSON as TEXT
         ]
         
         # Combine old and new migrations

@@ -1,5 +1,5 @@
 // src/components/AgentProfileDialog.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -8,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyManagedEntities } from "@/hooks/useAgents";
+import { Link } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Home, UserCheck, Users, BarChart3,
   TrendingUp, Clock, PoundSterling, Star, Mail, Phone,
@@ -47,9 +50,28 @@ interface Props {
 }
 
 export default function AgentProfileDialog({ open, onOpenChange }: Props) {
-  const [tab, setTab] = useState("properties");
   const { user } = useAuth();
+  const { data: managedEntities, isLoading: managedLoading } = useMyManagedEntities();
   const [profile, setProfile] = useState<AgentProfile>(defaultProfile);
+  
+  // Determine default tab (first available tab or KPIs)
+  const getDefaultTab = useMemo(() => {
+    if (managedEntities?.properties && managedEntities.properties.length > 0) return "properties";
+    if (managedEntities?.vendors && managedEntities.vendors.length > 0) return "vendors";
+    if (managedEntities?.buyers && managedEntities.buyers.length > 0) return "buyers";
+    if (managedEntities?.landlords && managedEntities.landlords.length > 0) return "landlords";
+    if (managedEntities?.applicants && managedEntities.applicants.length > 0) return "applicants";
+    return "kpis";
+  }, [managedEntities]);
+  
+  const [tab, setTab] = useState(getDefaultTab);
+  
+  // Update tab when managedEntities changes
+  useEffect(() => {
+    if (managedEntities) {
+      setTab(getDefaultTab);
+    }
+  }, [managedEntities, getDefaultTab]);
 
   useEffect(() => {
     const load = () => {
@@ -138,83 +160,193 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-4">
-            {["properties", "landlords", "applicants", "kpis"].map(t => (
-              <TabsTrigger key={t} value={t} className="text-xs sm:text-sm">
-                {t === "kpis" ? "KPIs" : t.charAt(0).toUpperCase() + t.slice(1)}
-              </TabsTrigger>
-            ))}
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${(() => {
+            const tabs = [];
+            if (managedEntities?.properties && managedEntities.properties.length > 0) tabs.push("properties");
+            if (managedEntities?.vendors && managedEntities.vendors.length > 0) tabs.push("vendors");
+            if (managedEntities?.buyers && managedEntities.buyers.length > 0) tabs.push("buyers");
+            if (managedEntities?.landlords && managedEntities.landlords.length > 0) tabs.push("landlords");
+            if (managedEntities?.applicants && managedEntities.applicants.length > 0) tabs.push("applicants");
+            tabs.push("kpis"); // Always show KPIs
+            return tabs.length;
+          })()}, 1fr)` }}>
+            {(() => {
+              const tabs = [];
+              if (managedEntities?.properties && managedEntities.properties.length > 0) {
+                tabs.push({ value: "properties", label: "Properties" });
+              }
+              if (managedEntities?.vendors && managedEntities.vendors.length > 0) {
+                tabs.push({ value: "vendors", label: "Vendors" });
+              }
+              if (managedEntities?.buyers && managedEntities.buyers.length > 0) {
+                tabs.push({ value: "buyers", label: "Buyers" });
+              }
+              if (managedEntities?.landlords && managedEntities.landlords.length > 0) {
+                tabs.push({ value: "landlords", label: "Landlords" });
+              }
+              if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
+                tabs.push({ value: "applicants", label: "Applicants" });
+              }
+              tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
+              return tabs.map((t) => (
+                <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm">
+                  {t.label}
+                </TabsTrigger>
+              ));
+            })()}
           </TabsList>
 
           {/* PROPERTIES */}
-          <TabsContent value="properties" className="mt-4 space-y-3">
-            {[
-              { addr: "Court Road, SO15", price: "£195,000", status: "Offer Accepted", badge: "default" },
-              { addr: "High Street, SO14", price: "£1,200 pcm", status: "Viewing Tomorrow", badge: "secondary" },
-              { addr: "Portswood Rd", price: "£340,000", status: "New Instruction", badge: "outline" },
-              { addr: "The Avenue", price: "£850 pcm", status: "Tenancy Started", badge: "default" },
-            ].map((p, i) => (
-              <Card key={i} className="hover:shadow-sm transition-shadow">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <Home className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{p.addr}</p>
-                      <p className="text-sm font-semibold text-primary">{p.price}</p>
-                    </div>
-                  </div>
-                  <Badge variant={p.badge as any}>{p.status}</Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
+          {managedEntities?.properties && managedEntities.properties.length > 0 && (
+            <TabsContent value="properties" className="mt-4 space-y-3">
+              {managedLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : (
+                managedEntities.properties.map((prop) => (
+                  <Link key={prop.id} to={`/properties/${prop.id}`} className="block">
+                    <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <Home className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium hover:text-primary transition-colors">{prop.name}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              )}
+            </TabsContent>
+          )}
+
+          {/* VENDORS */}
+          {managedEntities?.vendors && managedEntities.vendors.length > 0 && (
+            <TabsContent value="vendors" className="mt-4">
+              {managedLoading ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {managedEntities.vendors.map((vendor) => (
+                    <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="block">
+                      <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <UserCheck className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium hover:text-primary transition-colors">{vendor.name}</span>
+                            {vendor.property_count > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {vendor.property_count} {vendor.property_count === 1 ? "property" : "properties"}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          )}
+
+          {/* BUYERS */}
+          {managedEntities?.buyers && managedEntities.buyers.length > 0 && (
+            <TabsContent value="buyers" className="mt-4 space-y-3">
+              {managedLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : (
+                managedEntities.buyers.map((buyer) => (
+                  <Link key={buyer.id} to={`/applicants/${buyer.id}`} className="block">
+                    <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium hover:text-primary transition-colors">{buyer.name}</p>
+                            <p className="text-xs text-muted-foreground">Buyer</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              )}
+            </TabsContent>
+          )}
 
           {/* LANDLORDS */}
-          <TabsContent value="landlords" className="mt-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {[
-                "Mr A. Patel – 3 properties",
-                "Dr S. Chen – Court Road",
-                "Mrs J. Taylor – High St",
-                "Southampton Uni – 2 flats",
-                "Mr R. Kumar – Portswood",
-                "Trustees of L. Brown",
-              ].map((l, i) => (
-                <Card key={i} className="hover:shadow-sm transition-shadow">
-                  <CardContent className="flex items-center gap-3 p-4">
-                    <UserCheck className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium">{l}</span>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+          {managedEntities?.landlords && managedEntities.landlords.length > 0 && (
+            <TabsContent value="landlords" className="mt-4">
+              {managedLoading ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {managedEntities.landlords.map((landlord) => (
+                    <Link key={landlord.id} to={`/landlords/${landlord.id}`} className="block">
+                      <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                        <CardContent className="flex items-center gap-3 p-4">
+                          <UserCheck className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium hover:text-primary transition-colors">{landlord.name}</span>
+                            {landlord.property_count > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {landlord.property_count} {landlord.property_count === 1 ? "property" : "properties"}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          )}
 
           {/* APPLICANTS */}
-          <TabsContent value="applicants" className="mt-4 space-y-3">
-            {[
-              { name: "Emma Wilson", budget: "£1,200 pcm", move: "Dec 1", hot: true },
-              { name: "Tom & Lisa", budget: "£380,000", move: "ASAP", hot: true },
-              { name: "Dr Mike Lee", budget: "2-bed flat", move: "Jan", hot: false },
-              { name: "Sarah Khan", budget: "£900 pcm", move: "Nov 15", hot: true },
-            ].map((a, i) => (
-              <Card key={i} className="hover:shadow-sm transition-shadow">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{a.name}</p>
-                      <p className="text-xs text-muted-foreground">Budget: {a.budget}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    {a.hot && <Badge className="mb-1">HOT LEAD</Badge>}
-                    <p className="text-xs text-muted-foreground">Move: {a.move}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
+          {managedEntities?.applicants && managedEntities.applicants.length > 0 && (
+            <TabsContent value="applicants" className="mt-4 space-y-3">
+              {managedLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : (
+                managedEntities.applicants.map((applicant) => (
+                  <Link key={applicant.id} to={`/applicants/${applicant.id}`} className="block">
+                    <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <Users className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium hover:text-primary transition-colors">{applicant.name}</p>
+                            <p className="text-xs text-muted-foreground">Tenant</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              )}
+            </TabsContent>
+          )}
 
           {/* KPIs */}
           <TabsContent value="kpis" className="mt-4">

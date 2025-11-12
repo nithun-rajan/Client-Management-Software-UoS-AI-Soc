@@ -33,6 +33,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
 import NotesSection from "@/components/shared/NotesSection";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,6 +58,7 @@ export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
@@ -302,12 +304,19 @@ export default function ApplicantDetails() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
-                    <UserCheck className="h-4 w-4" />
-                    <span className="text-right whitespace-nowrap">
-                      Managed by: {applicant.managed_by_name || "Unassigned"}
-                    </span>
-                  </div>
+                  {applicant.assigned_agent_id === user?.id ? (
+                    <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Managed by Me
+                    </Badge>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                      <UserCheck className="h-4 w-4" />
+                      <span className="text-right whitespace-nowrap">
+                        Managed by: {applicant.managed_by_name || "Unassigned"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

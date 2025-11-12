@@ -33,10 +33,12 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Vendor } from "@/types";
 import StatusBadge from "@/components/shared/StatusBadge";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Vendors() {
   const { data: vendors, isLoading } = useVendors();
   const { data: properties } = useProperties();
+  const { user } = useAuth();
   const deleteVendor = useDeleteVendor();
   const updateVendor = useUpdateVendor();
   const [editOpen, setEditOpen] = useState(false);
@@ -202,11 +204,20 @@ export default function Vendors() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                    <UserCheck className="h-3.5 w-3.5" />
-                    <span className="text-right whitespace-nowrap">
-                      {vendor.managed_by_name || "Unassigned"}
-                    </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {vendor.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {vendor.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>

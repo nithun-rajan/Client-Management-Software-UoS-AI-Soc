@@ -82,12 +82,13 @@ def assign_agents(db: Session):
     # Sort agents by name for consistent assignment
     agents = sorted(agents, key=lambda a: (a.first_name or "", a.last_name or ""))
     
-    # Explicitly split agents: first 3 are sales team, rest are lettings team
-    # If there are exactly 6 agents, split 3 and 3
+    # Explicitly split agents: first 4 are sales team, rest are lettings team
+    # This ensures the user (who is likely the 4th agent) gets vendors and buyers
+    # If there are exactly 6 agents, split 4 and 2
     # Otherwise, split roughly in half with preference for sales team
     if len(agents) >= 6:
-        sales_agents = agents[:3]
-        lettings_agents = agents[3:]
+        sales_agents = agents[:4]  # Include 4 agents in sales team
+        lettings_agents = agents[4:]
     else:
         # If fewer than 6 agents, split roughly in half
         mid = (len(agents) + 1) // 2  # Round up for sales team

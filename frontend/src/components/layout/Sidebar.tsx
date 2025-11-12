@@ -6,6 +6,8 @@ import AgentProfileDialog from "./AgentProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { useAgent } from "@/hooks/useAgents";
+import { Badge } from "@/components/ui/badge";
 import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, Store, ShoppingBag,
@@ -49,6 +51,7 @@ export default function Sidebar() {
   const location = useLocation();
   const [agentOpen, setAgentOpen] = useState(false);
   const { user } = useAuth();
+  const { data: agentData } = useAgent(user?.id || "");
   const [agentAvatarUrl, setAgentAvatarUrl] = useState("");
 
   const loadAgentAvatar = () => {
@@ -257,7 +260,14 @@ export default function Sidebar() {
                 <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-xs font-semibold text-white truncate">{getUserDisplayName()}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-semibold text-white truncate">{getUserDisplayName()}</p>
+                  {agentData?.team && (
+                    <Badge className="bg-accent text-white text-[9px] font-semibold px-1.5 py-0 h-4 leading-none">
+                      {agentData.team}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-[10px] text-white/60">Online</p>
               </div>
               <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />

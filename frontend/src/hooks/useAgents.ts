@@ -92,3 +92,15 @@ export function useAgentManagedEntities(agentId: string) {
   });
 }
 
+export function useMyManagedEntities() {
+  return useQuery({
+    queryKey: ["me", "managed"],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/v1/auth/me/managed`);
+      return data as AgentManagedEntities;
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+

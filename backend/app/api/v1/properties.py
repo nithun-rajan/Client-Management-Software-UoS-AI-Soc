@@ -21,7 +21,7 @@ router = APIRouter(prefix="/properties", tags=["properties"])
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 def enrich_property_response(property: Property, db: Session) -> dict:
-    """Enrich property response with managed_by_name from landlord or vendor"""
+    """Enrich property response with managed_by and managed_by_name from landlord or vendor"""
     response_dict = PropertyResponse.model_validate(property).model_dump()
     
     # Get managed_by from landlord or vendor
@@ -35,8 +35,10 @@ def enrich_property_response(property: Property, db: Session) -> dict:
         if vendor and vendor.managed_by:
             agent_id = vendor.managed_by
     
-    # Get agent name if agent_id exists
+    # Set managed_by in response if we found an agent
     if agent_id:
+        response_dict["managed_by"] = agent_id
+        # Get agent name
         agent = db.query(User).filter(User.id == agent_id).first()
         if agent:
             response_dict["managed_by_name"] = f"{agent.first_name or ''} {agent.last_name or ''}".strip()

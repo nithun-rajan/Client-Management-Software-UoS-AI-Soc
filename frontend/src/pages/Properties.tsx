@@ -46,9 +46,11 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
+  const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -324,12 +326,19 @@ export default function Properties() {
                     <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
                       {property.property_type}
                     </span>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <UserCheck className="h-3.5 w-3.5" />
-                      <span className="text-right whitespace-nowrap">
-                        {property.managed_by_name || "Unassigned"}
-                      </span>
-                    </div>
+                    {property.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {property.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-4 pt-2">
