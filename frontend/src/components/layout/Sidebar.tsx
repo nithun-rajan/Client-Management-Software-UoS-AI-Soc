@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Home, Building2, Users, UserCheck,
-  BarChart3, Settings, MessageSquare, Store, ShoppingBag,
+  BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
   Calendar, StickyNote, UserCog, Sparkles
 } from "lucide-react";
@@ -34,7 +34,6 @@ const navigation = {
   ],
         other: [
           { name: "Maintenance", href: "/maintenance", icon: Wrench },
-          { name: "Messages", href: "/messages", icon: MessageSquare },
           { name: "Tasks", href: "/tasks", icon: CheckSquare },
           { name: "Tickets", href: "/tickets", icon: Wrench },
           { name: "Offers", href: "/offers", icon: Handshake },

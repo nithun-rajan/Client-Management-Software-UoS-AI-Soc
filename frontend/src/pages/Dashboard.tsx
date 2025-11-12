@@ -590,7 +590,10 @@ export default function Dashboard() {
           {/* Recent Activity Feed - Enhanced */}
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle>Recent Activity Feed</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Recent Activity Feed
+              </CardTitle>
               <CardDescription>Latest updates across your portfolio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
