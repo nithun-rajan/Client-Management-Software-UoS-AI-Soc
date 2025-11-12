@@ -371,15 +371,30 @@ def patch_property(
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
 
-    for key, value in property_data.model_dump(exclude_unset=True).items():
+    # Log photo updates for debugging
+    update_data = property_data.model_dump(exclude_unset=True)
+    if "main_photo_url" in update_data or "photo_urls" in update_data:
+        print(f"[INFO] Updating photos for property {property_id}")
+        print(f"[INFO] main_photo_url: {update_data.get('main_photo_url')}")
+        print(f"[INFO] photo_urls: {update_data.get('photo_urls')}")
+
+    for key, value in update_data.items():
         setattr(property, key, value)
 
     # Ensure status is never None - use default if missing
     if property.status is None:
         property.status = PropertyStatus.AVAILABLE
 
+    # Commit to database - this saves the photos for ALL users
+    # Photos are stored in the Property model, which is shared across all users
     db.commit()
     db.refresh(property)
+    
+    # Verify photos were saved
+    if "main_photo_url" in update_data or "photo_urls" in update_data:
+        print(f"[INFO] Photos saved successfully for property {property_id}")
+        print(f"[INFO] Verified main_photo_url: {property.main_photo_url}")
+        print(f"[INFO] Verified photo_urls: {property.photo_urls}")
     
     # Include landlord or vendor information in response
     response_dict = enrich_property_response(property, db)

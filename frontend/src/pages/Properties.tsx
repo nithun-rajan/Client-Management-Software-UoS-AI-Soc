@@ -7,7 +7,6 @@ import {
   Trash2,
   PoundSterling,
   Download,
-  Upload,
   Search,
   X,
   Sparkles,
@@ -49,6 +48,7 @@ import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
+import PhotoGallery from "@/components/property/PhotoGallery";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
@@ -141,11 +141,43 @@ export default function Properties() {
     );
   }
 
-  const handleRequestPhoto = (property: any) => {
-    toast({
-      title: "Request Sent",
-      description: `Photo upload request sent to landlord for ${property.address_line1}`,
-    });
+  // Helper function to normalize photo URLs
+  const normalizePhotoUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    return `${apiBaseUrl}/${url}`;
+  };
+
+  // Helper function to get photos array from property
+  const getPropertyPhotos = (property: any): string[] => {
+    if (property.photo_urls) {
+      try {
+        const photos = JSON.parse(property.photo_urls);
+        if (Array.isArray(photos) && photos.length > 0) {
+          return photos.map(normalizePhotoUrl);
+        }
+      } catch (e) {
+        console.error("Failed to parse photo_urls:", e);
+      }
+    }
+    // Fallback to main_photo_url if photo_urls is not available
+    if (property.main_photo_url) {
+      return [normalizePhotoUrl(property.main_photo_url)];
+    }
+    return [];
+  };
+
+  // Handler for photo updates
+  const handlePhotosUpdate = async (propertyId: string, photos: string[]) => {
+    refetch();
+  };
+
+  // Handler for main photo update
+  const handleMainPhotoUpdate = async (propertyId: string, url: string) => {
+    refetch();
   };
 
   const handleGenerateValuationPack = async (property: any) => {
@@ -378,32 +410,15 @@ export default function Properties() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden relative">
-                  {property.main_photo_url ? (
-                    <img
-                      src={property.main_photo_url}
-                      alt={property.address_line1}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <>
-                      <img
-                        src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                        alt={property.address_line1 || property.city}
-                        className="h-full w-full object-cover"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-white"
-                        onClick={() => handleRequestPhoto(property)}
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        Request Photo
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <PhotoGallery
+                  photos={getPropertyPhotos(property)}
+                  propertyId={property.id}
+                  onPhotosUpdate={(photos) => handlePhotosUpdate(property.id, photos)}
+                  mainPhotoUrl={property.main_photo_url ? normalizePhotoUrl(property.main_photo_url) : undefined}
+                  onMainPhotoUpdate={(url) => handleMainPhotoUpdate(property.id, url)}
+                  allowEdit={true}
+                  className="aspect-video"
+                />
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-start justify-between gap-2">

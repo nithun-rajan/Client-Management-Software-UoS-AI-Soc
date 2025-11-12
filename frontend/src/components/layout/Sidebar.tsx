@@ -1,6 +1,6 @@
 // src/components/Sidebar.tsx
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import AgentProfileDialog from "./AgentProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,8 +12,16 @@ import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
-  Calendar, StickyNote, UserCog, Sparkles
+  Calendar, StickyNote, UserCog, Sparkles, LogOut, UserIcon
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 const AGENT_KEY = "john-smith-agent";
 
@@ -49,8 +57,9 @@ const navigation = {
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [agentOpen, setAgentOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { data: agentData } = useAgent(user?.id || "");
   const [agentAvatarUrl, setAgentAvatarUrl] = useState("");
 
@@ -243,35 +252,69 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Agent Profile - Compact & Clean */}
+        {/* Agent Profile - Dropdown Menu */}
         {user && (
           <div className="border-t border-white/10 p-3">
-            <button
-              onClick={() => setAgentOpen(true)}
-              className="group flex w-full items-center gap-2.5 rounded-lg p-2 transition-all hover:bg-white/10"
-            >
-              <div className="relative">
-                <Avatar className="h-9 w-9 ring-2 ring-white/20">
-                  <AvatarImage src={agentAvatarUrl} />
-                  <AvatarFallback className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-white truncate">{getUserDisplayName()}</p>
-                  {agentData?.team && (
-                    <Badge className="bg-accent text-white text-[9px] font-semibold px-1.5 py-0 h-4 leading-none">
-                      {agentData.team}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-[10px] text-white/60">Online</p>
-              </div>
-              <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="group flex w-full items-center gap-2.5 rounded-lg p-2 transition-all hover:bg-white/10">
+                  <div className="relative">
+                    <Avatar className="h-9 w-9 ring-2 ring-white/20">
+                      <AvatarImage src={agentAvatarUrl} />
+                      <AvatarFallback className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-semibold text-white truncate">{getUserDisplayName()}</p>
+                      {agentData?.team && (
+                        <Badge className="bg-accent text-white text-[9px] font-semibold px-1.5 py-0 h-4 leading-none">
+                          {agentData.team}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-white/60">Online</p>
+                  </div>
+                  <Sparkles className="h-3.5 w-3.5 text-yellow-400 opacity-0 transition group-hover:opacity-100 flex-shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top" className="w-56 mb-2">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.first_name} {user.last_name}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground capitalize mt-1">
+                      {user.role}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setAgentOpen(true)}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  View Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
 
