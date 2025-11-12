@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Date, Text, DateTime
+from sqlalchemy import Column, String, Boolean, Date, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 
@@ -31,7 +31,11 @@ class Landlord(BaseModel):
     # Complete info flag (similar to vendor_complete_info)
     landlord_complete_info = Column(Boolean, default=False)
     
+    # Agent assignment
+    managed_by = Column(String, ForeignKey('users.id'), nullable=True, index=True)  # Which agent manages this landlord
+    
     # Relationships
     properties = relationship("Property", back_populates="landlord")
     communications = relationship("Communication", back_populates="landlord")
     maintenance_issues = relationship("MaintenanceIssue", back_populates="landlord", cascade="all, delete-orphan")
+    managing_agent = relationship("User", foreign_keys=[managed_by])

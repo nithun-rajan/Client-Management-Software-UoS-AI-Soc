@@ -158,27 +158,35 @@ export default function Landlords() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
-                    {getInitials(landlord.full_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-lg font-semibold">
-                      {landlord.full_name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      {landlord.aml_verified ? (
-                        <Badge className="gap-1 bg-accent text-white">
-                          <CheckCircle className="h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
+                      {getInitials(landlord.full_name)}
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-semibold">
+                        {landlord.full_name}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        {landlord.aml_verified ? (
+                          <Badge className="gap-1 bg-accent text-white">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    <span className="text-right whitespace-nowrap">
+                      {landlord.managed_by_name || "Unassigned"}
+                    </span>
                   </div>
                 </div>
               </CardHeader>

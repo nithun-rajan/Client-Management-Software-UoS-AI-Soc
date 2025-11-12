@@ -168,25 +168,49 @@ def calculate_agent_stats(agent_id: str, db: Session) -> AgentStats:
 
 
 def get_agent_team(agent_id: str, db: Session) -> str:
-    """Determine agent team based on their properties"""
+    """Determine agent team based on their properties and assignments"""
     # Check if agent has more sales properties or lettings properties
-    sales_count = db.query(Property)\
+    sales_prop_count = db.query(Property)\
         .filter(Property.managed_by == agent_id)\
         .filter(Property.vendor_id.isnot(None))\
         .count()
     
-    lettings_count = db.query(Property)\
+    lettings_prop_count = db.query(Property)\
         .filter(Property.managed_by == agent_id)\
         .filter(Property.landlord_id.isnot(None))\
         .count()
     
-    if sales_count > lettings_count:
+    # Check vendors/buyers vs landlords/applicants assignments
+    vendor_count = db.query(Vendor).filter(Vendor.managed_by == agent_id).count()
+    buyer_count = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        (
+            (Applicant.buyer_type.isnot(None)) |
+            (Applicant.willing_to_buy == True)
+        )
+    ).count()
+    
+    landlord_count = db.query(Landlord).filter(Landlord.managed_by == agent_id).count()
+    applicant_count = db.query(Applicant).filter(
+        Applicant.assigned_agent_id == agent_id,
+        Applicant.willing_to_rent == True,
+        Applicant.buyer_type.is_(None)  # Not a buyer
+    ).count()
+    
+    # Calculate totals
+    sales_total = sales_prop_count + vendor_count + buyer_count
+    lettings_total = lettings_prop_count + landlord_count + applicant_count
+    
+    if sales_total > lettings_total:
         return "Sales Team"
-    elif lettings_count > sales_count:
+    elif lettings_total > sales_total:
         return "Lettings Team"
     else:
-        # Default or mixed
-        return "Lettings Team"  # Default
+        # Default or mixed - if no assignments, default to Lettings Team
+        if sales_total == 0 and lettings_total == 0:
+            return "Lettings Team"
+        # If equal, prefer Sales Team (since we want 3 sales, 3 lettings)
+        return "Sales Team" if sales_total > 0 else "Lettings Team"
 
 
 def get_agent_position(agent_id: str, db: Session) -> str:

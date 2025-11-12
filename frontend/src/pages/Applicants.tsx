@@ -15,6 +15,7 @@ import {
   Calendar,
   Search,
   X,
+  UserCheck,
 } from "lucide-react";
 import {
   Card,
@@ -144,15 +145,23 @@ export default function Applicants() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
-                    {getInitials(applicant.first_name, applicant.last_name)}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
+                      {getInitials(applicant.first_name, applicant.last_name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold">
+                        {applicant.first_name} {applicant.last_name}
+                      </h3>
+                      <StatusBadge status={applicant.status} className="mt-1" />
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold">
-                      {applicant.first_name} {applicant.last_name}
-                    </h3>
-                    <StatusBadge status={applicant.status} className="mt-1" />
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    <span className="text-right whitespace-nowrap">
+                      {applicant.managed_by_name || "Unassigned"}
+                    </span>
                   </div>
                 </div>
               </CardHeader>

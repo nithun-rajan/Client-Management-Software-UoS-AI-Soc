@@ -24,6 +24,7 @@ import {
   Trash2,
   CheckSquare,
   Edit,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -293,6 +294,12 @@ export default function VendorDetails() {
                     </div>
                   )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                <UserCheck className="h-4 w-4" />
+                <span className="text-right whitespace-nowrap">
+                  Managed by: {vendor.managed_by_name || "Unassigned"}
+                </span>
               </div>
             </div>
           </CardHeader>

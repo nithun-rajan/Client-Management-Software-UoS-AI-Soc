@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Search,
   X,
+  UserCheck,
 } from "lucide-react";
 import {
   Card,
@@ -140,28 +141,36 @@ export default function Buyers() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
-                    {getInitials(buyer.first_name, buyer.last_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate font-semibold">
-                        {buyer.first_name} {buyer.last_name}
-                      </h3>
-                      {buyer.buyer_questions_answered ? (
-                        <Badge variant="outline" className="gap-1">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          Questions
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3 text-orange-500" />
-                          Pending
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
+                      {getInitials(buyer.first_name, buyer.last_name)}
                     </div>
-                    <StatusBadge status={buyer.status} className="mt-1" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate font-semibold">
+                          {buyer.first_name} {buyer.last_name}
+                        </h3>
+                        {buyer.buyer_questions_answered ? (
+                          <Badge variant="outline" className="gap-1">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            Questions
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3 text-orange-500" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                      <StatusBadge status={buyer.status} className="mt-1" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    <span className="text-right whitespace-nowrap">
+                      {buyer.managed_by_name || "Unassigned"}
+                    </span>
                   </div>
                 </div>
               </CardHeader>

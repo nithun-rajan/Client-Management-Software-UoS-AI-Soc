@@ -38,6 +38,7 @@ class VendorUpdate(AppBaseModel):
     minimum_fee: Optional[str] = None
     vendor_complete_info: Optional[bool] = None
     last_contacted_at: Optional[datetime] = None
+    managed_by: Optional[str] = None
 
 
 class VendorResponse(VendorBase):
@@ -45,6 +46,8 @@ class VendorResponse(VendorBase):
     instructed_property_id: Optional[str] = None
     vendor_complete_info: bool = False
     last_contacted_at: Optional[datetime] = None
+    managed_by: Optional[str] = None
+    managed_by_name: Optional[str] = None  # Full name of managing agent
     created_at: datetime
     updated_at: Optional[datetime] = None
     

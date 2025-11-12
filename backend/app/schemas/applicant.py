@@ -208,6 +208,7 @@ class ApplicantResponse(ApplicantBase):
     id: str
     status: str
     assigned_agent_id: str | None = None
+    managed_by_name: str | None = None  # Full name of managing agent (uses assigned_agent_id)
     last_contacted_at: datetime | None = None
     notes: str | None = None
 

@@ -57,9 +57,11 @@ def migrate_database():
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),
             ("landlords", "landlord_complete_info", "INTEGER DEFAULT 0"),
+            ("landlords", "managed_by", "VARCHAR"),
             
-            # Vendor table - Contact tracking
+            # Vendor table - Contact tracking and agent assignment
             ("vendors", "last_contacted_at", "DATETIME"),
+            ("vendors", "managed_by", "VARCHAR"),
         ]
         
         # Combine old and new migrations
