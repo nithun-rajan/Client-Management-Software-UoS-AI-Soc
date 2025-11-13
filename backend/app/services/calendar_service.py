@@ -8,7 +8,7 @@ Implements automated viewing scheduling based on blueprint requirements:
 """
 
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta, time, date
+from datetime import datetime, timedelta, time, date, timezone
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.core.database import get_db
@@ -16,6 +16,7 @@ from app.models.calendar import AgentAvailability, PropertyViewingSlot, ViewingS
 from app.models.viewing import Viewing
 from app.models.property import Property
 from app.models.applicant import Applicant
+from app.models.user import User
 
 
 class CalendarService:
@@ -27,7 +28,8 @@ class CalendarService:
         self.db = db
     
     async def auto_schedule_viewing(self, applicant_id: str, property_id: str, 
-                                  preferred_times: List[Dict] = None) -> Dict[str, Any]:
+                                  preferred_times: List[Dict] = None,
+                                  booking_context: Dict = None) -> Dict[str, Any]:
         """
         Automatically schedule a viewing based on availability
         Blueprint page 21: Auto-booking based on negotiator availability
@@ -68,6 +70,13 @@ class CalendarService:
                 status="scheduled",
                 assigned_agent=best_slot.get('agent_id')
             )
+            
+            # Add booking context if provided
+            if booking_context:
+                viewing.booking_source = booking_context.get("source", "manual")
+                viewing.match_id = booking_context.get("match_id")
+                viewing.booking_token = booking_context.get("booking_token")
+                viewing.public_booking_url = booking_context.get("booking_url")
             
             self.db.add(viewing)
             self.db.commit()
@@ -132,8 +141,8 @@ class CalendarService:
             )
         
         # Calculate date range for search
-        start_date = datetime.now() + timedelta(hours=rules.min_advance_hours)
-        end_date = datetime.now() + timedelta(days=rules.max_advance_days)
+        start_date = datetime.now(timezone.utc) + timedelta(hours=rules.min_advance_hours)
+        end_date = datetime.now(timezone.utc) + timedelta(days=rules.max_advance_days)
         
         # Find available agents for this property
         available_agents = await self._get_available_agents(property_id, start_date, end_date)
@@ -157,42 +166,56 @@ class CalendarService:
     
     async def _get_available_agents(self, property_id: str, start_date: datetime, end_date: datetime) -> List[Dict]:
         """Get agents available for viewings in the date range"""
-        # Get agents from the database (users with agent role or assigned to property)
         from app.models.user import User
         from app.models.property import Property
+        from app.schemas.user import Role
         
-        # Try to get property's managed_by agent first
+        agents_list = []
+        agent_ids_seen = set()
+        
+        # Priority 1: Try to get property's managed_by agent first
         property_obj = self.db.query(Property).filter(Property.id == property_id).first()
-        agents = []
-        
         if property_obj and property_obj.managed_by:
             agent = self.db.query(User).filter(User.id == property_obj.managed_by).first()
-            if agent:
-                agents.append({
-                    "agent_id": agent.id,
-                    "name": f"{agent.first_name or ''} {agent.last_name or ''}".strip() or agent.email,
-                    "availability": self._get_agent_availability(agent.id, start_date, end_date)
-                })
+            if agent and agent.is_active:
+                availability = self._get_agent_availability(agent.id, start_date, end_date)
+                if availability:
+                    agents_list.append({
+                        "agent_id": agent.id,
+                        "name": f"{agent.first_name or ''} {agent.last_name or ''}".strip() or agent.email,
+                        "availability": availability
+                    })
+                    agent_ids_seen.add(agent.id)
         
-        # If no agent found, get any active user as fallback
-        if not agents:
+        # Priority 2: Get all other active agents with agent/negotiator role
+        all_agents = self.db.query(User).filter(
+            User.is_active == True,
+            User.role.in_([Role.AGENT, "negotiator"])
+        ).all()
+        
+        for agent in all_agents:
+            if agent.id not in agent_ids_seen:
+                availability = self._get_agent_availability(agent.id, start_date, end_date)
+                if availability:
+                    agents_list.append({
+                        "agent_id": agent.id,
+                        "name": f"{agent.first_name or ''} {agent.last_name or ''}".strip() or agent.email,
+                        "availability": availability
+                    })
+                    agent_ids_seen.add(agent.id)
+        
+        # Fallback: If no agents found, get any active user
+        if not agents_list:
             fallback_agent = self.db.query(User).filter(User.is_active == True).first()
             if fallback_agent:
-                agents.append({
+                availability = self._get_agent_availability(fallback_agent.id, start_date, end_date)
+                agents_list.append({
                     "agent_id": fallback_agent.id,
                     "name": f"{fallback_agent.first_name or ''} {fallback_agent.last_name or ''}".strip() or fallback_agent.email,
-                    "availability": self._get_agent_availability(fallback_agent.id, start_date, end_date)
+                    "availability": availability or {}
                 })
         
-        # If still no agents, return mock data
-        if not agents:
-            agents.append({
-                "agent_id": "default",
-                "name": "Default Agent",
-                "availability": self._get_agent_availability("default", start_date, end_date)
-            })
-        
-        return agents
+        return agents_list
     
     async def _generate_day_slots(self, slot_date: date, available_agents: List[Dict], 
                                 property_id: str, rules) -> List[Dict]:
@@ -206,7 +229,7 @@ class CalendarService:
                 # Generate 30-minute slots within available time window
                 current_time = availability['start_time']
                 while current_time <= availability['end_time']:
-                    slot_datetime = datetime.combine(slot_date, current_time)
+                    slot_datetime = datetime.combine(slot_date, current_time).replace(tzinfo=timezone.utc)
                     
                     # Check if slot is available (no conflicts)
                     if await self._is_slot_available(property_id, agent['agent_id'], slot_datetime):
@@ -218,8 +241,10 @@ class CalendarService:
                             "property_id": property_id
                         })
                     
-                    current_time = (datetime.combine(date.today(), current_time) + 
-                                  timedelta(minutes=rules.slot_duration_minutes + rules.buffer_between_viewings)).time()
+                    # Move to next slot with buffer
+                    current_dt = datetime.combine(date.today(), current_time)
+                    next_dt = current_dt + timedelta(minutes=rules.slot_duration_minutes + rules.buffer_between_viewings)
+                    current_time = next_dt.time()
         
         return slots
     
@@ -287,19 +312,33 @@ class CalendarService:
         self.db.refresh(viewing)
     
     def _get_agent_availability(self, agent_id: str, start_date: datetime, end_date: datetime) -> Dict:
-        """Get agent availability for date range (mock implementation)"""
-        # This would query the AgentAvailability model
-        # For now, return mock availability
+        """Get agent availability for date range"""
+        # Query AgentAvailability model for this agent
+        availability_slots = self.db.query(AgentAvailability).filter(
+            AgentAvailability.agent_id == agent_id,
+            AgentAvailability.is_available == True,
+            AgentAvailability.valid_from <= end_date.date(),
+            (AgentAvailability.valid_to >= start_date.date()) | (AgentAvailability.valid_to.is_(None))
+        ).all()
+        
         availability = {}
         current_date = start_date.date()
         
         while current_date <= end_date.date():
-            # Mock: Agents available 9 AM - 5 PM on weekdays
-            if current_date.weekday() < 5:  # Monday-Friday
-                availability[current_date] = [
-                    {"start_time": time(9, 0), "end_time": time(12, 0)},
-                    {"start_time": time(13, 0), "end_time": time(17, 0)}
-                ]
+            day_availability = []
+            day_of_week = current_date.weekday()
+            
+            # Find availability slots for this day of week
+            for slot in availability_slots:
+                if slot.day_of_week == day_of_week:
+                    day_availability.append({
+                        "start_time": slot.start_time,
+                        "end_time": slot.end_time
+                    })
+            
+            if day_availability:
+                availability[current_date] = day_availability
+            
             current_date += timedelta(days=1)
         
         return availability

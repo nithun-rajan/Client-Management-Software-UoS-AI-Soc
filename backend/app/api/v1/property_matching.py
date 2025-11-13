@@ -4,13 +4,14 @@ import json
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db
-from app.models.property import Property
+from app.models import Property, Applicant, MatchHistory
+"""from app.models.property import Property
 from app.models.applicant import Applicant
-from app.models.match_history import MatchHistory
+from app.models.match_history import MatchHistory"""
 from app.models.enums import PropertyStatus, ApplicantStatus
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -214,7 +215,7 @@ async def ai_match_properties(
             personalized_message = matcher.generate_personalized_message(
                 property, applicant, score
             )
-            
+
             # Generate match reasoning
             reasons = []
             if applicant.desired_bedrooms:
@@ -244,6 +245,27 @@ async def ai_match_properties(
                 locs = [l.strip() for l in applicant.preferred_locations.split(',')]
                 if any(loc.lower() in f"{property.city} {property.postcode}".lower() for loc in locs):
                     reasons.append(f"Preferred location ({property.city})")
+
+            match_record = MatchHistory(
+                applicant_id=applicant.id,
+                property_id=property.id,
+                match_score=score,
+                personalized_message=personalized_message,
+                match_reason=personalized_message,
+                personalization_data={
+                    "match_reasons": reasons,
+                    "calculated_score": score
+                },
+                send_method="api",
+                recipient=applicant.email,
+                sent_at=datetime.now(timezone.utc)
+            )
+            db.add(match_record)
+            db.flush()  # Get ID without commit
+
+            from app.services.calendar_public_booking_service import get_public_booking_service
+            booking_service = get_public_booking_service(db)
+            booking_result = await booking_service.generate_booking_link(match_record.id)
             
             matches.append({
                 "property_id": property.id,
@@ -264,12 +286,17 @@ async def ai_match_properties(
                 },
                 "personalized_message": personalized_message,
                 "match_reasons": reasons,
-                "viewing_slots": [
-                    "Tomorrow 10:00 AM",
-                    "Tomorrow 2:00 PM",
-                    "Day after 11:00 AM"
-                ]  # In real version, integrate with calendar
+                "match_id": match_record.id,
+                "booking_url": booking_result.get("booking_url") if booking_result["success"] else None,
+                # REMOVED: "viewing_slots" hardcoded array
+                "calendar_info": {
+                    "has_available_slots": True,
+                    "booking_url": booking_result.get("booking_url") if booking_result["success"] else None,
+                    "message": "Click to view real-time availability and book instantly"
+                }
             })
+    
+    db.commit()
     
     # Sort by score and limit
     matches.sort(key=lambda x: x['score'], reverse=True)
@@ -291,7 +318,7 @@ async def ai_match_properties(
         "matches": matches,
         "total_matches": len(matches),
         "ai_confidence": 0.92,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "next_steps": [
             "Review the suggested properties",
             "Book viewings for top matches",
@@ -477,17 +504,28 @@ async def send_matches_to_applicant(
         else:
             recipient = applicant.email
         
-        # Create match history record
+        # Create enhanced MatchHistory record
         match_record = MatchHistory(
             applicant_id=applicant.id,
             property_id=property.id,
             match_score=score,
             personalized_message=personalized_msg,
-            sent_at=request.schedule_for or datetime.utcnow(),
+            match_reason=personalized_msg,
             send_method=request.send_method,
-            recipient=recipient
+            recipient=recipient,
+            sent_by_agent="current_agent_id",  # You'd get this from auth
+            sent_at=request.schedule_for or datetime.now(timezone.utc)
         )
         db.add(match_record)
+        db.flush()  # Get ID without commit
+        
+        # Generate booking link
+        from app.services.calendar_public_booking_service import get_public_booking_service
+        booking_service = get_public_booking_service(db)
+        booking_result = await booking_service.generate_booking_link(match_record.id)
+        
+        if booking_result["success"]:
+            match_record.booking_url = booking_result["booking_url"]
         
         sent_matches.append({
             "property_id": property.id,
@@ -495,7 +533,9 @@ async def send_matches_to_applicant(
             "score": round(score, 2),
             "message": personalized_msg,
             "sent_to": recipient,
-            "method": request.send_method
+            "method": request.send_method,
+            "match_id": match_record.id,
+            "booking_url": match_record.booking_url
         })
     
     db.commit()
@@ -509,7 +549,7 @@ async def send_matches_to_applicant(
         },
         "matches_sent": len(sent_matches),
         "send_method": request.send_method,
-        "sent_at": request.schedule_for or datetime.utcnow(),
+        "sent_at": request.schedule_for or datetime.now(timezone.utc),
         "is_scheduled": request.schedule_for is not None,
         "matches": sent_matches,
         "message": f"Successfully sent {len(sent_matches)} personalized property matches via {request.send_method}"
@@ -577,7 +617,6 @@ async def get_match_history(
         }
     }
 
-
 @router.post("/match-response/{match_id}")
 async def record_match_response(
     match_id: str,
@@ -597,7 +636,7 @@ async def record_match_response(
     # Update match record
     match_record.responded = True
     match_record.response_type = response_type
-    match_record.response_at = datetime.utcnow()
+    match_record.response_at = datetime.now(timezone.utc)
     match_record.response_notes = notes
     
     if response_type == "booked_viewing":
@@ -611,6 +650,6 @@ async def record_match_response(
         "response_recorded": {
             "type": response_type,
             "notes": notes,
-            "recorded_at": datetime.utcnow().isoformat()
+            "recorded_at": datetime.now(timezone.utc).isoformat()
         }
     }
