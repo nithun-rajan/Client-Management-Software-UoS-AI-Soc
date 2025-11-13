@@ -9,7 +9,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import Header from "@/components/layout/Header";
@@ -173,26 +172,9 @@ export default function Settings() {
             {/* AVATAR + DELETE */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={agent.avatarUrl} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                    {agent.name.split(" ").map(n => n[0]).join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                  <Camera className="h-5 w-5 text-white" />
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                </label>
-                {agent.avatarUrl && (
-                  <button
-                    onClick={() => setAgent(prev => ({ ...prev, avatarUrl: "" }))}
-                    className="absolute -top-1 -right-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full p-1.5 shadow-sm"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
+                  {agent.name.split(" ").map(n => n[0]).join("")}
+                </div>
               </div>
             </div>
 

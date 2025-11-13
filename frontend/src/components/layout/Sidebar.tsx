@@ -1,9 +1,8 @@
 // src/components/Sidebar.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import AgentProfileDialog from "./AgentProfileDialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgent } from "@/hooks/useAgents";
@@ -61,36 +60,6 @@ export default function Sidebar() {
   const [agentOpen, setAgentOpen] = useState(false);
   const { user, logout } = useAuth();
   const { data: agentData } = useAgent(user?.id || "");
-  const [agentAvatarUrl, setAgentAvatarUrl] = useState("");
-
-  const loadAgentAvatar = () => {
-    const saved = localStorage.getItem(AGENT_KEY);
-    if (saved) {
-      const data = JSON.parse(saved);
-      setAgentAvatarUrl(data.avatarUrl || "");
-    }
-  };
-
-  // Load avatar on mount
-  useEffect(() => {
-    loadAgentAvatar();
-  }, []);
-
-  // Listen to Settings save (from another tab or same tab)
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === AGENT_KEY) loadAgentAvatar();
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  // Listen to custom event from Settings (same tab)
-  useEffect(() => {
-    const handleSave = () => loadAgentAvatar();
-    window.addEventListener("agent-saved", handleSave);
-    return () => window.removeEventListener("agent-saved", handleSave);
-  }, []);
 
   // Get user display name
   const getUserDisplayName = () => {
@@ -263,13 +232,10 @@ export default function Sidebar() {
               <DropdownMenuTrigger asChild>
                 <button className="group flex w-full items-center gap-2.5 rounded-lg p-2 transition-all hover:bg-white/10">
                   <div className="relative">
-                    <Avatar className="h-9 w-9 ring-2 ring-white/20">
-                      <AvatarImage src={agentAvatarUrl} />
-                      <AvatarFallback className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white">
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-indigo-900 bg-green-500"></div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary ring-2 ring-white/20 text-sm font-semibold text-white">
+                      {getUserInitials()}
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-green-500"></div>
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">

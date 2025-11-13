@@ -5,7 +5,6 @@ import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -267,12 +266,9 @@ export default function Agents() {
                   <CardHeader>
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={photoUrl} />
-                          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
+                          {initials}
+                        </div>
                         {/* Online/Offline Status Indicator */}
                         <div className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-background ${
                           isOnline ? "bg-green-500" : "bg-gray-400"
@@ -357,12 +353,9 @@ export default function Agents() {
                   <DialogHeader>
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={photoUrl} />
-                          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                            {initials}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
+                          {initials}
+                        </div>
                         {/* Online/Offline Status Indicator */}
                         <div className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-background ${
                           isOnline ? "bg-green-500" : "bg-gray-400"

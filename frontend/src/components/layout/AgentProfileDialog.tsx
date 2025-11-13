@@ -6,7 +6,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyManagedEntities } from "@/hooks/useAgents";
 import { Link } from "react-router-dom";
@@ -133,12 +132,9 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profile.avatarUrl} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
+                {getUserInitials()}
+              </div>
               <div className="flex-1">
                 <DialogTitle className="text-xl">{getUserDisplayName()}</DialogTitle>
                 <p className="text-sm text-muted-foreground">{profile.title}</p>
