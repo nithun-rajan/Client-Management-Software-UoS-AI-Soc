@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useViewings } from '@/hooks/useViewings';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface BookViewingDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export default function BookViewingDialog({
   const [agentNotes, setAgentNotes] = useState('');
   const { createViewing, loading } = useViewings();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +46,21 @@ export default function BookViewingDialog({
     }
 
     try {
+      // Convert datetime-local format to ISO string
+      const dateObj = new Date(scheduledDate);
+      const isoDate = dateObj.toISOString();
+      
       await createViewing({
         property_id: propertyId,
         applicant_id: applicantId,
-        scheduled_date: scheduledDate,
+        scheduled_date: isoDate,
         duration_minutes: duration,
         agent_notes: agentNotes
       });
+
+      // Invalidate queries to refresh the calendar
+      queryClient.invalidateQueries({ queryKey: ["viewings"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
 
       toast({
         title: "Viewing Booked!",
@@ -77,9 +87,13 @@ export default function BookViewingDialog({
             <Calendar className="h-5 w-5" />
             Book Property Viewing
           </DialogTitle>
-          <DialogDescription>
-            {propertyAddress && <div className="font-medium">Property: {propertyAddress}</div>}
-            {applicantName && <div>Applicant: {applicantName}</div>}
+          <DialogDescription className="space-y-1">
+            {propertyAddress && (
+              <span className="block font-medium">Property: {propertyAddress}</span>
+            )}
+            {applicantName && (
+              <span className="block">Applicant: {applicantName}</span>
+            )}
           </DialogDescription>
         </DialogHeader>
 

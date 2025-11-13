@@ -47,6 +47,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo } from "react";
+import BookViewingDialog from "@/components/shared/BookViewingDialog";
+import { useMatchSending } from "@/hooks/useMatchSending";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Applicants() {
   const navigate = useNavigate();
@@ -57,6 +60,10 @@ export default function Applicants() {
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [bookViewingOpen, setBookViewingOpen] = useState(false);
+  const [selectedPropertyForViewing, setSelectedPropertyForViewing] = useState<{ propertyId: string; propertyAddress?: string } | null>(null);
+  const { toast } = useToast();
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -413,25 +420,62 @@ export default function Applicants() {
                       </div>
 
                       {/* Viewing Slots */}
-                      <div>
-                        <div className="mb-2 flex items-center gap-1 text-sm font-medium">
-                          <Calendar className="h-4 w-4" />
-                          Available Viewing Slots:
+                      {match.viewing_slots && match.viewing_slots.length > 0 && (
+                        <div>
+                          <div className="mb-2 flex items-center gap-1 text-sm font-medium">
+                            <Calendar className="h-4 w-4" />
+                            Available Viewing Slots:
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {match.viewing_slots.map((slot, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {slot}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {match.viewing_slots.map((slot, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {slot}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Applicant
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!matchData?.applicant.id) return;
+                          try {
+                            await sendMatches(
+                              matchData.applicant.id,
+                              [match.property_id],
+                              'email',
+                              match.personalized_message
+                            );
+                            toast({
+                              title: "Success",
+                              description: "Property match sent to applicant",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error?.message || "Failed to send match",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={sendingMatches}
+                      >
+                        {sendingMatches ? "Sending..." : "Send to Applicant"}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPropertyForViewing({
+                            propertyId: match.property_id,
+                            propertyAddress: match.property.address
+                          });
+                          setBookViewingOpen(true);
+                        }}
+                      >
                         Book Viewing
                       </Button>
                       <Button 
@@ -471,6 +515,18 @@ export default function Applicants() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedPropertyForViewing && matchData?.applicant && (
+        <BookViewingDialog
+          open={bookViewingOpen}
+          onOpenChange={setBookViewingOpen}
+          propertyId={selectedPropertyForViewing.propertyId}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedPropertyForViewing.propertyAddress}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

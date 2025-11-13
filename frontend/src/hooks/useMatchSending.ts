@@ -31,7 +31,7 @@ export const useMatchSending = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/ai/match-send', {
+      const response = await api.post('/api/v1/ai/match-send', {
         applicant_id: applicantId,
         property_ids: propertyIds,
         send_method: sendMethod,
@@ -50,7 +50,7 @@ export const useMatchSending = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/ai/match-history/${applicantId}?limit=${limit}`);
+      const response = await api.get(`/api/v1/ai/match-history/${applicantId}?limit=${limit}`);
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch match history');
@@ -68,7 +68,7 @@ export const useMatchSending = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/ai/match-response/${matchId}`, null, {
+      const response = await api.post(`/api/v1/ai/match-response/${matchId}`, null, {
         params: { response_type: responseType, notes }
       });
       return response.data;

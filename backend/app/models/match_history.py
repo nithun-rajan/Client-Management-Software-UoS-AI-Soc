@@ -23,7 +23,7 @@ class MatchHistory(BaseModel):
     personalization_data = Column(JSON, nullable=True)  # Structured match factors
     
     # Sending details
-    sent_at = Column(DateTime, default=datetime.date(timezone.utc))
+    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     send_method = Column(String)  # email, sms, whatsapp
     recipient = Column(String)  # email address or phone number
     sent_by_agent = Column(String, ForeignKey('users.id'), nullable=True)  # NEW
@@ -55,4 +55,4 @@ class MatchHistory(BaseModel):
     applicant = relationship("Applicant", backref="match_history")
     property = relationship("Property", backref="match_history")
     agent = relationship("User", backref="sent_matches")  # NEW
-    viewing = relationship("Viewing", backref="triggering_match")  # NEW
+    # Note: viewing_id is stored but relationship is defined on Viewing side to avoid circular reference

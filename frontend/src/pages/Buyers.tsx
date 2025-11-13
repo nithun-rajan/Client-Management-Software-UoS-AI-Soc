@@ -44,6 +44,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo } from "react";
+import BookViewingDialog from "@/components/shared/BookViewingDialog";
+import { useMatchSending } from "@/hooks/useMatchSending";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Buyers() {
   const navigate = useNavigate();
@@ -54,6 +57,10 @@ export default function Buyers() {
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [bookViewingOpen, setBookViewingOpen] = useState(false);
+  const [selectedPropertyForViewing, setSelectedPropertyForViewing] = useState<{ propertyId: string; propertyAddress?: string } | null>(null);
+  const { toast } = useToast();
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
 
   const matchingMutation = usePropertyMatching(5, 50);
 
@@ -400,10 +407,45 @@ export default function Buyers() {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Buyer
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!matchData?.applicant.id) return;
+                          try {
+                            await sendMatches(
+                              matchData.applicant.id,
+                              [match.property_id],
+                              'email',
+                              match.personalized_message
+                            );
+                            toast({
+                              title: "Success",
+                              description: "Property match sent to buyer",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error?.message || "Failed to send match",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={sendingMatches}
+                      >
+                        {sendingMatches ? "Sending..." : "Send to Buyer"}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPropertyForViewing({
+                            propertyId: match.property_id,
+                            propertyAddress: match.property.address
+                          });
+                          setBookViewingOpen(true);
+                        }}
+                      >
                         Book Viewing
                       </Button>
                       <Button 
@@ -424,6 +466,18 @@ export default function Buyers() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedPropertyForViewing && matchData?.applicant && (
+        <BookViewingDialog
+          open={bookViewingOpen}
+          onOpenChange={setBookViewingOpen}
+          propertyId={selectedPropertyForViewing.propertyId}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedPropertyForViewing.propertyAddress}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

@@ -97,7 +97,7 @@ export const useViewings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post('/viewings/', viewingData);
+      const response = await api.post('/api/v1/viewings/', viewingData);
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create viewing');
@@ -116,7 +116,7 @@ export const useViewings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/viewings/', { params: filters });
+      const response = await api.get('/api/v1/viewings/', { params: filters });
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch viewings');
@@ -130,7 +130,7 @@ export const useViewings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/viewings/${viewingId}`);
+      const response = await api.get(`/api/v1/viewings/${viewingId}`);
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch viewing');
@@ -151,7 +151,7 @@ export const useViewings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.put(`/viewings/${viewingId}`, updates);
+      const response = await api.put(`/api/v1/viewings/${viewingId}`, updates);
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to update viewing');
@@ -165,7 +165,7 @@ export const useViewings = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.delete(`/viewings/${viewingId}`);
+      const response = await api.delete(`/api/v1/viewings/${viewingId}`);
       return response.data;
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to cancel viewing');

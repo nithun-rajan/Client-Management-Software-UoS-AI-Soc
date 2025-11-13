@@ -410,7 +410,12 @@ export default function Tasks() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={task.id} 
+                className={`hover:shadow-lg transition-shadow ${
+                  task.priority === "urgent" ? "border-red-500 border-2" : ""
+                } ${task.priority === "high" ? "border-orange-500" : ""}`}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg font-semibold line-clamp-2">

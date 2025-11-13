@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/layout/Header";
 import {
   Calendar as CalendarIcon,
@@ -22,18 +22,8 @@ import { useProperties } from "@/hooks/useProperties";
 import { useApplicants } from "@/hooks/useApplicants";
 import { useAgents } from "@/hooks/useAgents";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, parseISO } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { UserCheck } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -49,17 +39,13 @@ import { cn } from "@/lib/utils";
 export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<string>("");
   const [selectedApplicant, setSelectedApplicant] = useState<string>("");
-  const [selectedDateForSchedule, setSelectedDateForSchedule] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>("09:00");
   const [selectedAgent, setSelectedAgent] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isOpeningDialog = useRef(false);
-  const dialogOpenRef = useRef(false);
-  const dialogMountedRef = useRef(false);
   
   // Get agents for selection
   const { data: agents } = useAgents();
@@ -95,15 +81,12 @@ export default function Calendar() {
         title: "Success",
         description: "Viewing scheduled successfully",
       });
-      dialogOpenRef.current = false;
-      dialogMountedRef.current = false;
-      isOpeningDialog.current = false;
-      setScheduleOpen(false);
+      // Reset form
       setSelectedProperty("");
       setSelectedApplicant("");
-      setSelectedDateForSchedule(undefined);
       setSelectedTime("09:00");
       setSelectedAgent("");
+      setShowAddForm(false);
     },
     onError: (error: any) => {
       toast({
@@ -124,6 +107,8 @@ export default function Calendar() {
     if (!viewings) return [];
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
+    // Set end of month to end of day (23:59:59)
+    monthEnd.setHours(23, 59, 59, 999);
     
     return viewings.filter((viewing) => {
       const viewingDate = new Date(viewing.scheduled_date);
@@ -161,7 +146,7 @@ export default function Calendar() {
       return;
     }
 
-    if (!selectedDateForSchedule || !selectedTime) {
+    if (!selectedDate || !selectedTime) {
       toast({
         title: "Error",
         description: "Please select a date and time",
@@ -172,7 +157,7 @@ export default function Calendar() {
 
     // Combine date and time into datetime string
     const [hours, minutes] = selectedTime.split(":").map(Number);
-    const scheduledDateTime = new Date(selectedDateForSchedule);
+    const scheduledDateTime = new Date(selectedDate);
     scheduledDateTime.setHours(hours, minutes, 0, 0);
 
     createViewing.mutate({
@@ -297,26 +282,15 @@ export default function Calendar() {
                     const handleDateClick = (e: React.MouseEvent<HTMLButtonElement>) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
                       
-                      // Don't do anything if dialog is already open or mounting
-                      if (scheduleOpen || dialogOpenRef.current || dialogMountedRef.current || isOpeningDialog.current) {
-                        return;
-                      }
-                      
-                      // Mark as opening immediately
-                      isOpeningDialog.current = true;
-                      dialogOpenRef.current = true;
-                      dialogMountedRef.current = true;
-                      
+                      // Select the date to show viewings in sidebar
                       setSelectedDate(day);
-                      setSelectedDateForSchedule(day);
-                      setScheduleOpen(true);
-                      
-                      // Reset the opening flag after a delay, but keep mounted ref
-                      setTimeout(() => {
-                        isOpeningDialog.current = false;
-                      }, 500);
+                      setShowAddForm(false);
+                      // Reset form when selecting a new date
+                      setSelectedProperty("");
+                      setSelectedApplicant("");
+                      setSelectedTime("09:00");
+                      setSelectedAgent("");
                     };
 
                     return (
@@ -324,7 +298,6 @@ export default function Calendar() {
                         key={day.toISOString()}
                         type="button"
                         onClick={handleDateClick}
-                        disabled={scheduleOpen}
                         className={cn(
                           "h-24 border-2 rounded-lg p-1 text-left w-full flex flex-col transition-all",
                           isSelected
@@ -375,66 +348,197 @@ export default function Calendar() {
             </Card>
           </div>
 
-          {/* Upcoming Viewings Sidebar */}
+          {/* Selected Date Viewings Sidebar */}
           <div className="space-y-6">
             {/* Selected Date Viewings */}
-            {selectedDate && (
+            {selectedDate ? (
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="text-lg">
                     {format(selectedDate, "EEEE, MMMM d")}
                   </CardTitle>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setShowAddForm(!showAddForm);
+                      if (!showAddForm) {
+                        // Reset form when opening
+                        setSelectedProperty("");
+                        setSelectedApplicant("");
+                        setSelectedTime("09:00");
+                        setSelectedAgent("");
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {showAddForm ? "Cancel" : "Add Viewing"}
+                  </Button>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {getViewingsForDate(selectedDate).length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No viewings scheduled
-                    </p>
-                  ) : (
-                    getViewingsForDate(selectedDate).map((viewing) => (
-                      <div
-                        key={viewing.id}
-                        className="p-3 border rounded-lg space-y-2 hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">
-                              {format(
-                                new Date(viewing.scheduled_date),
-                                "HH:mm"
-                              )}
-                            </span>
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={getViewingStatusColor(
-                              viewing.status || "pending"
-                            )}
-                          >
-                            {getViewingStatusIcon(viewing.status || "pending")}
-                            <span className="ml-1 capitalize">
-                              {viewing.status || "Pending"}
-                            </span>
-                          </Badge>
-                        </div>
-                        {viewing.property && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="truncate">
-                              {viewing.property.address || "Property"}
-                            </span>
-                          </div>
-                        )}
-                        {viewing.applicant && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>{viewing.applicant.name}</span>
-                          </div>
-                        )}
+                <CardContent className="space-y-4">
+                  {/* Add New Viewing Form */}
+                  {showAddForm && (
+                    <div className="p-4 border-2 border-dashed rounded-lg bg-muted/30 space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Property *</Label>
+                        <Select
+                          value={selectedProperty}
+                          onValueChange={setSelectedProperty}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a property" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {properties
+                              ?.filter((p) => p.landlord_id && !p.vendor_id)
+                              .map((property) => (
+                                <SelectItem key={property.id} value={property.id}>
+                                  {property.address_line1 || property.city} - {property.postcode}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ))
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Applicant *</Label>
+                        <Select
+                          value={selectedApplicant}
+                          onValueChange={setSelectedApplicant}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose an applicant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {applicants?.map((applicant) => (
+                              <SelectItem key={applicant.id} value={applicant.id}>
+                                {applicant.first_name} {applicant.last_name} - {applicant.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Time *</Label>
+                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 bg-background rounded-lg border">
+                          {timeSlots.map((time) => {
+                            const isSelected = selectedTime === time;
+                            return (
+                              <button
+                                key={time}
+                                type="button"
+                                onClick={() => setSelectedTime(time)}
+                                className={cn(
+                                  "p-2 border rounded text-xs font-medium transition-all",
+                                  isSelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "hover:bg-accent border-border"
+                                )}
+                              >
+                                {time}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Agent (Optional)</Label>
+                        <Select
+                          value={selectedAgent || undefined}
+                          onValueChange={(value) => setSelectedAgent(value || "")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose an agent" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {agents?.map((agent) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.first_name} {agent.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        onClick={handleSchedule}
+                        disabled={
+                          createViewing.isPending ||
+                          !selectedProperty ||
+                          !selectedApplicant ||
+                          !selectedTime
+                        }
+                        className="w-full"
+                      >
+                        {createViewing.isPending ? "Scheduling..." : "Schedule Viewing"}
+                      </Button>
+                    </div>
                   )}
+
+                  {/* Existing Viewings */}
+                  <div className="space-y-3">
+                    {getViewingsForDate(selectedDate).length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No viewings scheduled
+                      </p>
+                    ) : (
+                      getViewingsForDate(selectedDate).map((viewing) => (
+                        <div
+                          key={viewing.id}
+                          className="p-3 border rounded-lg space-y-2 hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                {format(
+                                  new Date(viewing.scheduled_date),
+                                  "HH:mm"
+                                )}
+                              </span>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={getViewingStatusColor(
+                                viewing.status || "pending"
+                              )}
+                            >
+                              {getViewingStatusIcon(viewing.status || "pending")}
+                              <span className="ml-1 capitalize">
+                                {viewing.status || "Pending"}
+                              </span>
+                            </Badge>
+                          </div>
+                          {viewing.property && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="truncate">
+                                {viewing.property.address || "Property"}
+                              </span>
+                            </div>
+                          )}
+                          {viewing.applicant && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span>{viewing.applicant.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Select a Date</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Click on a date in the calendar to view and manage viewings
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -511,231 +615,6 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Schedule Viewing Dialog */}
-      <Dialog 
-        open={scheduleOpen} 
-        onOpenChange={(open) => {
-          // Prevent any changes if we're in the middle of opening
-          if (isOpeningDialog.current && open) {
-            return;
-          }
-          
-          // Prevent opening if already mounted/open
-          if (open && (dialogOpenRef.current || dialogMountedRef.current)) {
-            return;
-          }
-          
-          // Update refs
-          dialogOpenRef.current = open;
-          if (open) {
-            dialogMountedRef.current = true;
-          } else {
-            dialogMountedRef.current = false;
-            isOpeningDialog.current = false;
-          }
-          
-          setScheduleOpen(open);
-          
-          if (!open) {
-            // Reset selections when dialog closes
-            setSelectedProperty("");
-            setSelectedApplicant("");
-            setSelectedDateForSchedule(undefined);
-            setSelectedTime("09:00");
-            setSelectedAgent("");
-          }
-        }}
-        modal={true}
-      >
-        <DialogContent aria-describedby="schedule-dialog-description" className="max-w-4xl max-h-[95vh] overflow-y-auto">
-          <DialogHeader className="pb-4 border-b">
-            <DialogTitle className="text-2xl font-bold">Schedule New Viewing</DialogTitle>
-            <DialogDescription id="schedule-dialog-description" className="text-base">
-              Choose a property, applicant, date, and time
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label htmlFor="property" className="text-base font-semibold">Property *</Label>
-                <Select
-                  value={selectedProperty}
-                  onValueChange={(value) => {
-                    setSelectedProperty(value);
-                  }}
-                >
-                  <SelectTrigger id="property" className="h-12 text-base">
-                    <SelectValue placeholder="Choose a property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {properties
-                      ?.filter((p) => p.landlord_id && !p.vendor_id)
-                      .map((property) => (
-                        <SelectItem key={property.id} value={property.id}>
-                          {property.address_line1 || property.city} - {property.postcode}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-3">
-                <Label htmlFor="applicant" className="text-base font-semibold">Applicant *</Label>
-                <Select
-                  value={selectedApplicant}
-                  onValueChange={setSelectedApplicant}
-                >
-                  <SelectTrigger id="applicant" className="h-12 text-base">
-                    <SelectValue placeholder="Choose an applicant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {applicants?.map((applicant) => (
-                      <SelectItem key={applicant.id} value={applicant.id}>
-                        {applicant.first_name} {applicant.last_name} - {applicant.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-4 border-t pt-6">
-              <Label className="text-base font-semibold">Date *</Label>
-              <div 
-                className="border-2 rounded-xl p-6 bg-muted/20 flex justify-center"
-                onClick={(e) => {
-                  // Prevent any clicks inside the dialog calendar from bubbling
-                  e.stopPropagation();
-                }}
-              >
-                <Calendar
-                  mode="single"
-                  selected={selectedDateForSchedule}
-                  onSelect={(date) => {
-                    if (date) {
-                      setSelectedDateForSchedule(date);
-                    }
-                  }}
-                  disabled={(date) => {
-                    // Disable past dates
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return date < today;
-                  }}
-                  className="rounded-lg"
-                />
-              </div>
-            </div>
-
-            {selectedDateForSchedule && (
-              <div className="space-y-6 border-t pt-6">
-                <div className="space-y-4">
-                  <Label className="text-base font-semibold">Time *</Label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-80 overflow-y-auto p-3 bg-muted/20 rounded-xl border-2">
-                    {timeSlots.map((time) => {
-                      const isSelected = selectedTime === time;
-                      return (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setSelectedTime(time);
-                          }}
-                          className={cn(
-                            "p-4 border-2 rounded-lg text-center transition-all text-sm font-semibold min-h-[3rem]",
-                            isSelected
-                              ? "border-primary bg-primary text-primary-foreground shadow-lg scale-105"
-                              : "hover:bg-accent hover:border-primary/50 border-border bg-background"
-                          )}
-                        >
-                          {time}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="agent" className="text-base font-semibold">Assign Agent (Optional)</Label>
-                  <div className="flex gap-3 items-end">
-                    <Select
-                      value={selectedAgent || undefined}
-                      onValueChange={(value) => setSelectedAgent(value || "")}
-                      className="flex-1"
-                    >
-                      <SelectTrigger id="agent" className="h-12 text-base">
-                        <SelectValue placeholder="Choose an agent (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {agents?.map((agent) => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.first_name} {agent.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedAgent && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="default"
-                        onClick={() => setSelectedAgent("")}
-                        className="h-12 px-4"
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!selectedDateForSchedule && (
-              <div className="text-center py-12 text-muted-foreground border-2 rounded-xl bg-muted/20">
-                <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="font-semibold text-lg">Select a date above</p>
-                <p className="text-sm mt-2">Then choose a time slot</p>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="gap-4 pt-4 border-t">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                dialogOpenRef.current = false;
-                dialogMountedRef.current = false;
-                isOpeningDialog.current = false;
-                setScheduleOpen(false);
-                setSelectedProperty("");
-                setSelectedApplicant("");
-                setSelectedDateForSchedule(undefined);
-                setSelectedTime("09:00");
-                setSelectedAgent("");
-              }}
-              className="flex-1 h-12 text-base"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSchedule}
-              disabled={
-                createViewing.isPending ||
-                !selectedProperty ||
-                !selectedApplicant ||
-                !selectedDateForSchedule ||
-                !selectedTime
-              }
-              className="flex-1 h-12 text-base font-semibold"
-            >
-              {createViewing.isPending ? "Scheduling..." : "Schedule Viewing"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
