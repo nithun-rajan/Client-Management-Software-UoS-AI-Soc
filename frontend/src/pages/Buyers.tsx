@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   ShoppingBag,
+  User,
+  UserCheck,
   Mail,
   Phone,
   Bed,
@@ -37,15 +39,70 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
+import BookViewingDialog from "@/components/shared/BookViewingDialog";
+import { useMatchSending } from "@/hooks/useMatchSending";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Buyers() {
+  const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [selectedBuyerId, setSelectedBuyerId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [bookViewingOpen, setBookViewingOpen] = useState(false);
+  const [selectedPropertyForViewing, setSelectedPropertyForViewing] = useState<{ propertyId: string; propertyAddress?: string } | null>(null);
+  const { toast } = useToast();
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
 
   const matchingMutation = usePropertyMatching(5, 50);
+
+  // Filter applicants that are buyers (willing_to_buy = true)
+  const buyers = useMemo(() => applicants?.filter((a: any) => a.willing_to_buy) || [], [applicants]);
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return buyers.filter((buyer: any) => buyer.assigned_agent_id === user?.id);
+    } else if (activeTab === "managed-by-team") {
+      return buyers.filter((buyer: any) => buyer.assigned_agent_id && teamAgentIds.includes(buyer.assigned_agent_id));
+    }
+    return buyers;
+  }, [buyers, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = buyers.length;
+  const managedByMeCount = buyers.filter((b: any) => b.assigned_agent_id === user?.id).length;
+  const managedByTeamCount = buyers.filter((b: any) => b.assigned_agent_id && teamAgentIds.includes(b.assigned_agent_id)).length;
+
+  // Apply search filter
+  const filteredBuyers = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((buyer: any) => (
+      buyer.first_name?.toLowerCase().includes(query) ||
+      buyer.last_name?.toLowerCase().includes(query) ||
+      buyer.email?.toLowerCase().includes(query) ||
+      buyer.phone?.includes(query) ||
+      buyer.preferred_locations?.toLowerCase().includes(query) ||
+      buyer.status?.toLowerCase().includes(query) ||
+      buyer.mortgage_status?.toLowerCase().includes(query) ||
+      buyer.buyer_type?.toLowerCase().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
+  
+  const matchData = matchingMutation.data;
 
   const handleFindMatches = async (buyerId: string) => {
     setSelectedBuyerId(buyerId);
@@ -57,6 +114,10 @@ export default function Buyers() {
     } catch (error) {
       // Error is already handled by the mutation's onError
     }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
 
   if (isLoading) {
@@ -73,32 +134,6 @@ export default function Buyers() {
       </div>
     );
   }
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  // Filter applicants that are buyers (willing_to_buy = true)
-  const buyers = applicants?.filter((a: any) => a.willing_to_buy) || [];
-
-  // Apply search
-  const filteredBuyers = buyers.filter((buyer: any) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      buyer.first_name?.toLowerCase().includes(query) ||
-      buyer.last_name?.toLowerCase().includes(query) ||
-      buyer.email?.toLowerCase().includes(query) ||
-      buyer.phone?.includes(query) ||
-      buyer.preferred_locations?.toLowerCase().includes(query) ||
-      buyer.status?.toLowerCase().includes(query) ||
-      buyer.mortgage_status?.toLowerCase().includes(query) ||
-      buyer.buyer_type?.toLowerCase().includes(query)
-    );
-  });
-  
-  const matchData = matchingMutation.data;
 
   return (
     <div>
@@ -132,6 +167,23 @@ export default function Buyers() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Buyers ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredBuyers.map((buyer) => (
             <Card
@@ -139,28 +191,45 @@ export default function Buyers() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
-                    {getInitials(buyer.first_name, buyer.last_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate font-semibold">
-                        {buyer.first_name} {buyer.last_name}
-                      </h3>
-                      {buyer.buyer_questions_answered ? (
-                        <Badge variant="outline" className="gap-1">
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          Questions
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3 text-orange-500" />
-                          Pending
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
+                      {getInitials(buyer.first_name, buyer.last_name)}
                     </div>
-                    <StatusBadge status={buyer.status} className="mt-1" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate font-semibold">
+                          {buyer.first_name} {buyer.last_name}
+                        </h3>
+                        {buyer.buyer_questions_answered ? (
+                          <Badge variant="outline" className="gap-1">
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                            Questions
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3 text-orange-500" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                      <StatusBadge status={buyer.status} className="mt-1" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {buyer.assigned_agent_id === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {buyer.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -213,10 +282,10 @@ export default function Buyers() {
         {filteredBuyers.length === 0 && (
           <EmptyState
             icon={ShoppingBag}
-            title="No buyers yet"
-            description="Start building your buyer database by adding your first buyer"
-            actionLabel="+ Add Buyer"
-            onAction={() => {}}
+            title={searchQuery || activeTab !== "all" ? "No buyers found" : "No buyers yet"}
+            description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your buyer database by adding your first buyer"}
+            actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Buyer"}
+            onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
           />
         )}
       </div>
@@ -338,13 +407,55 @@ export default function Buyers() {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Buyer
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!matchData?.applicant.id) return;
+                          try {
+                            await sendMatches(
+                              matchData.applicant.id,
+                              [match.property_id],
+                              'email',
+                              match.personalized_message
+                            );
+                            toast({
+                              title: "Success",
+                              description: "Property match sent to buyer",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error?.message || "Failed to send match",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={sendingMatches}
+                      >
+                        {sendingMatches ? "Sending..." : "Send to Buyer"}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPropertyForViewing({
+                            propertyId: match.property_id,
+                            propertyAddress: match.property.address
+                          });
+                          setBookViewingOpen(true);
+                        }}
+                      >
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setMatchesDialogOpen(false);
+                          navigate(`/properties/${match.property_id}`);
+                        }}
+                      >
                         View Property
                       </Button>
                     </CardFooter>
@@ -355,6 +466,18 @@ export default function Buyers() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedPropertyForViewing && matchData?.applicant && (
+        <BookViewingDialog
+          open={bookViewingOpen}
+          onOpenChange={setBookViewingOpen}
+          propertyId={selectedPropertyForViewing.propertyId}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedPropertyForViewing.propertyAddress}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

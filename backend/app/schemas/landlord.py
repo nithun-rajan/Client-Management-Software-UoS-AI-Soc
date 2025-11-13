@@ -30,6 +30,7 @@ class LandlordUpdate(AppBaseModel):
     notes: str | None = None
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool | None = None
+    managed_by: str | None = None
 
 class LandlordResponse(LandlordBase):
     id: str
@@ -39,4 +40,6 @@ class LandlordResponse(LandlordBase):
     properties_count: int = 0  # Number of properties owned by this landlord
     last_contacted_at: datetime | None = None
     landlord_complete_info: bool = False
+    managed_by: str | None = None
+    managed_by_name: str | None = None  # Full name of managing agent
 

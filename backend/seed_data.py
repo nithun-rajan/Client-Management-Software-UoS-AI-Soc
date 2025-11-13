@@ -347,7 +347,7 @@ def create_vendors(db: Session, count: int = 8):
     print(f"[OK] Created {count} vendors")
     return vendors
 
-def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, count: int = 30):
+def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, agents: list = None, count: int = 30):
     """Create diverse tasks with different priorities, statuses, and assignments"""
     print(f"\n[*] Creating {count} tasks...")
     
@@ -403,6 +403,11 @@ def create_tasks(db: Session, landlords: list, vendors: list, applicants: list, 
     
     # Collect all assignable people
     assignable_people = []
+    
+    # Add agents (using first_name + last_name) - agents should be assignable
+    if agents:
+        for agent in agents:
+            assignable_people.append(f"{agent.first_name} {agent.last_name}")
     
     # Add landlords (using full_name)
     for landlord in landlords:
@@ -818,6 +823,207 @@ def create_offers(db: Session, properties: list, applicants: list, count: int = 
     print(f"[OK] Created {count} offers")
     return offers
 
+def create_maintenance_issues(db: Session, properties: list, tenants: list, landlords: list, count: int = 20):
+    """Create diverse maintenance issues with different types, statuses, and priorities"""
+    print(f"\n[*] Creating {count} maintenance issues...")
+    
+    from app.models.maintenance import MaintenanceIssue, MaintenanceType, MaintenanceStatus, MaintenancePriority
+    from datetime import datetime, timedelta, timezone
+    
+    # Only use rental properties for maintenance issues (not sales)
+    rental_properties = [p for p in properties if p.rent and not p.sales_status]
+    
+    if not rental_properties:
+        print("[WARN] No rental properties available for maintenance issues")
+        return []
+    
+    maintenance_templates = [
+        {"title": "Leaking tap in kitchen", "type": MaintenanceType.PLUMBING, "priority": MaintenancePriority.LOW, "status": MaintenanceStatus.REPORTED},
+        {"title": "Boiler not working", "type": MaintenanceType.HEATING, "priority": MaintenancePriority.URGENT, "status": MaintenanceStatus.IN_PROGRESS},
+        {"title": "Broken window latch", "type": MaintenanceType.STRUCTURAL, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.ACKNOWLEDGED},
+        {"title": "Faulty electrical socket", "type": MaintenanceType.ELECTRICAL, "priority": MaintenancePriority.HIGH, "status": MaintenanceStatus.INSPECTED},
+        {"title": "Blocked drain", "type": MaintenanceType.PLUMBING, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.COMPLETED},
+        {"title": "No hot water", "type": MaintenanceType.HEATING, "priority": MaintenancePriority.URGENT, "status": MaintenanceStatus.IN_PROGRESS},
+        {"title": "Cracked tile in bathroom", "type": MaintenanceType.STRUCTURAL, "priority": MaintenancePriority.LOW, "status": MaintenanceStatus.REPORTED},
+        {"title": "Smoke alarm beeping", "type": MaintenanceType.ELECTRICAL, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.COMPLETED},
+        {"title": "Front door lock jammed", "type": MaintenanceType.STRUCTURAL, "priority": MaintenancePriority.HIGH, "status": MaintenanceStatus.ACKNOWLEDGED},
+        {"title": "Water leak from ceiling", "type": MaintenanceType.PLUMBING, "priority": MaintenancePriority.URGENT, "status": MaintenanceStatus.IN_PROGRESS, "is_emergency": True},
+        {"title": "Radiator not heating", "type": MaintenanceType.HEATING, "priority": MaintenancePriority.HIGH, "status": MaintenanceStatus.QUOTED},
+        {"title": "Toilet not flushing", "type": MaintenanceType.PLUMBING, "priority": MaintenancePriority.URGENT, "status": MaintenanceStatus.IN_PROGRESS},
+        {"title": "Power cut in one room", "type": MaintenanceType.ELECTRICAL, "priority": MaintenancePriority.HIGH, "status": MaintenanceStatus.ACKNOWLEDGED},
+        {"title": "Central heating not working", "type": MaintenanceType.HEATING, "priority": MaintenancePriority.URGENT, "status": MaintenanceStatus.IN_PROGRESS, "is_emergency": True},
+        {"title": "Gutter overflowing", "type": MaintenanceType.STRUCTURAL, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.REPORTED},
+        {"title": "Washing machine not draining", "type": MaintenanceType.APPLIANCE, "priority": MaintenancePriority.LOW, "status": MaintenanceStatus.REPORTED},
+        {"title": "Fridge not cooling", "type": MaintenanceType.APPLIANCE, "priority": MaintenancePriority.HIGH, "status": MaintenanceStatus.QUOTED},
+        {"title": "Oven not heating", "type": MaintenanceType.APPLIANCE, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.REPORTED},
+        {"title": "Shower head broken", "type": MaintenanceType.PLUMBING, "priority": MaintenancePriority.LOW, "status": MaintenanceStatus.COMPLETED},
+        {"title": "Loose banister rail", "type": MaintenanceType.STRUCTURAL, "priority": MaintenancePriority.MEDIUM, "status": MaintenanceStatus.INSPECTED},
+    ]
+    
+    issue_types = [MaintenanceType.REPAIR, MaintenanceType.PLUMBING, MaintenanceType.ELECTRICAL, 
+                   MaintenanceType.HEATING, MaintenanceType.STRUCTURAL, MaintenanceType.APPLIANCE,
+                   MaintenanceType.CLEANING, MaintenanceType.GARDENING]
+    statuses = [MaintenanceStatus.REPORTED, MaintenanceStatus.ACKNOWLEDGED, MaintenanceStatus.INSPECTED,
+                MaintenanceStatus.QUOTED, MaintenanceStatus.APPROVED, MaintenanceStatus.IN_PROGRESS,
+                MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]
+    priorities = [MaintenancePriority.LOW, MaintenancePriority.MEDIUM, MaintenancePriority.HIGH, MaintenancePriority.URGENT]
+    reported_via_options = ["phone", "email", "portal", "in_person"]
+    
+    maintenance_issues = []
+    for i in range(count):
+        # Pick a random template or create a custom one
+        if i < len(maintenance_templates):
+            template = maintenance_templates[i]
+        else:
+            # Generate random maintenance issue
+            issues = ["leak", "not working", "broken", "faulty", "blocked", "damaged", "missing", "stuck"]
+            locations = ["kitchen", "bathroom", "bedroom", "living room", "hallway", "garden", "basement"]
+            issue_type = random.choice(issue_types)
+            template = {
+                "title": f"{random.choice(issues).capitalize()} in {random.choice(locations)}",
+                "type": issue_type,
+                "priority": random.choice(priorities),
+                "status": random.choice(statuses),
+                "is_emergency": issue_type == MaintenanceType.EMERGENCY or random.random() < 0.1
+            }
+        
+        # Generate reported date (some past, some recent)
+        days_offset = random.choice([
+            -30, -21, -14, -7, -5, -3, -2, -1,  # Past dates
+            0,  # Today
+        ])
+        reported_date = datetime.now(timezone.utc) + timedelta(days=days_offset)
+        
+        # Assign to a random rental property (required)
+        property = random.choice(rental_properties) if rental_properties else None
+        if not property:
+            continue  # Skip if no properties available
+        
+        # Get landlord for this property
+        landlord = None
+        if property.landlord_id:
+            landlord = db.query(Landlord).filter(Landlord.id == property.landlord_id).first()
+        
+        # Randomly assign to a tenant (50% chance)
+        tenant = None
+        if random.random() < 0.5 and tenants:
+            tenant = random.choice(tenants)
+        
+        # Generate description
+        descriptions = [
+            f"Issue reported by tenant. {template['title']}. Please investigate and resolve as soon as possible.",
+            f"Tenant has reported this issue multiple times. Requires urgent attention.",
+            f"Standard maintenance request. {template['title']}. No rush required.",
+            f"Emergency situation - please respond immediately. {template['title']}.",
+            f"Part of routine property maintenance schedule. {template['title']}.",
+            f"Tenant has provided photos. Issue visible and needs repair. {template['title']}.",
+            f"Landlord has requested this maintenance work. {template['title']}.",
+        ]
+        description = random.choice(descriptions)
+        
+        # Generate reported by info
+        reported_by = None
+        reported_by_phone = None
+        reported_by_email = None
+        if tenant:
+            reported_by = f"{tenant.first_name} {tenant.last_name}"
+            reported_by_phone = tenant.phone or fake.phone_number()
+            reported_by_email = tenant.email
+        elif random.random() < 0.3:
+            reported_by = fake.name()
+            reported_by_phone = fake.phone_number()
+            reported_by_email = fake.email()
+        
+        # Set dates based on status
+        acknowledged_date = None
+        inspection_date = None
+        scheduled_date = None
+        started_date = None
+        completed_date = None
+        closed_date = None
+        
+        if template["status"] in [MaintenanceStatus.ACKNOWLEDGED, MaintenanceStatus.INSPECTED, 
+                                   MaintenanceStatus.QUOTED, MaintenanceStatus.APPROVED, 
+                                   MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            acknowledged_date = reported_date + timedelta(hours=random.randint(1, 24))
+        
+        if template["status"] in [MaintenanceStatus.INSPECTED, MaintenanceStatus.QUOTED, 
+                                   MaintenanceStatus.APPROVED, MaintenanceStatus.IN_PROGRESS, 
+                                   MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            inspection_date = acknowledged_date + timedelta(days=random.randint(1, 3)) if acknowledged_date else None
+        
+        if template["status"] in [MaintenanceStatus.APPROVED, MaintenanceStatus.IN_PROGRESS, 
+                                   MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            scheduled_date = (inspection_date or acknowledged_date or reported_date) + timedelta(days=random.randint(1, 7))
+        
+        if template["status"] in [MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            started_date = scheduled_date + timedelta(days=random.randint(0, 2)) if scheduled_date else None
+        
+        if template["status"] in [MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            completed_date = (started_date or scheduled_date or reported_date) + timedelta(days=random.randint(1, 5))
+        
+        if template["status"] == MaintenanceStatus.CLOSED:
+            closed_date = completed_date + timedelta(days=random.randint(1, 3)) if completed_date else None
+        
+        # Generate costs for quoted/approved/in_progress/completed issues
+        estimated_cost = None
+        actual_cost = None
+        quote_amount = None
+        quote_received = False
+        landlord_approved = False
+        
+        if template["status"] in [MaintenanceStatus.QUOTED, MaintenanceStatus.APPROVED, 
+                                   MaintenanceStatus.IN_PROGRESS, MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            quote_received = True
+            quote_amount = round(random.uniform(50, 500), 2)
+            estimated_cost = quote_amount
+        
+        if template["status"] in [MaintenanceStatus.APPROVED, MaintenanceStatus.IN_PROGRESS, 
+                                   MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            landlord_approved = True
+        
+        if template["status"] in [MaintenanceStatus.COMPLETED, MaintenanceStatus.CLOSED]:
+            # Actual cost might be slightly different from quote
+            actual_cost = round(quote_amount * random.uniform(0.9, 1.1), 2) if quote_amount else round(random.uniform(50, 500), 2)
+        
+        maintenance_issue = MaintenanceIssue(
+            title=template["title"],
+            description=description,
+            issue_type=template["type"],
+            status=template["status"],
+            priority=template["priority"],
+            is_emergency=template.get("is_emergency", False),
+            property_id=property.id,
+            landlord_id=landlord.id if landlord else None,
+            reported_by=reported_by,
+            reported_by_phone=reported_by_phone,
+            reported_by_email=reported_by_email,
+            reported_date=reported_date,
+            reported_via=random.choice(reported_via_options),
+            acknowledged_date=acknowledged_date,
+            inspection_date=inspection_date,
+            scheduled_date=scheduled_date,
+            started_date=started_date,
+            completed_date=completed_date,
+            closed_date=closed_date,
+            estimated_cost=estimated_cost,
+            actual_cost=actual_cost,
+            quote_received=quote_received,
+            quote_amount=quote_amount,
+            landlord_approved=landlord_approved,
+            landlord_approval_date=acknowledged_date + timedelta(days=random.randint(1, 3)) if landlord_approved and acknowledged_date else None,
+        )
+        
+        db.add(maintenance_issue)
+        maintenance_issues.append(maintenance_issue)
+        
+        if (i + 1) % 5 == 0:
+            print(f"   Created {i + 1}/{count} maintenance issues...")
+    
+    db.commit()
+    print(f"[OK] Created {len(maintenance_issues)} maintenance issues")
+    return maintenance_issues
+
 def main():
     """Main seed function"""
     print("\n" + "="*60)
@@ -842,8 +1048,8 @@ def main():
         buyers = create_buyers(db, count=10)
         vendors = create_vendors(db, count=8)
         
-        # Create diverse tasks
-        tasks = create_tasks(db, landlords, vendors, tenants, count=30)
+        # Create diverse tasks (including tasks assigned to agents)
+        tasks = create_tasks(db, landlords, vendors, tenants, agents=agents, count=30)
         
         # Create diverse tickets
         all_properties = properties_rent + properties_sale
@@ -851,8 +1057,8 @@ def main():
         
         # Create diverse offers (only for letting properties)
         offers = create_offers(db, properties_rent, tenants, count=20)
-
-        # Link landlords to properties-for-let (ensure no sales_status)
+        
+        # Link landlords to properties-for-let (ensure no sales_status) BEFORE creating maintenance issues
         print("\n[*] Linking landlords to properties for letting...")
         for i, property in enumerate(properties_rent):
             if landlords:
@@ -862,6 +1068,9 @@ def main():
             property.vendor_id = None
         db.commit()
         print("[OK] Linked landlords to properties for letting")
+        
+        # Create diverse maintenance issues (only for rental properties) - AFTER linking landlords
+        maintenance_issues = create_maintenance_issues(db, properties_rent, tenants, landlords, count=20)
 
         # Link vendors to properties-for-sale (set vendor_id on property)
         print("\n[*] Linking vendors to properties-for-sale...")
@@ -875,6 +1084,132 @@ def main():
         db.commit()
         print("[OK] Linked vendors to properties-for-sale")
 
+        # Create test user for login (agent.test@example.com) BEFORE assignments
+        print("\n" + "="*60)
+        print("[*] Creating test user for login...")
+        print("="*60)
+        
+        try:
+            # Use the same organization that was created for agents
+            test_org = db.query(Organization).filter(Organization.name == "UoS Scouting Challenge").first()
+            if not test_org:
+                test_org = db.query(Organization).first()
+                if not test_org:
+                    test_org = Organization(name="UoS Scouting Challenge")
+                    db.add(test_org)
+                    db.commit()
+                    db.refresh(test_org)
+            
+            # Create or get test agent
+            agent_email = "agent.test@example.com"
+            test_agent = db.query(User).filter(User.email == agent_email).first()
+            if not test_agent:
+                test_agent = User(
+                    email=agent_email,
+                    first_name="John",
+                    last_name="Agent",
+                    role=Role.AGENT,
+                    hashed_password=get_password_hash("testpassword123"),
+                    organization_id=test_org.id,
+                    is_active=True
+                )
+                db.add(test_agent)
+                db.commit()
+                db.refresh(test_agent)
+                print(f"[OK] Created test agent: {test_agent.email}")
+                print(f"     Organization: {test_org.name}")
+                print(f"     Password: testpassword123")
+            else:
+                print(f"[OK] Test agent already exists: {test_agent.email}")
+                print(f"     Organization: {test_org.name}")
+        except Exception as e:
+            print(f"[WARNING] Could not create test user: {e}")
+            import traceback
+            traceback.print_exc()
+            test_agent = None
+
+        # Assign all created data to agents
+        print("\n" + "="*60)
+        print("[*] Assigning data to agents...")
+        print("="*60)
+        
+        # Import assignment modules
+        from assign_properties import assign_properties_to_agents
+        from assign_entities import (
+            assign_vendors_to_agents,
+            assign_buyers_to_agents,
+            assign_landlords_to_agents,
+            assign_tenants_to_agents
+        )
+        from assign_tasks import assign_tasks_to_agents
+        from assign_maintenance import assign_maintenance_to_agents, ensure_test_agent_gets_maintenance
+        from ensure_test_agent_data import ensure_test_agent_gets_data
+        from verify_assignments import verify_test_agent_assignments
+        
+        # Get all agents (including test agent)
+        all_agents = db.query(User).filter(
+            User.role == Role.AGENT,
+            User.is_active == True
+        ).all()
+        
+        if all_agents:
+            # Sort agents by name for consistent assignment
+            all_agents = sorted(all_agents, key=lambda a: (a.first_name or "", a.last_name or ""))
+            
+            # Split agents into sales and lettings teams
+            if len(all_agents) >= 6:
+                sales_agents = all_agents[:4]
+                lettings_agents = all_agents[4:]
+            else:
+                mid = (len(all_agents) + 1) // 2
+                sales_agents = all_agents[:mid]
+                lettings_agents = all_agents[mid:]
+            
+            # Ensure at least one agent in each team
+            if not sales_agents and lettings_agents:
+                sales_agents.append(lettings_agents.pop(0))
+            if not lettings_agents and sales_agents:
+                lettings_agents.append(sales_agents.pop(0))
+            
+            print(f"Sales Team ({len(sales_agents)} agents):")
+            for agent in sales_agents:
+                print(f"  - {agent.first_name} {agent.last_name} ({agent.email})")
+            
+            print(f"\nLettings Team ({len(lettings_agents)} agents):")
+            for agent in lettings_agents:
+                print(f"  - {agent.first_name} {agent.last_name} ({agent.email})")
+            
+            # 1. Assign Properties to agents (must happen FIRST before maintenance issues)
+            all_properties_for_assign = properties_rent + properties_sale
+            assign_properties_to_agents(db, all_properties_for_assign, all_agents)
+            
+            # 2. Assign Vendors to sales agents
+            assign_vendors_to_agents(db, vendors, sales_agents)
+            
+            # 3. Assign Buyers to sales agents
+            assign_buyers_to_agents(db, buyers, sales_agents)
+            
+            # 4. Assign Landlords to lettings agents
+            assign_landlords_to_agents(db, landlords, lettings_agents)
+            
+            # 5. Assign Tenants to lettings agents
+            assign_tenants_to_agents(db, tenants, lettings_agents)
+            
+            # 6. Ensure test agent gets some tenants, buyers, and landlords
+            ensure_test_agent_gets_data(db, test_agent, tenants, buyers, landlords)
+            
+            # 7. Assign Tasks to agents
+            assign_tasks_to_agents(db, tasks, all_agents)
+            
+            # 8. Assign Maintenance Issues to agents (AFTER properties are assigned)
+            assign_maintenance_to_agents(db, maintenance_issues)
+            ensure_test_agent_gets_maintenance(db, maintenance_issues, test_agent)
+            
+            print(f"\n[OK] All data assigned to agents!")
+            
+            # Verify test agent assignments
+            verify_test_agent_assignments(db, test_agent)
+        
         # Summary
         print("\n" + "="*60)
         print("[OK] SEEDING COMPLETE!")
@@ -889,9 +1224,21 @@ def main():
         print(f"   - {len(tasks)} Tasks")
         print(f"   - {len(tickets)} Tickets")
         print(f"   - {len(offers)} Offers")
+        print(f"   - {len(maintenance_issues)} Maintenance Issues")
         print(f"   - {len(agents)} Agents")
+        print("\n" + "="*60)
+        print("LOGIN CREDENTIALS:")
+        print("="*60)
+        print("Test User (Agent):")
+        print("   Email: agent.test@example.com")
+        print("   Password: testpassword123")
+        print("\nAlternative Agents (from seed):")
+        print("   Email: john.smith@uos-crm.co.uk")
+        print("   Password: password123")
+        print("   (and other agents with same password)")
         print("\n[*] Your API is now ready for demo!")
         print("   Visit: http://localhost:8000/docs")
+        print("   Frontend: http://localhost:8080")
         print("="*60 + "\n")
 
     except Exception as e:

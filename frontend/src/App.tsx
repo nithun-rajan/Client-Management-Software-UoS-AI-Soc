@@ -22,7 +22,6 @@ import Vendors from "./pages/Vendors";
 import VendorDetails from "./pages/VendorDetails";
 import Buyers from "./pages/Buyers";
 import PropertiesForSale from "./pages/PropertiesForSale";
-import Messages from "./pages/Messages";
 import Search from "./pages/Search";
 import KPIsDashboard from "./pages/KPIsDashboard";
 import Settings from "./pages/Settings";
@@ -34,6 +33,8 @@ import Valuations from "./pages/Valuations";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Maintenance from "./pages/Maintenance";
+import MaintenanceDetails from "./pages/MaintenanceDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,12 +116,13 @@ const AppContent = () => {
                         <Route path="/buyers" element={<Buyers />} />
                         <Route path="/properties-for-sale" element={<PropertiesForSale />} />
                         <Route path="/valuations" element={<Valuations />} />
-                        <Route path="/messages" element={<Messages />} />
                         <Route path="/search" element={<Search />} />
                         <Route path="/tasks" element={<Tasks />} />
                         <Route path="/tickets" element={<Tickets />} />
                         <Route path="/offers" element={<Offers />} />
                         <Route path="/kpis" element={<KPIsDashboard />} />
+                        <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/maintenance/:id" element={<MaintenanceDetails />} />
                         <Route path="/agents" element={<Agents />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="*" element={<NotFound />} />

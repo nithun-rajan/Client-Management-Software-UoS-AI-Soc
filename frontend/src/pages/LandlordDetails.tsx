@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTasks } from "@/hooks/useTasks";
 import { useProperties } from "@/hooks/useProperties";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +59,7 @@ export default function LandlordDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
@@ -252,7 +254,7 @@ export default function LandlordDetails() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-3xl font-bold text-white">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-3xl font-bold text-white">
                   {getInitials(landlord.full_name)}
                 </div>
                 <div>
@@ -265,6 +267,19 @@ export default function LandlordDetails() {
                   )}
                 </div>
               </div>
+              {landlord.managed_by === user?.id ? (
+                <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  Managed by Me
+                </Badge>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                  <UserCheck className="h-4 w-4" />
+                  <span className="text-right whitespace-nowrap">
+                    Managed by: {landlord.managed_by_name || "Unassigned"}
+                  </span>
+                </div>
+              )}
             </div>
           </CardHeader>
         </Card>

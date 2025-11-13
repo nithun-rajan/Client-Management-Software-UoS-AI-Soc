@@ -9,12 +9,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import Header from "@/components/layout/Header";
 import Pipeline from "./Pipeline";
 import { getAuthRequired, setAuthRequired } from "@/lib/authSettings";
+import { useAgentProfile, useUpdateAgentProfile, AgentProfile } from "@/hooks/useAgentProfile";
+import { useAuth } from "@/hooks/useAuth";
 
 // GLOBAL AGENT STORE (shared with Sidebar & Dialog)
 interface Agent {
@@ -33,15 +34,15 @@ interface Agent {
   };
 }
 
-const AGENT_KEY = "john-smith-agent";
+const AGENT_KEY = "agent-profile"; // Keep for backward compatibility with localStorage
 
 const defaultAgent: Agent = {
-  name: "John Smith",
+  name: "Tom Smith",
   title: "Senior Sales & Lettings Manager – Southampton",
-  email: "john.smith@uos-crm.co.uk",
-  phone: "023 8099 1111",
-  office: "Court Road, Southampton SO15 2JS",
-  qualifications: "ARLA Level 3 • 7 years experience",
+  email: "",
+  phone: "",
+  office: "",
+  qualifications: "",
   avatarUrl: "",
   kpis: {
     askingPrice: "96%",
@@ -52,24 +53,77 @@ const defaultAgent: Agent = {
 };
 
 export default function Settings() {
+  const { user } = useAuth();
+  const { data: backendProfile, isLoading: profileLoading } = useAgentProfile();
+  const updateProfile = useUpdateAgentProfile();
   const [agent, setAgent] = useState<Agent>(defaultAgent);
   const [saved, setSaved] = useState(false);
   const [authRequired, setAuthRequiredState] = useState(getAuthRequired());
   const [securitySaved, setSecuritySaved] = useState(false);
 
-  // LOAD FROM LOCALSTORAGE ON MOUNT
+  // LOAD FROM BACKEND OR LOCALSTORAGE ON MOUNT
   useEffect(() => {
-    const saved = localStorage.getItem(AGENT_KEY);
-    if (saved) setAgent(JSON.parse(saved));
+    if (backendProfile) {
+      // Merge backend profile with user data
+      const mergedAgent: Agent = {
+        name: backendProfile.name || `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "Tom Smith",
+        title: backendProfile.title || defaultAgent.title,
+        email: backendProfile.email || user?.email || "",
+        phone: backendProfile.phone || "",
+        office: backendProfile.office || "",
+        qualifications: backendProfile.qualifications || "",
+        avatarUrl: backendProfile.avatarUrl || "",
+        kpis: backendProfile.kpis || defaultAgent.kpis,
+      };
+      setAgent(mergedAgent);
+      // Also save to localStorage for backward compatibility
+      localStorage.setItem(AGENT_KEY, JSON.stringify(mergedAgent));
+    } else {
+      // Fallback to localStorage if backend doesn't have profile yet
+      const saved = localStorage.getItem(AGENT_KEY);
+      if (saved) {
+        const localAgent = JSON.parse(saved);
+        setAgent(localAgent);
+      } else {
+        // Use user data as default
+        setAgent({
+          ...defaultAgent,
+          name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "Tom Smith",
+          email: user?.email || "",
+        });
+      }
+    }
     setAuthRequiredState(getAuthRequired());
-  }, []);
+  }, [backendProfile, user]);
 
-  // AUTO-SAVE TO LOCALSTORAGE
-  const saveAgent = () => {
-    localStorage.setItem(AGENT_KEY, JSON.stringify(agent));
-    window.dispatchEvent(new Event("agent-saved"));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // SAVE TO BACKEND AND LOCALSTORAGE
+  const saveAgent = async () => {
+    try {
+      // Save to backend
+      await updateProfile.mutateAsync({
+        name: agent.name,
+        title: agent.title,
+        email: agent.email,
+        phone: agent.phone,
+        office: agent.office,
+        qualifications: agent.qualifications,
+        avatarUrl: agent.avatarUrl,
+        kpis: agent.kpis,
+      });
+      
+      // Also save to localStorage for backward compatibility
+      localStorage.setItem(AGENT_KEY, JSON.stringify(agent));
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error("Failed to save agent profile:", error);
+      // Still save to localStorage as fallback
+      localStorage.setItem(AGENT_KEY, JSON.stringify(agent));
+      window.dispatchEvent(new Event("agent-saved"));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,26 +172,9 @@ export default function Settings() {
             {/* AVATAR + DELETE */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative group">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={agent.avatarUrl} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                    {agent.name.split(" ").map(n => n[0]).join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                  <Camera className="h-5 w-5 text-white" />
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                </label>
-                {agent.avatarUrl && (
-                  <button
-                    onClick={() => setAgent(prev => ({ ...prev, avatarUrl: "" }))}
-                    className="absolute -top-1 -right-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full p-1.5 shadow-sm"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
+                  {agent.name.split(" ").map(n => n[0]).join("")}
+                </div>
               </div>
             </div>
 
@@ -182,9 +219,10 @@ export default function Settings() {
               <Button
                 onClick={saveAgent}
                 className="gap-2"
+                disabled={updateProfile.isPending || profileLoading}
               >
                 <Save className="h-4 w-4" />
-                {saved ? "Saved!" : "Save Changes"}
+                {updateProfile.isPending ? "Saving..." : saved ? "Saved!" : "Save Changes"}
               </Button>
             </div>
           </CardContent>

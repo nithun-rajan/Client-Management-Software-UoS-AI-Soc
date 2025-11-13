@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Building2,
   Building,
@@ -11,6 +11,17 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Calendar,
+  Handshake,
+  MessageSquare,
+  TrendingUp,
+  TrendingDown,
+  CheckSquare,
+  Clock,
+  Home,
+  BarChart3,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   Card,
@@ -22,14 +33,176 @@ import {
 import { Button } from "@/components/ui/button";
 import { useKPIs } from "@/hooks/useKPIs";
 import { useEvents } from "@/hooks/useEvents";
+import { useProperties } from "@/hooks/useProperties";
+import { useApplicants } from "@/hooks/useApplicants";
+import { useUpcomingViewings } from "@/hooks/useViewings";
+import { useTasks } from "@/hooks/useTasks";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: kpis, isLoading } = useKPIs();
   const { data: events, isLoading: isLoadingEvents } = useEvents();
+  const { data: properties, isLoading: isLoadingProperties } = useProperties();
+  const { data: applicants, isLoading: isLoadingApplicants } = useApplicants();
+  const { data: upcomingViewings, isLoading: isLoadingViewings } = useUpcomingViewings(7);
+  const { data: tasks, isLoading: isLoadingTasks } = useTasks();
   const [complianceOpen, setComplianceOpen] = useState(false);
+
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      return "Good Morning";
+    } else if (hour < 18) {
+      return "Good Afternoon";
+    } else {
+      return "Good Evening";
+    }
+  };
+
+  // Get icon based on time of day
+  const getTimeIcon = () => {
+    const hour = new Date().getHours();
+    // Show sun during day (6 AM - 6 PM), moon during night
+    if (hour >= 6 && hour < 18) {
+      return <Sun className="h-8 w-8 text-yellow-500" />;
+    } else {
+      return <Moon className="h-8 w-8 text-blue-400" />;
+    }
+  };
+
+  // Get user's first name or email
+  const getUserName = () => {
+    if (user?.first_name) {
+      return user.first_name;
+    } else if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "";
+  };
+
+  // Calculate new properties this week
+  const newPropertiesThisWeek = useMemo(() => {
+    if (!properties) return 0;
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return properties.filter((p) => {
+      const createdDate = new Date(p.created_at);
+      return createdDate >= weekAgo;
+    }).length;
+  }, [properties]);
+
+  // Calculate pipeline value
+  const pipelineValue = useMemo(() => {
+    if (!properties) return { sales: 0, lettings: 0, total: 0 };
+    const salesValue = properties
+      .filter((p) => p.asking_price && p.sales_status && p.sales_status !== "completed" && p.sales_status !== "withdrawn")
+      .reduce((sum, p) => sum + (p.asking_price || 0), 0);
+    const lettingsValue = properties
+      .filter((p) => p.rent && (p.status === "available" || p.status === "let_agreed"))
+      .reduce((sum, p) => sum + (p.rent || 0) * 12, 0); // Annual rent value
+    return {
+      sales: salesValue,
+      lettings: lettingsValue,
+      total: salesValue + lettingsValue,
+    };
+  }, [properties]);
+
+  // Calculate market snapshot
+  const marketSnapshot = useMemo(() => {
+    if (!properties || properties.length === 0) {
+      return {
+        avgPrice: 0,
+        avgDaysOnMarket: 0,
+        demandLevel: "Low",
+      };
+    }
+    
+    // Average property price (sales)
+    const salesProperties = properties.filter((p) => p.asking_price);
+    const avgPrice = salesProperties.length > 0
+      ? salesProperties.reduce((sum, p) => sum + (p.asking_price || 0), 0) / salesProperties.length
+      : 0;
+
+    // Average days on market (simplified - using created_at as listed date)
+    const now = new Date();
+    const daysOnMarket = properties
+      .filter((p) => p.created_at && (p.status === "available" || p.status === "under_offer"))
+      .map((p) => {
+        const listedDate = new Date(p.created_at);
+        return Math.floor((now.getTime() - listedDate.getTime()) / (1000 * 60 * 60 * 24));
+      });
+    const avgDaysOnMarket = daysOnMarket.length > 0
+      ? daysOnMarket.reduce((sum, days) => sum + days, 0) / daysOnMarket.length
+      : 0;
+
+    // Demand level (based on available properties vs total)
+    const availableCount = properties.filter((p) => p.status === "available").length;
+    const demandLevel = availableCount < properties.length * 0.3 ? "High" : 
+                        availableCount < properties.length * 0.6 ? "Medium" : "Low";
+
+    return {
+      avgPrice,
+      avgDaysOnMarket: Math.round(avgDaysOnMarket),
+      demandLevel,
+    };
+  }, [properties]);
+
+  // Calculate applicant funnel
+  const applicantFunnel = useMemo(() => {
+    if (!applicants) return [];
+    const statusCounts: Record<string, number> = {};
+    applicants.forEach((app) => {
+      const status = app.status || "new";
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+      // Map statuses to funnel stages
+      const funnelStages = [
+        { name: "Lead", count: statusCounts["new"] || 0 },
+        { name: "Viewing", count: statusCounts["viewing_booked"] || 0 },
+        { name: "Offer", count: (statusCounts["offer_submitted"] || 0) + (statusCounts["offer_accepted"] || 0) },
+        { name: "Completed", count: statusCounts["tenancy_started"] || 0 },
+      ];
+
+    return funnelStages;
+  }, [applicants]);
+
+  // Tasks due today assigned to current user
+  const tasksDueToday = useMemo(() => {
+    if (!tasks || !user) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Get user's full name for matching
+    const userFullName = `${user.first_name} ${user.last_name}`;
+
+    return tasks.filter((task) => {
+      if (!task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate >= today && dueDate < tomorrow && 
+             task.status !== "completed" && 
+             task.status !== "cancelled" &&
+             task.assigned_to === userFullName; // Match by full name
+    }).slice(0, 5);
+  }, [tasks, user]);
 
   if (isLoading) {
     return (
@@ -75,41 +248,160 @@ export default function Dashboard() {
       subtitle: "Active buyers",
       gradient: "from-blue-500 to-cyan-500 dark:from-blue-600 dark:to-cyan-600",
     },
-    {
-      title: "Landlords",
-      icon: UserCheck,
-      value: kpis?.landlords?.total || 0,
-      subtitle: `${(kpis?.landlords?.verification_rate || 0).toFixed(0)}% AML verified`,
-      gradient: "from-accent to-emerald-500 dark:from-teal-600 dark:to-emerald-600",
-    },
-    {
-      title: "Vendors",
-      icon: UserCircle,
-      value: kpis?.vendors?.total || 0,
-      subtitle: "Active vendors",
-      gradient: "from-indigo-500 to-blue-500 dark:from-indigo-600 dark:to-blue-600",
-    },
-    {
-      title: "Average Rent",
-      icon: PoundSterling,
-      value: `£${(kpis?.properties_letting?.avg_rent || kpis?.properties?.avg_rent || 0).toFixed(0)}`,
-      subtitle: "per calendar month",
-      gradient: "from-green-500 to-emerald-500 dark:from-green-600 dark:to-emerald-600",
-    },
-    {
-      title: "Average Selling Price",
-      icon: PoundSterling,
-      value: `£${(kpis?.properties_sale?.avg_selling_price || 0).toLocaleString()}`,
-      subtitle: "properties for sale",
-      gradient: "from-rose-500 to-pink-500 dark:from-rose-600 dark:to-pink-600",
-    },
   ];
 
   return (
     <div>
       <Header title="Dashboard" />
       <div className="space-y-6 p-6">
-        {/* KPI Cards */}
+        {/* Greeting Title */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            {getTimeIcon()}
+            <h1 className="text-4xl font-bold text-foreground">
+              {getGreeting()}{getUserName() ? `, ${getUserName()}` : ""}
+            </h1>
+          </div>
+          <p className="text-muted-foreground mt-2">
+            Here's what's happening with your properties today.
+          </p>
+        </div>
+
+        {/* Top Priority Widgets */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Applicant Funnel Chart Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Applicant Funnel
+              </CardTitle>
+              <CardDescription>Applicants moving through stages</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingApplicants ? (
+                <Skeleton className="h-64" />
+              ) : applicantFunnel.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={applicantFunnel} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={80} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#667eea" radius={[0, 4, 4, 0]}>
+                      {applicantFunnel.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={
+                          index === 0 ? "#667eea" :
+                          index === 1 ? "#10b981" :
+                          index === 2 ? "#f59e0b" :
+                          "#ef4444"
+                        } />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-64 items-center justify-center text-muted-foreground">
+                  No applicant data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Viewings Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Upcoming Viewings
+              </CardTitle>
+              <CardDescription>Next 7 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingViewings ? (
+                <Skeleton className="h-64" />
+              ) : upcomingViewings && upcomingViewings.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {upcomingViewings.slice(0, 5).map((viewing) => (
+                    <div key={viewing.id} className="flex items-start justify-between gap-2 p-2 rounded-lg border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {viewing.property?.address || "Property"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {viewing.applicant?.name || "Applicant"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(viewing.scheduled_date), "MMM d, h:mm a")}
+                        </p>
+                      </div>
+                      {viewing.assigned_agent && (
+                        <UserCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-64 items-center justify-center text-muted-foreground">
+                  No upcoming viewings
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tasks Due Today Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                Tasks Due Today
+              </CardTitle>
+              <CardDescription>Pending tasks for you</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingTasks ? (
+                <Skeleton className="h-64" />
+              ) : tasksDueToday.length > 0 ? (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {tasksDueToday.map((task) => (
+                    <div key={task.id} className="flex items-start justify-between gap-2 p-2 rounded-lg border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{task.title}</p>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            task.priority === "urgent" ? "bg-red-100 text-red-700" :
+                            task.priority === "high" ? "bg-orange-100 text-orange-700" :
+                            task.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
+                            "bg-gray-100 text-gray-700"
+                          }`}>
+                            {task.priority}
+                          </span>
+                          {task.due_date && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(task.due_date), "h:mm a")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-64 items-center justify-center text-muted-foreground">
+                  No tasks due today
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top KPI Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {kpiCards.map((card) => (
             <Card
@@ -129,11 +421,182 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-        {/* Recent Activity */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="shadow-card md:col-span-2">
+
+        {/* New Widgets Row 1 */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Active Listings Count Widget */}
+          <Card className="shadow-card">
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Active Listings
+              </CardTitle>
+              <CardDescription>Total properties for sale and letting</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">For Letting</span>
+                  </div>
+                  <span className="text-2xl font-bold text-primary">
+                    {kpis?.properties_letting?.total || kpis?.properties?.total || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm text-muted-foreground">For Sale</span>
+                  </div>
+                  <span className="text-2xl font-bold text-purple-600">
+                    {kpis?.properties_sale?.total || 0}
+                  </span>
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-xl font-bold">
+                      {(kpis?.properties_letting?.total || kpis?.properties?.total || 0) + (kpis?.properties_sale?.total || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* New Properties This Week Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                New Properties This Week
+              </CardTitle>
+              <CardDescription>Listings added in last 7 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingProperties ? (
+                  <Skeleton className="h-10 w-20" />
+                ) : (
+                  newPropertiesThisWeek
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {newPropertiesThisWeek === 1 ? "new listing" : "new listings"}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Pipeline Value Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <PoundSterling className="h-4 w-4" />
+                Pipeline Value
+              </CardTitle>
+              <CardDescription>Total estimated value of active listings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Sales</span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {isLoadingProperties ? (
+                      <Skeleton className="h-6 w-24" />
+                    ) : (
+                      `£${(pipelineValue.sales / 1000000).toFixed(1)}M`
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Lettings (Annual)</span>
+                  <span className="text-lg font-bold text-primary">
+                    {isLoadingProperties ? (
+                      <Skeleton className="h-6 w-24" />
+                    ) : (
+                      `£${(pipelineValue.lettings / 1000).toFixed(0)}K`
+                    )}
+                  </span>
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Total</span>
+                    <span className="text-xl font-bold">
+                      {isLoadingProperties ? (
+                        <Skeleton className="h-8 w-32" />
+                      ) : (
+                        `£${((pipelineValue.total) / 1000000).toFixed(1)}M`
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* New Widgets Row 2 */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Market Snapshot Widget */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Market Snapshot
+              </CardTitle>
+              <CardDescription>High-level market statistics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingProperties ? (
+                <Skeleton className="h-64" />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Average Property Price</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold">
+                        £{marketSnapshot.avgPrice > 0 ? (marketSnapshot.avgPrice / 1000).toFixed(0) + "K" : "0"}
+                      </span>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Average Days on Market</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold">{marketSnapshot.avgDaysOnMarket}</span>
+                      <span className="text-xs text-muted-foreground">days</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Demand Level</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xl font-bold ${
+                        marketSnapshot.demandLevel === "High" ? "text-green-500" :
+                        marketSnapshot.demandLevel === "Medium" ? "text-yellow-500" :
+                        "text-red-500"
+                      }`}>
+                        {marketSnapshot.demandLevel}
+                      </span>
+                      {marketSnapshot.demandLevel === "High" ? (
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                      ) : marketSnapshot.demandLevel === "Low" ? (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity Feed - Enhanced */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Recent Activity Feed
+              </CardTitle>
               <CardDescription>Latest updates across your portfolio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -144,29 +607,63 @@ export default function Dashboard() {
                   <Skeleton className="h-16" />
                 </>
               ) : events && events.length > 0 ? (
-                events.slice(0, 5).map((event) => {
-                  const eventIcon =
-                    event.entity_type === "property"
-                      ? Building2
-                      : event.entity_type === "applicant"
-                        ? Users
-                        : event.entity_type === "landlord"
-                          ? UserCheck
-                          : Activity;
+                events.slice(0, 3).map((event) => {
+                  // Determine icon component based on entity type
+                  let IconComponent = Activity;
+                  if (event.entity_type === "property") {
+                    IconComponent = Building2;
+                  } else if (event.entity_type === "applicant") {
+                    IconComponent = Users;
+                  } else if (event.entity_type === "landlord") {
+                    IconComponent = UserCheck;
+                  } else if (event.entity_type === "vendor") {
+                    IconComponent = UserCircle;
+                  } else if (event.entity_type === "task") {
+                    IconComponent = Activity;
+                  } else if (event.entity_type === "viewing") {
+                    IconComponent = Calendar;
+                  } else if (event.entity_type === "offer") {
+                    IconComponent = Handshake;
+                  } else if (event.entity_type === "communication") {
+                    IconComponent = MessageSquare;
+                  }
 
-                  const eventColor =
-                    event.entity_type === "property"
-                      ? "accent"
-                      : event.entity_type === "applicant"
-                        ? "primary"
-                        : event.entity_type === "landlord"
-                          ? "accent"
-                          : "secondary";
+                  // Determine color classes based on entity type
+                  let bgColorClass = "bg-muted/10";
+                  let iconColorClass = "text-muted-foreground";
+                  if (event.entity_type === "property") {
+                    bgColorClass = "bg-primary/10";
+                    iconColorClass = "text-primary";
+                  } else if (event.entity_type === "applicant") {
+                    bgColorClass = "bg-blue-500/10";
+                    iconColorClass = "text-blue-500";
+                  } else if (event.entity_type === "landlord") {
+                    bgColorClass = "bg-accent/10";
+                    iconColorClass = "text-accent";
+                  } else if (event.entity_type === "vendor") {
+                    bgColorClass = "bg-indigo-500/10";
+                    iconColorClass = "text-indigo-500";
+                  } else if (event.entity_type === "task") {
+                    bgColorClass = "bg-orange-500/10";
+                    iconColorClass = "text-orange-500";
+                  } else if (event.entity_type === "viewing") {
+                    bgColorClass = "bg-cyan-500/10";
+                    iconColorClass = "text-cyan-500";
+                  } else if (event.entity_type === "offer") {
+                    bgColorClass = "bg-green-500/10";
+                    iconColorClass = "text-green-500";
+                  } else if (event.entity_type === "communication") {
+                    bgColorClass = "bg-purple-500/10";
+                    iconColorClass = "text-purple-500";
+                  }
 
-                  const eventTitle = event.event
-                    .split(".")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ");
+                  // Format event title
+                  const eventTitle = event.description 
+                    ? event.description
+                    : event.event
+                        .split(".")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ");
 
                   const timeAgo = formatDistanceToNow(new Date(event.timestamp), {
                     addSuffix: true,
@@ -174,14 +671,16 @@ export default function Dashboard() {
 
                   return (
                     <div key={event.id} className="flex items-start gap-4">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full bg-${eventColor}/10`}
-                      ></div>
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${bgColorClass}`}>
+                        <IconComponent className={`h-5 w-5 ${iconColorClass}`} />
+                      </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{eventTitle}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {event.entity_type} #{event.entity_id}
-                        </p>
+                        {event.entity_name && (
+                          <p className="text-sm text-muted-foreground">
+                            {event.entity_name}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">{timeAgo}</p>
                       </div>
                     </div>
@@ -193,45 +692,6 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">No recent activity</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-              <CardDescription>This month's overview</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Properties for Letting</span>
-                <span className="text-2xl font-bold text-accent">
-                  {kpis?.properties_letting?.total || kpis?.properties?.total || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Properties for Sale</span>
-                <span className="text-2xl font-bold text-primary">
-                  {kpis?.properties_sale?.total || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Tenants</span>
-                <span className="text-2xl font-bold text-secondary">
-                  {kpis?.tenants?.total || kpis?.applicants?.total || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Buyers</span>
-                <span className="text-2xl font-bold text-blue-500">
-                  {kpis?.buyers?.total || 0}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Vendors</span>
-                <span className="text-2xl font-bold text-indigo-500">
-                  {kpis?.vendors?.total || 0}
-                </span>
-              </div>
             </CardContent>
           </Card>
         </div>

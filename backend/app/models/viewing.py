@@ -38,8 +38,18 @@ class Viewing(BaseModel):
     # Follow-up
     follow_up_required = Column(Boolean, default=False)
     follow_up_notes = Column(Text, nullable=True)
+
+    # Match integration fields
+    match_id = Column(String, ForeignKey('match_history.id'), nullable=True)  # Link to the match that triggered this viewing
+    booking_source = Column(String, default="match_link")  # match_link, manual, phone, portal
+    booking_token = Column(String, nullable=True, unique=True)  # Secure token for public booking links
     
+    # Public booking fields
+    public_booking_url = Column(String, nullable=True)
+    booking_expires_at = Column(DateTime, nullable=True)
+
     # Relationships
     property = relationship("Property", backref="viewings")
     applicant = relationship("Applicant", backref="viewings")
+    triggering_match = relationship("MatchHistory", foreign_keys=[match_id])  # Link to match that triggered this viewing
 

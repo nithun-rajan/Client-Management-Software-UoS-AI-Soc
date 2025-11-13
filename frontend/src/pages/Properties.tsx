@@ -7,15 +7,16 @@ import {
   Trash2,
   PoundSterling,
   Download,
-  Upload,
   Search,
   X,
   Sparkles,
   FileText,
   CheckCircle,
   AlertCircle,
+  User,
+  UserCheck,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,8 +28,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -36,7 +37,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProperties } from "@/hooks/useProperties";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProperties, useMyProperties, useTeamProperties, useAvailableProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
@@ -45,9 +47,25 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { getFlatOrUnitNumber } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import PhotoGallery from "@/components/property/PhotoGallery";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  const { data: myProperties, isLoading: isLoadingMyProperties, refetch: refetchMyProperties } = useMyProperties();
+  const { data: teamProperties, isLoading: isLoadingTeamProperties, refetch: refetchTeamProperties } = useTeamProperties(teamAgentIds);
+  const { data: availableProperties, isLoading: isLoadingAvailableProperties, refetch: refetchAvailableProperties } = useAvailableProperties();
+  
+  const refetchAll = () => {
+    refetch();
+    refetchMyProperties();
+    refetchTeamProperties();
+    refetchAvailableProperties();
+  };
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
@@ -56,6 +74,7 @@ export default function Properties() {
   const [valuationPackOpen, setValuationPackOpen] = useState(false);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -72,7 +91,7 @@ export default function Properties() {
       await api.delete(`/api/v1/properties/${selectedProperty.id}/`);
       toast({ title: "Success", description: "Property deleted successfully" });
       setDeleteOpen(false);
-      refetch();
+      refetchAll();
     } catch (error) {
       toast({
         title: "Error",
@@ -81,6 +100,83 @@ export default function Properties() {
       });
     }
   };
+
+  // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
+  const propertiesForLetting = useMemo(() => {
+    return properties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [properties]);
+
+  // Filter my properties for letting
+  const myPropertiesForLetting = useMemo(() => {
+    return myProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [myProperties]);
+
+  // Filter team properties for letting
+  const teamPropertiesForLetting = useMemo(() => {
+    return teamProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [teamProperties]);
+
+  // Filter available properties for letting
+  const availablePropertiesForLetting = useMemo(() => {
+    return availableProperties?.filter(
+      (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
+    ) || [];
+  }, [availableProperties]);
+
+  // Filter properties based on active tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "my-properties") {
+      // Use backend endpoint for my properties
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-me") {
+      // Use backend endpoint for managed by me
+      return myPropertiesForLetting;
+    } else if (activeTab === "managed-by-team") {
+      // Use backend endpoint for team properties
+      return teamPropertiesForLetting;
+    } else if (activeTab === "available") {
+      // Use backend endpoint for available properties
+      return availablePropertiesForLetting;
+    }
+    // "all" tab - return all properties
+    return propertiesForLetting;
+  }, [propertiesForLetting, myPropertiesForLetting, teamPropertiesForLetting, availablePropertiesForLetting, activeTab]);
+
+  // Apply filters and search
+  const filteredProperties = useMemo(() => {
+    let filtered = filteredByTab;
+    
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((property) => {
+        return (
+          property.address_line1?.toLowerCase().includes(query) ||
+          property.city?.toLowerCase().includes(query) ||
+          property.postcode?.toLowerCase().includes(query) ||
+          property.property_type?.toLowerCase().includes(query) ||
+          property.bedrooms?.toString().includes(query) ||
+          property.bathrooms?.toString().includes(query) ||
+          property.rent?.toString().includes(query)
+        );
+      });
+    }
+    
+    return filtered;
+  }, [filteredByTab, searchQuery]);
+
+  // Calculate counts for each tab (using backend data)
+  const allCount = propertiesForLetting.length;
+  const myPropertiesCount = myPropertiesForLetting.length;
+  const managedByMeCount = myPropertiesForLetting.length;
+  const managedByTeamCount = teamPropertiesForLetting.length;
+  const availableCount = availablePropertiesForLetting.length;
 
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,7 +194,7 @@ export default function Properties() {
       });
       toast({ title: "Success", description: "Property updated successfully" });
       setEditOpen(false);
-      refetch();
+      refetchAll();
     } catch (error) {
       toast({
         title: "Error",
@@ -108,26 +204,43 @@ export default function Properties() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div>
-        <Header title="Properties for Letting" />
-        <div className="p-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-64" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Helper function to normalize photo URLs
+  const normalizePhotoUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    return `${apiBaseUrl}/${url}`;
+  };
 
-  const handleRequestPhoto = (property: any) => {
-    toast({
-      title: "Request Sent",
-      description: `Photo upload request sent to landlord for ${property.address_line1}`,
-    });
+  // Helper function to get photos array from property
+  const getPropertyPhotos = (property: any): string[] => {
+    if (property.photo_urls) {
+      try {
+        const photos = JSON.parse(property.photo_urls);
+        if (Array.isArray(photos) && photos.length > 0) {
+          return photos.map(normalizePhotoUrl);
+        }
+      } catch (e) {
+        console.error("Failed to parse photo_urls:", e);
+      }
+    }
+    // Fallback to main_photo_url if photo_urls is not available
+    if (property.main_photo_url) {
+      return [normalizePhotoUrl(property.main_photo_url)];
+    }
+    return [];
+  };
+
+  // Handler for photo updates
+  const handlePhotosUpdate = async (propertyId: string, photos: string[]) => {
+    refetch();
+  };
+
+  // Handler for main photo update
+  const handleMainPhotoUpdate = async (propertyId: string, url: string) => {
+    refetch();
   };
 
   const handleGenerateValuationPack = async (property: any) => {
@@ -138,6 +251,8 @@ export default function Properties() {
         postcode: property.postcode,
         property_type: property.property_type,
         bedrooms: property.bedrooms,
+        property_id: property.id,
+        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
       });
       setValuationPack(response.data.data);
       setValuationPackOpen(true);
@@ -149,7 +264,7 @@ export default function Properties() {
         title: "Success",
         description: "Valuation pack generated successfully",
       });
-      refetch();
+      refetchAll();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -199,26 +314,20 @@ export default function Properties() {
     toast({ title: "Success", description: "Properties exported to CSV" });
   };
 
-  // Filter properties for letting (have landlord_id, no vendor_id, no sales_status)
-  const propertiesForLetting = properties?.filter(
-    (p) => p.landlord_id && !p.vendor_id && (!p.sales_status || p.sales_status.trim() === "")
-  ) || [];
-
-  // Filter properties based on search query
-  const filteredProperties = propertiesForLetting.filter((property) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
+  if (isLoading || (activeTab === "my-properties" && isLoadingMyProperties) || (activeTab === "managed-by-me" && isLoadingMyProperties) || (activeTab === "managed-by-team" && isLoadingTeamProperties) || (activeTab === "available" && isLoadingAvailableProperties)) {
     return (
-      property.address_line1?.toLowerCase().includes(query) ||
-      property.city?.toLowerCase().includes(query) ||
-      property.postcode?.toLowerCase().includes(query) ||
-      property.property_type?.toLowerCase().includes(query) ||
-      property.bedrooms?.toString().includes(query) ||
-      property.bathrooms?.toString().includes(query) ||
-      property.rent?.toString().includes(query)
+      <div>
+        <Header title="Properties for Letting" />
+        <div className="p-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-64" />
+            ))}
+          </div>
+        </div>
+      </div>
     );
-  }) || [];
+  }
 
   return (
     <div>
@@ -252,6 +361,33 @@ export default function Properties() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <div className="mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="all">
+                All Properties ({allCount})
+              </TabsTrigger>
+              <TabsTrigger value="my-properties">
+                <User className="mr-2 h-4 w-4" />
+                My Properties ({myPropertiesCount})
+              </TabsTrigger>
+              <TabsTrigger value="managed-by-me">
+                <User className="mr-2 h-4 w-4" />
+                Managed by Me ({managedByMeCount})
+              </TabsTrigger>
+              <TabsTrigger value="managed-by-team">
+                <UserCheck className="mr-2 h-4 w-4" />
+                Managed by My Team ({managedByTeamCount})
+              </TabsTrigger>
+              <TabsTrigger value="available">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Available ({availableCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         <div className="mb-6 flex justify-end">
           <Button onClick={handleExportCSV} variant="outline">
             <Download className="mr-2 h-4 w-4" />
@@ -275,32 +411,15 @@ export default function Properties() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex aspect-video items-center justify-center rounded-lg bg-muted overflow-hidden relative">
-                  {property.main_photo_url ? (
-                    <img
-                      src={property.main_photo_url}
-                      alt={property.address_line1}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <>
-                      <img
-                        src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                        alt={property.address_line1 || property.city}
-                        className="h-full w-full object-cover"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white hover:text-white"
-                        onClick={() => handleRequestPhoto(property)}
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        Request Photo
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <PhotoGallery
+                  photos={getPropertyPhotos(property)}
+                  propertyId={property.id}
+                  onPhotosUpdate={(photos) => handlePhotosUpdate(property.id, photos)}
+                  mainPhotoUrl={property.main_photo_url ? normalizePhotoUrl(property.main_photo_url) : undefined}
+                  onMainPhotoUpdate={(url) => handleMainPhotoUpdate(property.id, url)}
+                  allowEdit={true}
+                  className="aspect-video"
+                />
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -317,9 +436,24 @@ export default function Properties() {
                       </p>
                     )}
                   </div>
-                  <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
-                    {property.property_type}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="rounded bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
+                      {property.property_type}
+                    </span>
+                    {property.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {property.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 pt-2">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -368,10 +502,10 @@ export default function Properties() {
         {filteredProperties.length === 0 && (
           <EmptyState
             icon={Building2}
-            title="No properties for letting yet"
-            description="Get started by adding your first property for letting to begin managing your portfolio"
-            actionLabel="+ Add Property"
-            onAction={() => {}}
+            title={searchQuery ? "No properties found" : "No properties for letting yet"}
+            description={searchQuery ? "Try adjusting your search to see more results" : "Get started by adding your first property for letting to begin managing your portfolio"}
+            actionLabel={searchQuery ? undefined : "+ Add Property"}
+            onAction={searchQuery ? undefined : () => {}}
           />
         )}
       </div>
@@ -605,7 +739,9 @@ export default function Properties() {
               )}
 
               {/* Area Statistics */}
-              {valuationPack.area_statistics && (
+              {valuationPack.area_statistics && 
+               valuationPack.area_statistics.total_sales > 0 && 
+               valuationPack.area_statistics.average_price > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Area Statistics</CardTitle>
@@ -615,16 +751,21 @@ export default function Properties() {
                       <div>
                         <div className="text-sm text-muted-foreground">Total Sales</div>
                         <div className="text-lg font-semibold">
-                          {valuationPack.area_statistics.total_sales || "N/A"}
+                          {valuationPack.area_statistics.total_sales.toLocaleString()}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground">Average Price</div>
                         <div className="text-lg font-semibold">
-                          £{valuationPack.area_statistics.average_price?.toLocaleString() || "N/A"}
+                          £{valuationPack.area_statistics.average_price.toLocaleString()}
                         </div>
                       </div>
                     </div>
+                    {valuationPack.area_statistics.time_period && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        {valuationPack.area_statistics.time_period}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -644,3 +785,4 @@ export default function Properties() {
     </div>
   );
 }
+

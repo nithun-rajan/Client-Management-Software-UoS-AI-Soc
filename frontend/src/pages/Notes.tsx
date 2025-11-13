@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, StickyNote, Calendar } from "lucide-react";
+import { Search, StickyNote, Calendar, Users, Building2, UserCheck, ShoppingBag, Store } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox as UICheckbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/components/shared/EmptyState";
 import { useLandlords } from "@/hooks/useLandlords";
 import { useProperties } from "@/hooks/useProperties";
@@ -27,14 +26,7 @@ interface NoteEntry {
 
 export default function Notes() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showEditedToday, setShowEditedToday] = useState(true);
-  const [typeFilters, setTypeFilters] = useState({
-    tenants: true,
-    properties: true,
-    landlords: true,
-    buyers: true,
-    vendors: true,
-  });
+  const [activeTab, setActiveTab] = useState("all");
 
   const { data: landlords, isLoading: landlordsLoading } = useLandlords();
   const { data: properties, isLoading: propertiesLoading } = useProperties();
@@ -162,38 +154,83 @@ export default function Notes() {
     return { notesToday: today, notesOther: other };
   }, [allNotes]);
 
-  // Filter notes based on search, type filters, and edited today filter
-  const filterNotes = (notes: NoteEntry[]) => {
+  // Filter notes by tab
+  const filterNotesByTab = (notes: NoteEntry[]) => {
+    if (activeTab === "all") return notes;
+    
     return notes.filter((note) => {
-      // Type filter
-      let filterKey: keyof typeof typeFilters | null = null;
-      
-      if (note.entityType === "applicant") {
+      if (activeTab === "tenants") {
+        if (note.entityType !== "applicant") return false;
         const applicant = applicants?.find((a) => a.id === note.entityId);
-        const isBuyer = applicant?.willing_to_buy === true && applicant?.willing_to_rent !== true;
-        filterKey = isBuyer ? "buyers" : "tenants";
-      } else if (note.entityType === "property") {
-        filterKey = "properties";
-      } else if (note.entityType === "landlord") {
-        filterKey = "landlords";
-      } else if (note.entityType === "vendor") {
-        filterKey = "vendors";
+        return applicant && !(applicant.willing_to_buy === true && applicant.willing_to_rent !== true);
+      } else if (activeTab === "buyers") {
+        if (note.entityType !== "applicant") return false;
+        const applicant = applicants?.find((a) => a.id === note.entityId);
+        return applicant && applicant.willing_to_buy === true && applicant.willing_to_rent !== true;
+      } else if (activeTab === "properties") {
+        return note.entityType === "property";
+      } else if (activeTab === "landlords") {
+        return note.entityType === "landlord";
+      } else if (activeTab === "vendors") {
+        return note.entityType === "vendor";
       }
-      
-      if (filterKey && !typeFilters[filterKey]) return false;
-      
-      // Search filter
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        note.entityName.toLowerCase().includes(query) ||
-        note.content.toLowerCase().includes(query)
-      );
+      return true;
     });
   };
 
-  const filteredNotesToday = useMemo(() => filterNotes(notesToday), [notesToday, searchQuery, typeFilters, applicants]);
-  const filteredNotesOther = useMemo(() => filterNotes(notesOther), [notesOther, searchQuery, typeFilters, applicants]);
+  // Apply search filter
+  const applySearchFilter = (notes: NoteEntry[]) => {
+    if (!searchQuery) return notes;
+    const query = searchQuery.toLowerCase();
+    return notes.filter((note) => (
+      note.entityName.toLowerCase().includes(query) ||
+      note.content.toLowerCase().includes(query)
+    ));
+  };
+
+  // Filter notes based on tab and search
+  const filteredNotesToday = useMemo(() => {
+    const tabFiltered = filterNotesByTab(notesToday);
+    return applySearchFilter(tabFiltered);
+  }, [notesToday, activeTab, searchQuery, applicants]);
+
+  const filteredNotesOther = useMemo(() => {
+    const tabFiltered = filterNotesByTab(notesOther);
+    return applySearchFilter(tabFiltered);
+  }, [notesOther, activeTab, searchQuery, applicants]);
+
+  // Helper function to filter notes by a specific tab
+  const filterByTab = (notes: NoteEntry[], tab: string) => {
+    if (tab === "all") return notes;
+    
+    return notes.filter((note) => {
+      if (tab === "tenants") {
+        if (note.entityType !== "applicant") return false;
+        const applicant = applicants?.find((a) => a.id === note.entityId);
+        return applicant && !(applicant.willing_to_buy === true && applicant.willing_to_rent !== true);
+      } else if (tab === "buyers") {
+        if (note.entityType !== "applicant") return false;
+        const applicant = applicants?.find((a) => a.id === note.entityId);
+        return applicant && applicant.willing_to_buy === true && applicant.willing_to_rent !== true;
+      } else if (tab === "properties") {
+        return note.entityType === "property";
+      } else if (tab === "landlords") {
+        return note.entityType === "landlord";
+      } else if (tab === "vendors") {
+        return note.entityType === "vendor";
+      }
+      return true;
+    });
+  };
+
+  // Calculate counts for each tab
+  const allNotesCombined = useMemo(() => [...notesToday, ...notesOther], [notesToday, notesOther]);
+  const allCount = allNotesCombined.length;
+  const tenantsCount = useMemo(() => filterByTab(allNotesCombined, "tenants").length, [allNotesCombined, applicants]);
+  const buyersCount = useMemo(() => filterByTab(allNotesCombined, "buyers").length, [allNotesCombined, applicants]);
+  const propertiesCount = useMemo(() => filterByTab(allNotesCombined, "properties").length, [allNotesCombined]);
+  const landlordsCount = useMemo(() => filterByTab(allNotesCombined, "landlords").length, [allNotesCombined]);
+  const vendorsCount = useMemo(() => filterByTab(allNotesCombined, "vendors").length, [allNotesCombined]);
 
   const getTypeLabel = (note: NoteEntry) => {
     if (note.entityType === "applicant") {
@@ -429,8 +466,8 @@ export default function Notes() {
     <div>
       <Header title="Notes" />
       <div className="p-6 space-y-6">
-        {/* Filters */}
-        <div className="flex flex-col gap-4">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -440,85 +477,36 @@ export default function Notes() {
               className="pl-9"
             />
           </div>
-          
-          <div className="flex flex-wrap gap-4 items-center">
-            <Label className="text-sm font-medium">Filter by type:</Label>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-edited-today"
-                  checked={showEditedToday}
-                  onCheckedChange={(checked) =>
-                    setShowEditedToday(checked as boolean)
-                  }
-                />
-                <Label htmlFor="filter-edited-today" className="text-sm font-normal cursor-pointer">
-                  Edited today
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-tenants"
-                  checked={typeFilters.tenants}
-                  onCheckedChange={(checked) =>
-                    setTypeFilters({ ...typeFilters, tenants: checked as boolean })
-                  }
-                />
-                <Label htmlFor="filter-tenants" className="text-sm font-normal cursor-pointer">
-                  Tenants
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-properties"
-                  checked={typeFilters.properties}
-                  onCheckedChange={(checked) =>
-                    setTypeFilters({ ...typeFilters, properties: checked as boolean })
-                  }
-                />
-                <Label htmlFor="filter-properties" className="text-sm font-normal cursor-pointer">
-                  Properties
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-landlords"
-                  checked={typeFilters.landlords}
-                  onCheckedChange={(checked) =>
-                    setTypeFilters({ ...typeFilters, landlords: checked as boolean })
-                  }
-                />
-                <Label htmlFor="filter-landlords" className="text-sm font-normal cursor-pointer">
-                  Landlords
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-buyers"
-                  checked={typeFilters.buyers}
-                  onCheckedChange={(checked) =>
-                    setTypeFilters({ ...typeFilters, buyers: checked as boolean })
-                  }
-                />
-                <Label htmlFor="filter-buyers" className="text-sm font-normal cursor-pointer">
-                  Buyers
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <UICheckbox
-                  id="filter-vendors"
-                  checked={typeFilters.vendors}
-                  onCheckedChange={(checked) =>
-                    setTypeFilters({ ...typeFilters, vendors: checked as boolean })
-                  }
-                />
-                <Label htmlFor="filter-vendors" className="text-sm font-normal cursor-pointer">
-                  Vendors
-                </Label>
-              </div>
-            </div>
-          </div>
         </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Notes ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="tenants">
+              <Users className="mr-2 h-4 w-4" />
+              Tenants ({tenantsCount})
+            </TabsTrigger>
+            <TabsTrigger value="properties">
+              <Building2 className="mr-2 h-4 w-4" />
+              Properties ({propertiesCount})
+            </TabsTrigger>
+            <TabsTrigger value="landlords">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Landlords ({landlordsCount})
+            </TabsTrigger>
+            <TabsTrigger value="buyers">
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Buyers ({buyersCount})
+            </TabsTrigger>
+            <TabsTrigger value="vendors">
+              <Store className="mr-2 h-4 w-4" />
+              Vendors ({vendorsCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Notes Grid */}
         {filteredNotesToday.length === 0 && filteredNotesOther.length === 0 ? (
@@ -526,7 +514,7 @@ export default function Notes() {
             icon={StickyNote}
             title="No notes found"
             description={
-              searchQuery || Object.values(typeFilters).some((v) => !v)
+              searchQuery || activeTab !== "all"
                 ? "Try adjusting your search or filters"
                 : "Your notes will appear here once you start adding them"
             }
@@ -580,12 +568,12 @@ export default function Notes() {
             )}
 
             {/* Separator */}
-            {!showEditedToday && filteredNotesToday.length > 0 && filteredNotesOther.length > 0 && (
+            {filteredNotesToday.length > 0 && filteredNotesOther.length > 0 && (
               <div className="border-t my-6" />
             )}
 
             {/* Other Notes */}
-            {!showEditedToday && filteredNotesOther.length > 0 && (
+            {filteredNotesOther.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-semibold">Other notes</h2>

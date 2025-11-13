@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Users,
+  User,
+  UserCheck,
   Mail,
   Phone,
   Bed,
@@ -40,15 +42,71 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import StatusBadge from "@/components/shared/StatusBadge";
 import EmptyState from "@/components/shared/EmptyState";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
+import BookViewingDialog from "@/components/shared/BookViewingDialog";
+import { useMatchSending } from "@/hooks/useMatchSending";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Applicants() {
+  const navigate = useNavigate();
   const { data: applicants, isLoading } = useApplicants();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [bookViewingOpen, setBookViewingOpen] = useState(false);
+  const [selectedPropertyForViewing, setSelectedPropertyForViewing] = useState<{ propertyId: string; propertyAddress?: string } | null>(null);
+  const { toast } = useToast();
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
 
   const matchingMutation = usePropertyMatching(5, 50);
+
+  // Filter applicants that are tenants (willing_to_rent = true)
+  const tenants = useMemo(() => applicants?.filter((a: any) => a.willing_to_rent !== false) || [], [applicants]);
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return tenants.filter((tenant: any) => tenant.assigned_agent_id === user?.id);
+    } else if (activeTab === "managed-by-team") {
+      return tenants.filter((tenant: any) => tenant.assigned_agent_id && teamAgentIds.includes(tenant.assigned_agent_id));
+    }
+    return tenants;
+  }, [tenants, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = tenants.length;
+  const managedByMeCount = tenants.filter((t: any) => t.assigned_agent_id === user?.id).length;
+  const managedByTeamCount = tenants.filter((t: any) => t.assigned_agent_id && teamAgentIds.includes(t.assigned_agent_id)).length;
+
+  // Apply search filter
+  const filteredTenants = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((tenant: any) => (
+      tenant.first_name?.toLowerCase().includes(query) ||
+      tenant.last_name?.toLowerCase().includes(query) ||
+      tenant.email?.toLowerCase().includes(query) ||
+      tenant.phone?.includes(query) ||
+      tenant.preferred_locations?.toLowerCase().includes(query) ||
+      tenant.status?.toLowerCase().includes(query) ||
+      tenant.desired_bedrooms?.toString().includes(query) ||
+      tenant.rent_budget_min?.toString().includes(query) ||
+      tenant.rent_budget_max?.toString().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
+
+  const matchData = matchingMutation.data;
 
   const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
@@ -60,6 +118,10 @@ export default function Applicants() {
     } catch (error) {
       // Error is already handled by the mutation's onError
     }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
 
   if (isLoading) {
@@ -76,33 +138,6 @@ export default function Applicants() {
       </div>
     );
   }
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  const matchData = matchingMutation.data;
-
-  // Filter applicants that are tenants (willing_to_rent = true)
-  const tenants = applicants?.filter((a: any) => a.willing_to_rent !== false) || [];
-
-  // Apply search
-  const filteredTenants = tenants.filter((tenant: any) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      tenant.first_name?.toLowerCase().includes(query) ||
-      tenant.last_name?.toLowerCase().includes(query) ||
-      tenant.email?.toLowerCase().includes(query) ||
-      tenant.phone?.includes(query) ||
-      tenant.preferred_locations?.toLowerCase().includes(query) ||
-      tenant.status?.toLowerCase().includes(query) ||
-      tenant.desired_bedrooms?.toString().includes(query) ||
-      tenant.rent_budget_min?.toString().includes(query) ||
-      tenant.rent_budget_max?.toString().includes(query)
-    );
-  });
 
   return (
     <div>
@@ -136,6 +171,23 @@ export default function Applicants() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Tenants ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTenants.map((applicant) => (
             <Card
@@ -143,15 +195,32 @@ export default function Applicants() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
-                    {getInitials(applicant.first_name, applicant.last_name)}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary font-bold text-white">
+                      {getInitials(applicant.first_name, applicant.last_name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold">
+                        {applicant.first_name} {applicant.last_name}
+                      </h3>
+                      <StatusBadge status={applicant.status} className="mt-1" />
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold">
-                      {applicant.first_name} {applicant.last_name}
-                    </h3>
-                    <StatusBadge status={applicant.status} className="mt-1" />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {applicant.assigned_agent_id === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {applicant.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -213,10 +282,10 @@ export default function Applicants() {
           {filteredTenants.length === 0 && (
             <EmptyState
               icon={Users}
-              title="No tenants yet"
-              description="Start building your tenant database by adding your first tenant"
-              actionLabel="+ Add Tenant"
-              onAction={() => {}}
+              title={searchQuery || activeTab !== "all" ? "No tenants found" : "No tenants yet"}
+              description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your tenant database by adding your first tenant"}
+              actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Tenant"}
+              onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
             />
           )}
       </div>
@@ -351,28 +420,72 @@ export default function Applicants() {
                       </div>
 
                       {/* Viewing Slots */}
-                      <div>
-                        <div className="mb-2 flex items-center gap-1 text-sm font-medium">
-                          <Calendar className="h-4 w-4" />
-                          Available Viewing Slots:
+                      {match.viewing_slots && match.viewing_slots.length > 0 && (
+                        <div>
+                          <div className="mb-2 flex items-center gap-1 text-sm font-medium">
+                            <Calendar className="h-4 w-4" />
+                            Available Viewing Slots:
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {match.viewing_slots.map((slot, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {slot}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {match.viewing_slots.map((slot, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {slot}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Applicant
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!matchData?.applicant.id) return;
+                          try {
+                            await sendMatches(
+                              matchData.applicant.id,
+                              [match.property_id],
+                              'email',
+                              match.personalized_message
+                            );
+                            toast({
+                              title: "Success",
+                              description: "Property match sent to applicant",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error?.message || "Failed to send match",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={sendingMatches}
+                      >
+                        {sendingMatches ? "Sending..." : "Send to Applicant"}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPropertyForViewing({
+                            propertyId: match.property_id,
+                            propertyAddress: match.property.address
+                          });
+                          setBookViewingOpen(true);
+                        }}
+                      >
                         Book Viewing
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setMatchesDialogOpen(false);
+                          navigate(`/properties/${match.property_id}`);
+                        }}
+                      >
                         View Property
                       </Button>
                     </CardFooter>
@@ -402,6 +515,18 @@ export default function Applicants() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedPropertyForViewing && matchData?.applicant && (
+        <BookViewingDialog
+          open={bookViewingOpen}
+          onOpenChange={setBookViewingOpen}
+          propertyId={selectedPropertyForViewing.propertyId}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedPropertyForViewing.propertyAddress}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

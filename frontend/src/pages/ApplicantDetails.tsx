@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Users,
@@ -18,6 +18,7 @@ import {
   Pencil,
   Trash2,
   Edit,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { useTasks } from "@/hooks/useTasks";
 import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
 import NotesSection from "@/components/shared/NotesSection";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +58,7 @@ export default function ApplicantDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLastContactedDialogOpen, setEditLastContactedDialogOpen] = useState(false);
@@ -94,6 +97,39 @@ export default function ApplicantDetails() {
   const reportedTickets = allTickets?.filter(
     (ticket) => ticket.applicant_id === applicant?.id
   ) || [];
+
+  // Fetch match history for this applicant
+  const { data: matchHistoryData, isLoading: isLoadingMatchHistory } = useQuery({
+    queryKey: ["matchHistory", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const response = await api.get(`/api/v1/ai/match-history/${id}?limit=100`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+
+  const sentMatchesCount = matchHistoryData?.stats?.total_matches_sent || 0;
+
+  // Deduplicate matches by property_id, keeping the most recent one
+  const uniqueMatches = useMemo(() => {
+    if (!matchHistoryData?.history) return [];
+    
+    const propertyMap = new Map<string, any>();
+    
+    matchHistoryData.history.forEach((match: any) => {
+      if (!match.property?.id) return;
+      
+      const existing = propertyMap.get(match.property.id);
+      if (!existing || new Date(match.sent_at) > new Date(existing.sent_at)) {
+        propertyMap.set(match.property.id, match);
+      }
+    });
+    
+    return Array.from(propertyMap.values()).sort((a, b) => 
+      new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()
+    );
+  }, [matchHistoryData?.history]);
 
   // Get all offers to filter by applicant_id
   const { data: allOffers } = useOffers();
@@ -287,18 +323,33 @@ export default function ApplicantDetails() {
             {/* Contact Info + Property Requirements Card */}
             <Card>
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="bg-gradient-secondary flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-3xl font-bold text-white">
-                    {getInitials(applicant.first_name, applicant.last_name)}
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl">
-                      {applicant.first_name || ""} {applicant.last_name || ""}
-                    </CardTitle>
-                    <div className="mt-2 flex items-center gap-2">
-                      {applicant.status && <StatusBadge status={applicant.status} />}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-3xl font-bold text-white">
+                      {getInitials(applicant.first_name, applicant.last_name)}
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-2xl">
+                        {applicant.first_name || ""} {applicant.last_name || ""}
+                      </CardTitle>
+                      <div className="mt-2 flex items-center gap-2">
+                        {applicant.status && <StatusBadge status={applicant.status} />}
+                      </div>
                     </div>
                   </div>
+                  {applicant.assigned_agent_id === user?.id ? (
+                    <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Managed by Me
+                    </Badge>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                      <UserCheck className="h-4 w-4" />
+                      <span className="text-right whitespace-nowrap">
+                        Managed by: {applicant.managed_by_name || "Unassigned"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -832,14 +883,101 @@ export default function ApplicantDetails() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Matched Properties</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                    <span>Matched Properties</span>
+                    {uniqueMatches.length > 0 && (
+                      <Badge variant="secondary">{uniqueMatches.length}</Badge>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center">
-                    <Home className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
-                    <div className="text-3xl font-bold">0</div>
-                    <p className="text-sm text-muted-foreground">Matches</p>
-                  </div>
+                  {isLoadingMatchHistory ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  ) : uniqueMatches.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {uniqueMatches.map((match: any) => {
+                        // Count how many times this property was sent
+                        const sendCount = matchHistoryData?.history?.filter(
+                          (h: any) => h.property?.id === match.property?.id
+                        ).length || 1;
+                        
+                        return (
+                        <div
+                          key={match.id}
+                          className="p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/properties/${match.property?.id}`)}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">
+                                {match.property?.address || "Unknown Property"}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <span>{format(new Date(match.sent_at), "MMM d, yyyy")}</span>
+                                <span>•</span>
+                                <span className="capitalize">{match.send_method}</span>
+                                {match.match_score && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{match.match_score}% match</span>
+                                  </>
+                                )}
+                                {sendCount > 1 && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-primary">Sent {sendCount}x</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {match.viewed && (
+                                <Badge variant="outline" className="text-xs">
+                                  Viewed
+                                </Badge>
+                              )}
+                              {match.viewing_booked && (
+                                <Badge variant="default" className="text-xs bg-green-500">
+                                  Booked
+                                </Badge>
+                              )}
+                              {match.responded && match.response_type === "interested" && (
+                                <Badge variant="default" className="text-xs bg-blue-500">
+                                  Interested
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <Home className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No matches sent yet</p>
+                    </div>
+                  )}
+                  {matchHistoryData?.stats && sentMatchesCount > 0 && (
+                    <div className="mt-4 pt-4 border-t space-y-1 text-xs text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Viewed:</span>
+                        <span className="font-medium">{matchHistoryData.stats.viewed_rate || "0%"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Response:</span>
+                        <span className="font-medium">{matchHistoryData.stats.response_rate || "0%"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Bookings:</span>
+                        <span className="font-medium">{matchHistoryData.stats.viewing_conversion || "0%"}</span>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

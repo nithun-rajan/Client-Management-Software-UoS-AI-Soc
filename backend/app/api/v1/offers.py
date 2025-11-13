@@ -1,13 +1,15 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.offer import Offer
 from app.models.property import Property
 from app.models.applicant import Applicant
+from app.models.user import User
 
 router = APIRouter(prefix="/offers", tags=["offers"])
 
@@ -74,10 +76,10 @@ def create_offer(offer: OfferCreate, db: Session = Depends(get_db)):
 
 @router.get("/")
 def list_offers(
-    property_id: Optional[str] = None,
-    applicant_id: Optional[str] = None,
-    status: Optional[str] = None,
-    limit: int = 50,
+    property_id: Optional[str] = Query(None),
+    applicant_id: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=1000),
     db: Session = Depends(get_db)
 ):
     """Get all offers with optional filters"""
@@ -263,4 +265,73 @@ def withdraw_offer(offer_id: str, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Offer withdrawn successfully"}
+
+
+@router.get("/my-offers")
+def get_my_offers(
+    status: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=1000),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all offers for properties managed by the current user or applicants assigned to the current user"""
+    # Get properties managed by current user
+    user_properties = db.query(Property).filter(Property.managed_by == current_user.id).all()
+    user_property_ids = [p.id for p in user_properties]
+    
+    # Get applicants assigned to current user
+    user_applicants = db.query(Applicant).filter(Applicant.assigned_agent_id == current_user.id).all()
+    user_applicant_ids = [a.id for a in user_applicants]
+    
+    query = db.query(Offer)
+    
+    # Filter by properties OR applicants managed by user
+    if user_property_ids or user_applicant_ids:
+        from sqlalchemy import or_
+        conditions = []
+        if user_property_ids:
+            conditions.append(Offer.property_id.in_(user_property_ids))
+        if user_applicant_ids:
+            conditions.append(Offer.applicant_id.in_(user_applicant_ids))
+        if conditions:
+            query = query.filter(or_(*conditions))
+        else:
+            return {"offers": [], "total": 0}
+    else:
+        return {"offers": [], "total": 0}
+    
+    if status:
+        query = query.filter(Offer.status == status)
+    
+    offers = query.order_by(Offer.submitted_at.desc()).limit(limit).all()
+    
+    result = []
+    for o in offers:
+        property = db.query(Property).filter(Property.id == o.property_id).first()
+        applicant = db.query(Applicant).filter(Applicant.id == o.applicant_id).first()
+        
+        result.append({
+            "id": o.id,
+            "property_id": o.property_id,
+            "applicant_id": o.applicant_id,
+            "offered_rent": o.offered_rent,
+            "proposed_start_date": o.proposed_start_date.isoformat() if o.proposed_start_date else None,
+            "proposed_term_months": o.proposed_term_months,
+            "status": o.status,
+            "counter_offer_rent": o.counter_offer_rent,
+            "special_conditions": o.special_conditions,
+            "applicant_notes": o.applicant_notes,
+            "submitted_at": o.submitted_at.isoformat(),
+            "property": {
+                "id": property.id,
+                "address": property.address,
+                "asking_rent": property.rent
+            } if property else None,
+            "applicant": {
+                "id": applicant.id,
+                "name": f"{applicant.first_name} {applicant.last_name}"
+            } if applicant else None
+        })
+    
+    return {"offers": result, "total": len(result)}
 

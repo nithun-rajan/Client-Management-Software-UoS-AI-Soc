@@ -39,9 +39,10 @@ class Communication(BaseModel):
     is_read = Column(Boolean, default=False)  # Track if communication has been reviewed
     
     # Polymorphic Relationships (at least one must be set)
-    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True, index=True)
-    landlord_id = Column(Integer, ForeignKey("landlords.id"), nullable=True, index=True)
-    applicant_id = Column(Integer, ForeignKey("applicants.id"), nullable=True, index=True)
+    # Use String to match other models (Property, Landlord, Applicant all use String UUIDs)
+    property_id = Column(String, ForeignKey("properties.id"), nullable=True, index=True)
+    landlord_id = Column(String, ForeignKey("landlords.id"), nullable=True, index=True)
+    applicant_id = Column(String, ForeignKey("applicants.id"), nullable=True, index=True)
     
     # Relationships (back-references)
     property = relationship("Property", back_populates="communications")

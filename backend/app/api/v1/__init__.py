@@ -2,12 +2,14 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     applicants, 
+    agents,
     auth, 
     events, 
     kpis, 
     land_registry, 
     landlords, 
     messaging, 
+    maintenance,
     properties, 
     property_matching, 
     search,
@@ -18,18 +20,21 @@ from app.api.v1 import (
     viewings,
     offers,
     workflows,
-    sales
+    sales,
+    valuations
 )
 
 api_router = APIRouter()
 
 api_router.include_router(applicants.router)
+api_router.include_router(agents.router)
 api_router.include_router(auth.router)
 api_router.include_router(events.router)
 api_router.include_router(kpis.router)
 api_router.include_router(land_registry.router)
 api_router.include_router(landlords.router)
 api_router.include_router(messaging.router)
+api_router.include_router(maintenance.router)
 api_router.include_router(properties.router)
 api_router.include_router(property_matching.router)
 api_router.include_router(search.router)
@@ -41,3 +46,4 @@ api_router.include_router(viewings.router)
 api_router.include_router(offers.router)
 api_router.include_router(workflows.router)
 api_router.include_router(sales.router, tags=["sales"])
+api_router.include_router(valuations.router, tags=["valuations"])

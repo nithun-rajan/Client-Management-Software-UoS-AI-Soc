@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface NotesSectionProps {
   entityType: "landlord" | "vendor" | "applicant" | "property";
@@ -28,18 +29,38 @@ export default function NotesSection({
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount, but prioritize backend data if it's newer
   useEffect(() => {
     const storageKey = `notes_${entityType}_${entityId}`;
     const timestampKey = `notes_${entityType}_${entityId}_timestamp`;
     const previousContentKey = `notes_${entityType}_${entityId}_previous`;
     const previousTimestampKey = `notes_${entityType}_${entityId}_previous_timestamp`;
     const saved = localStorage.getItem(storageKey);
+    const savedTimestamp = localStorage.getItem(timestampKey);
     
-    if (saved) {
+    // If we have backend data (initialNotes), prioritize it over localStorage
+    // This ensures we're always in sync with the backend
+    if (initialNotes !== undefined && initialNotes !== null) {
+      // If backend has notes, use them (they're the source of truth)
+      if (initialNotes !== saved) {
+        setNotes(initialNotes);
+        // Update localStorage to match backend
+        if (initialNotes) {
+          localStorage.setItem(storageKey, initialNotes);
+          localStorage.setItem(timestampKey, new Date().toISOString());
+        }
+      } else if (saved) {
+        // They match, use saved value and timestamp
+        setNotes(saved);
+        if (savedTimestamp) {
+          setLastSaved(new Date(savedTimestamp));
+        }
+      }
+    } else if (saved) {
+      // No backend data, use localStorage
       setNotes(saved);
-      const savedTimestamp = localStorage.getItem(timestampKey);
       if (savedTimestamp) {
         setLastSaved(new Date(savedTimestamp));
         
@@ -51,7 +72,6 @@ export default function NotesSection({
         const wasSavedBeforeToday = lastSave.getTime() < today.getTime();
         
         // If saved before today and no previous content exists, store current as previous
-        // This ensures we have the "before today" version when editing today
         if (wasSavedBeforeToday) {
           const existingPrevious = localStorage.getItem(previousContentKey);
           if (!existingPrevious) {
@@ -62,10 +82,6 @@ export default function NotesSection({
       } else {
         setLastSaved(new Date());
       }
-    } else if (initialNotes) {
-      setNotes(initialNotes);
-      // Store initial notes as previous content
-      localStorage.setItem(previousContentKey, initialNotes);
     }
   }, [entityType, entityId, initialNotes]);
 
@@ -125,17 +141,33 @@ export default function NotesSection({
       const config = endpointMap[entityType];
       if (config) {
         // All update schemas support partial updates, so we can just send the field we want to update
-        const updateData = { [config.field]: notesToSave };
+        const updateData = { [config.field]: notesToSave || null }; // Send null for empty strings to clear the field
         
         if (config.method === "patch") {
           await api.patch(config.endpoint, updateData);
         } else {
           await api.put(config.endpoint, updateData);
         }
+        
+        // Invalidate relevant queries to refresh the data
+        if (entityType === "property") {
+          queryClient.invalidateQueries({ queryKey: ["property", entityId] });
+          queryClient.invalidateQueries({ queryKey: ["properties"] });
+        } else if (entityType === "landlord") {
+          queryClient.invalidateQueries({ queryKey: ["landlord", entityId] });
+          queryClient.invalidateQueries({ queryKey: ["landlords"] });
+        } else if (entityType === "applicant") {
+          queryClient.invalidateQueries({ queryKey: ["applicant", entityId] });
+          queryClient.invalidateQueries({ queryKey: ["applicants"] });
+        }
       }
     } catch (error: any) {
-      // Silently fail - localStorage is the primary storage
-      console.warn("Failed to save notes to backend:", error);
+      // Log error for debugging but don't show toast - localStorage is the primary storage
+      console.error("Failed to save notes to backend:", error);
+      // Optionally show a subtle notification that backend save failed
+      if (error?.response?.status === 404) {
+        console.warn(`Entity ${entityId} not found - notes saved to localStorage only`);
+      }
     } finally {
       setIsSaving(false);
     }

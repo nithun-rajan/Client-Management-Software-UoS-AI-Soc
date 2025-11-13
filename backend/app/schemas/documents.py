@@ -12,16 +12,19 @@ class DocumentBase(BaseModel):
     applicant_id: Optional[str] = None
 
 class DocumentCreate(DocumentBase):
-    file_path: str
+    title: str
+    file_url: str
     file_size: Optional[int] = None
-    uploaded_by_id: Optional[str] = None
+    uploaded_by_user_id: Optional[str] = None
 
 class DocumentResponse(DocumentBase):
     id: str
+    title: str
     file_url: str
     file_size: Optional[int] = None
     uploaded_at: datetime
     status: str
+    uploaded_by_user_id: Optional[str] = None
 
     class Config:
         from_attributes = True

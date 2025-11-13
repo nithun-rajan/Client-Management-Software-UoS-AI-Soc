@@ -57,9 +57,32 @@ def migrate_database():
             # Landlord table - Contact tracking and complete info
             ("landlords", "last_contacted_at", "DATETIME"),
             ("landlords", "landlord_complete_info", "INTEGER DEFAULT 0"),
+            ("landlords", "managed_by", "VARCHAR"),
             
-            # Vendor table - Contact tracking
+            # Vendor table - Contact tracking and agent assignment
             ("vendors", "last_contacted_at", "DATETIME"),
+            ("vendors", "managed_by", "VARCHAR"),
+            
+            # User table - agent profile settings
+            ("users", "agent_profile", "TEXT"),  # SQLite stores JSON as TEXT
+            
+            # Viewing table - Match integration and booking fields
+            ("viewings", "match_id", "VARCHAR"),
+            ("viewings", "booking_source", "VARCHAR DEFAULT 'match_link'"),
+            ("viewings", "booking_token", "VARCHAR"),
+            ("viewings", "public_booking_url", "VARCHAR"),
+            ("viewings", "booking_expires_at", "DATETIME"),
+            
+            # Match_history table - Enhanced match analytics and booking fields
+            ("match_history", "match_reason", "TEXT"),
+            ("match_history", "personalization_data", "TEXT"),  # SQLite stores JSON as TEXT
+            ("match_history", "sent_by_agent", "VARCHAR"),
+            ("match_history", "opened_at", "DATETIME"),
+            ("match_history", "clicked_at", "DATETIME"),
+            ("match_history", "booking_link_clicked_at", "DATETIME"),
+            ("match_history", "viewing_id", "VARCHAR"),
+            ("match_history", "booking_token", "VARCHAR"),
+            ("match_history", "booking_url", "VARCHAR"),
         ]
         
         # Combine old and new migrations
@@ -87,6 +110,26 @@ def migrate_database():
                 print("[SKIP] maintenance_issues table already exists")
             else:
                 print(f"[WARN] Error creating maintenance_issues table: {e}")
+        
+        # Create match_history table if it doesn't exist
+        try:
+            Base.metadata.tables['match_history'].create(bind=engine, checkfirst=True)
+            print("[OK] Created match_history table")
+        except Exception as e:
+            if "already exists" in str(e).lower():
+                print("[SKIP] match_history table already exists")
+            else:
+                print(f"[WARN] Error creating match_history table: {e}")
+        
+        # Create match_proposals table if it doesn't exist
+        try:
+            Base.metadata.tables['match_proposals'].create(bind=engine, checkfirst=True)
+            print("[OK] Created match_proposals table")
+        except Exception as e:
+            if "already exists" in str(e).lower():
+                print("[SKIP] match_proposals table already exists")
+            else:
+                print(f"[WARN] Error creating match_proposals table: {e}")
         
         # Update existing notifications to have default priority
         try:

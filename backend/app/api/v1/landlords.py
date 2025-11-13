@@ -1,5 +1,5 @@
 
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -17,6 +17,15 @@ router = APIRouter(prefix="/landlords", tags=["landlords"])
 
 # OAuth2 scheme for optional authentication
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+def enrich_landlord_response(landlord: Landlord, db: Session) -> dict:
+    """Enrich landlord response with managed_by_name"""
+    response_dict = LandlordResponse.model_validate(landlord).model_dump()
+    if landlord.managed_by:
+        agent = db.query(User).filter(User.id == landlord.managed_by).first()
+        if agent:
+            response_dict["managed_by_name"] = f"{agent.first_name or ''} {agent.last_name or ''}".strip()
+    return response_dict
 
 def get_optional_user(
     token: Optional[str] = Depends(oauth2_scheme_optional),
@@ -70,20 +79,20 @@ def create_landlord(
     
     # Calculate properties count
     properties_count = db.query(Property).filter(Property.landlord_id == db_landlord.id).count()
-    response = LandlordResponse.model_validate(db_landlord)
-    response.properties_count = properties_count
-    return response
+    response_dict = enrich_landlord_response(db_landlord, db)
+    response_dict["properties_count"] = properties_count
+    return LandlordResponse(**response_dict)
 
-@router.get("/", response_model=list[LandlordResponse])
+@router.get("/", response_model=List[LandlordResponse])
 def list_landlords(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all landlords with property counts"""
     landlords = db.query(Landlord).offset(skip).limit(limit).all()
     result = []
     for landlord in landlords:
         properties_count = db.query(Property).filter(Property.landlord_id == landlord.id).count()
-        response = LandlordResponse.model_validate(landlord)
-        response.properties_count = properties_count
-        result.append(response)
+        response_dict = enrich_landlord_response(landlord, db)
+        response_dict["properties_count"] = properties_count
+        result.append(LandlordResponse(**response_dict))
     return result
 
 @router.get("/{landlord_id}", response_model=LandlordResponse)
@@ -95,9 +104,9 @@ def get_landlord(landlord_id: str, db: Session = Depends(get_db)):
     
     # Calculate properties count
     properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
-    response = LandlordResponse.model_validate(landlord)
-    response.properties_count = properties_count
-    return response
+    response_dict = enrich_landlord_response(landlord, db)
+    response_dict["properties_count"] = properties_count
+    return LandlordResponse(**response_dict)
 
 @router.put("/{landlord_id}", response_model=LandlordResponse)
 def update_landlord(
@@ -118,9 +127,9 @@ def update_landlord(
     
     # Calculate properties count
     properties_count = db.query(Property).filter(Property.landlord_id == landlord_id).count()
-    response = LandlordResponse.model_validate(landlord)
-    response.properties_count = properties_count
-    return response
+    response_dict = enrich_landlord_response(landlord, db)
+    response_dict["properties_count"] = properties_count
+    return LandlordResponse(**response_dict)
 
 @router.delete("/{landlord_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_landlord(landlord_id: str, db: Session = Depends(get_db)):

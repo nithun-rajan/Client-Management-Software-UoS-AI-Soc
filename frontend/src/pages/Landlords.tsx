@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  User,
   UserCheck,
   Mail,
   Phone,
@@ -24,21 +25,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useLandlords, useDeleteLandlord, useUpdateLandlord } from "@/hooks/useLandlords";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/Header";
 import EmptyState from "@/components/shared/EmptyState";
 import { Link } from "react-router-dom";
 import { Landlord } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
 
 export default function Landlords() {
   const { data: landlords, isLoading } = useLandlords();
+  const { user } = useAuth();
+  const { data: teamAgents } = useMyTeamAgents();
   const deleteLandlord = useDeleteLandlord();
   const updateLandlord = useUpdateLandlord();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedLandlord, setSelectedLandlord] = useState<Landlord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   const handleEdit = (landlord: Landlord) => {
     setSelectedLandlord(landlord);
@@ -61,6 +70,38 @@ export default function Landlords() {
     }
   };
 
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return landlords?.filter((landlord: Landlord) => landlord.managed_by === user?.id) || [];
+    } else if (activeTab === "managed-by-team") {
+      return landlords?.filter((landlord: Landlord) => landlord.managed_by && teamAgentIds.includes(landlord.managed_by)) || [];
+    }
+    return landlords || [];
+  }, [landlords, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = landlords?.length || 0;
+  const managedByMeCount = landlords?.filter((l: Landlord) => l.managed_by === user?.id).length || 0;
+  const managedByTeamCount = landlords?.filter((l: Landlord) => l.managed_by && teamAgentIds.includes(l.managed_by)).length || 0;
+  
+  // Apply search filter
+  const filteredLandlords = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((landlord: Landlord) => (
+      landlord.full_name?.toLowerCase().includes(query) ||
+      landlord.email?.toLowerCase().includes(query) ||
+      landlord.phone?.includes(query) ||
+      landlord.address?.toLowerCase().includes(query) ||
+      landlord.status?.toLowerCase().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
+
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedLandlord) return;
@@ -81,6 +122,15 @@ export default function Landlords() {
     }
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (isLoading) {
     return (
       <div>
@@ -95,29 +145,6 @@ export default function Landlords() {
       </div>
     );
   }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Apply search
-  const filteredLandlords = landlords?.filter((landlord: Landlord) => {
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      landlord.full_name?.toLowerCase().includes(query) ||
-      landlord.email?.toLowerCase().includes(query) ||
-      landlord.phone?.includes(query) ||
-      landlord.address?.toLowerCase().includes(query) ||
-      landlord.status?.toLowerCase().includes(query)
-    );
-  }) || [];
 
   return (
     <div>
@@ -151,6 +178,23 @@ export default function Landlords() {
           </div>
         </div>
 
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Landlords ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div className="grid gap-6 md:grid-cols-2">
           {filteredLandlords.map((landlord) => (
             <Card
@@ -158,27 +202,44 @@ export default function Landlords() {
               className="shadow-card transition-shadow hover:shadow-elevated"
             >
               <CardHeader>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
-                    {getInitials(landlord.full_name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-lg font-semibold">
-                      {landlord.full_name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      {landlord.aml_verified ? (
-                        <Badge className="gap-1 bg-accent text-white">
-                          <CheckCircle className="h-3 w-3" />
-                          Verified
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-xl font-bold text-white">
+                      {getInitials(landlord.full_name)}
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-semibold">
+                        {landlord.full_name}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        {landlord.aml_verified ? (
+                          <Badge className="gap-1 bg-accent text-white">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {landlord.managed_by === user?.id ? (
+                      <Badge className="bg-accent text-white text-xs font-semibold px-2 py-0.5">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Managed by Me
+                      </Badge>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <UserCheck className="h-3.5 w-3.5" />
+                        <span className="text-right whitespace-nowrap">
+                          {landlord.managed_by_name || "Unassigned"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -213,10 +274,10 @@ export default function Landlords() {
         {filteredLandlords.length === 0 && (
           <EmptyState
             icon={UserCheck}
-            title="No landlords yet"
-            description="Start building your network by adding your first landlord"
-            actionLabel="+ Add Landlord"
-            onAction={() => {}}
+            title={searchQuery || activeTab !== "all" ? "No landlords found" : "No landlords yet"}
+            description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your network by adding your first landlord"}
+            actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Landlord"}
+            onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
           />
         )}
       </div>

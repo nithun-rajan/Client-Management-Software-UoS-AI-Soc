@@ -24,6 +24,7 @@ import {
   Trash2,
   CheckSquare,
   Edit,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import { useVerifyVendorAML } from "@/hooks/useVendors";
 import { useTasks } from "@/hooks/useTasks";
 import { useProperties } from "@/hooks/useProperties";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +67,7 @@ export default function VendorDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const verifyAML = useVerifyVendorAML();
   const [expandedInfo, setExpandedInfo] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -281,7 +284,7 @@ export default function VendorDetails() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-3xl font-bold text-white">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-3xl font-bold text-white">
                   {getInitials(vendor.first_name, vendor.last_name)}
                 </div>
                 <div>
@@ -294,6 +297,19 @@ export default function VendorDetails() {
                   )}
                 </div>
               </div>
+              {vendor.managed_by === user?.id ? (
+                <Badge className="bg-accent text-white text-sm font-semibold px-2 py-1">
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  Managed by Me
+                </Badge>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+                  <UserCheck className="h-4 w-4" />
+                  <span className="text-right whitespace-nowrap">
+                    Managed by: {vendor.managed_by_name || "Unassigned"}
+                  </span>
+                </div>
+              )}
             </div>
           </CardHeader>
         </Card>

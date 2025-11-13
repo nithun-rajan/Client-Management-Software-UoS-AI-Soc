@@ -40,6 +40,7 @@ export interface Property {
   vendor?: VendorInfo;
   virtual_tour_url?: string;
   main_photo_url?: string;
+  photo_urls?: string;  // JSON array of photo URLs
   // Sales fields
   sales_status?: string;
   asking_price?: number;
@@ -49,6 +50,7 @@ export interface Property {
   managed_by?: string;
   management_type?: string;
   management_notes?: string;
+  managed_by_name?: string;  // Full name of agent managing the landlord/vendor
   created_at: string;
   updated_at?: string;
 }
@@ -68,6 +70,8 @@ export interface Landlord {
   notes?: string;
   last_contacted_at?: string;
   landlord_complete_info?: boolean;
+  managed_by?: string;
+  managed_by_name?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -99,6 +103,8 @@ export interface Vendor {
   instructed_property_id?: string;
   vendor_complete_info?: boolean;
   last_contacted_at?: string;
+  managed_by?: string;
+  managed_by_name?: string;
   // Optional fields that may not be in model yet
   id_document_type?: string;
   proof_of_address_type?: string;
@@ -139,9 +145,70 @@ export interface Applicant {
   willing_to_buy?: boolean;
   buyer_questions_answered?: boolean;
   tenant_questions_answered?: boolean;
+  assigned_agent_id?: string;
+  managed_by_name?: string;
   last_contacted_at?: string;
   created_at: string;
   updated_at?: string;
+}
+
+export interface MaintenanceIssue {
+  id: string;
+  title: string;
+  description: string;
+  issue_type: string; // repair, emergency, plumbing, electrical, heating, etc.
+  status: string; // reported, acknowledged, inspected, quoted, approved, in_progress, completed, closed, cancelled
+  priority: string; // low, medium, high, urgent
+  is_complaint: boolean;
+  complaint_type?: string;
+  reported_by?: string;
+  reported_by_phone?: string;
+  reported_by_email?: string;
+  reported_via?: string;
+  property_id: string;
+  tenancy_id?: string;
+  landlord_id?: string;
+  managed_by?: string;
+  assigned_to?: string;
+  acknowledged_date?: string;
+  inspection_date?: string;
+  scheduled_date?: string;
+  started_date?: string;
+  completed_date?: string;
+  closed_date?: string;
+  estimated_cost?: number;
+  actual_cost?: number;
+  quote_received: boolean;
+  quote_amount?: number;
+  landlord_approved: boolean;
+  landlord_approval_date?: string;
+  contractor_name?: string;
+  contractor_contact?: string;
+  contractor_quote_ref?: string;
+  contractor_invoice_ref?: string;
+  resolution_notes?: string;
+  tenant_satisfied: boolean;
+  follow_up_required: boolean;
+  follow_up_date?: string;
+  photos_urls?: string;
+  documents_urls?: string;
+  internal_notes?: string;
+  public_notes?: string;
+  is_emergency: boolean;
+  emergency_response_time?: string;
+  is_recurring: boolean;
+  parent_issue_id?: string;
+  recurrence_count: number;
+  requires_epc_update: boolean;
+  requires_gas_safety_update: boolean;
+  requires_eicr_update: boolean;
+  reported_date: string;
+  created_at: string;
+  updated_at?: string;
+  // Computed properties
+  days_open?: number;
+  is_overdue?: boolean;
+  requires_attention?: boolean;
 }
 
 export interface KPIData {
@@ -327,3 +394,4 @@ export interface Ticket {
   created_at: string;
   updated_at?: string;
 }
+>>>>>>> pivzavod-3

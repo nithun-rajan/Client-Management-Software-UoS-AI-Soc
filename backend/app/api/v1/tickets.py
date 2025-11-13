@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
-
+from app.core.security import get_current_user
 from app.models.tickets import Ticket
 from app.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate
 from app.models.enums import TicketStatus
 from app.models.property import Property
+from app.models.user import User
 
 # Creates a ticket
 router = APIRouter(prefix="/tickets", tags=["tickets"])
@@ -40,11 +41,63 @@ def create_ticket(ticket_data: TicketCreate, db: Session = Depends(get_db)):
     return db_ticket
 
 @router.get("/", response_model=List[TicketResponse])
-def list_tickets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_tickets(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    status: Optional[str] = Query(None),
+    urgency: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    property_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
     """
-    Lists all maintenance tickets.
+    Lists all maintenance tickets with optional filtering.
     """
-    tickets = db.query(Ticket).offset(skip).limit(limit).all()
+    query = db.query(Ticket)
+    
+    if status:
+        query = query.filter(Ticket.status == status)
+    if urgency:
+        query = query.filter(Ticket.urgency == urgency)
+    if priority:
+        query = query.filter(Ticket.priority == priority)
+    if property_id:
+        query = query.filter(Ticket.property_id == property_id)
+    
+    tickets = query.order_by(Ticket.reported_date.desc()).offset(skip).limit(limit).all()
+    return tickets
+
+
+@router.get("/my-tickets", response_model=List[TicketResponse])
+def get_my_tickets(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    status: Optional[str] = Query(None),
+    urgency: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all tickets for properties managed by the current user.
+    """
+    # Get properties managed by current user
+    user_properties = db.query(Property).filter(Property.managed_by == current_user.id).all()
+    user_property_ids = [p.id for p in user_properties]
+    
+    if not user_property_ids:
+        return []
+    
+    query = db.query(Ticket).filter(Ticket.property_id.in_(user_property_ids))
+    
+    if status:
+        query = query.filter(Ticket.status == status)
+    if urgency:
+        query = query.filter(Ticket.urgency == urgency)
+    if priority:
+        query = query.filter(Ticket.priority == priority)
+    
+    tickets = query.order_by(Ticket.reported_date.desc()).offset(skip).limit(limit).all()
     return tickets
 
 @router.get("/{ticket_id}", response_model=TicketResponse)
