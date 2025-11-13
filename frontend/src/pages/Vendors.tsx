@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useVendors, useDeleteVendor, useUpdateVendor } from "@/hooks/useVendors";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,6 +52,51 @@ export default function Vendors() {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+
+  // Helper functions
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  };
+
+  const getFullName = (vendor: Vendor) => {
+    const parts = [vendor.first_name, vendor.last_name].filter(Boolean);
+    return parts.join(" ");
+  };
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return vendors?.filter((vendor: Vendor) => vendor.managed_by === user?.id) || [];
+    } else if (activeTab === "managed-by-team") {
+      return vendors?.filter((vendor: Vendor) => vendor.managed_by && teamAgentIds.includes(vendor.managed_by)) || [];
+    }
+    return vendors || [];
+  }, [vendors, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = vendors?.length || 0;
+  const managedByMeCount = vendors?.filter((v: Vendor) => v.managed_by === user?.id).length || 0;
+  const managedByTeamCount = vendors?.filter((v: Vendor) => v.managed_by && teamAgentIds.includes(v.managed_by)).length || 0;
+
+  // Apply search filter
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((vendor: Vendor) => (
+      vendor.first_name?.toLowerCase().includes(query) ||
+      vendor.last_name?.toLowerCase().includes(query) ||
+      vendor.email?.toLowerCase().includes(query) ||
+      vendor.primary_phone?.includes(query) ||
+      vendor.current_address?.toLowerCase().includes(query) ||
+      vendor.status?.toLowerCase().includes(query) ||
+      vendor.aml_status?.toLowerCase().includes(query) ||
+      (vendor.vendor_complete_info ? "complete info" : "incomplete info").includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
 
   const handleEdit = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -108,50 +154,6 @@ export default function Vendors() {
       </div>
     );
   }
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  const getFullName = (vendor: Vendor) => {
-    const parts = [vendor.first_name, vendor.last_name].filter(Boolean);
-    return parts.join(" ");
-  };
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-  
-  // Filter by tab
-  const filteredByTab = useMemo(() => {
-    if (activeTab === "managed-by-me") {
-      return vendors?.filter((vendor: Vendor) => vendor.managed_by === user?.id) || [];
-    } else if (activeTab === "managed-by-team") {
-      return vendors?.filter((vendor: Vendor) => vendor.managed_by && teamAgentIds.includes(vendor.managed_by)) || [];
-    }
-    return vendors || [];
-  }, [vendors, activeTab, user?.id, teamAgentIds]);
-
-  // Calculate counts
-  const allCount = vendors?.length || 0;
-  const managedByMeCount = vendors?.filter((v: Vendor) => v.managed_by === user?.id).length || 0;
-  const managedByTeamCount = vendors?.filter((v: Vendor) => v.managed_by && teamAgentIds.includes(v.managed_by)).length || 0;
-
-  // Apply search filter
-  const filteredVendors = useMemo(() => {
-    if (!searchQuery) return filteredByTab;
-    
-    const query = searchQuery.toLowerCase();
-    return filteredByTab.filter((vendor: Vendor) => (
-      vendor.first_name?.toLowerCase().includes(query) ||
-      vendor.last_name?.toLowerCase().includes(query) ||
-      vendor.email?.toLowerCase().includes(query) ||
-      vendor.primary_phone?.includes(query) ||
-      vendor.current_address?.toLowerCase().includes(query) ||
-      vendor.status?.toLowerCase().includes(query) ||
-      vendor.aml_status?.toLowerCase().includes(query) ||
-      (vendor.vendor_complete_info ? "complete info" : "incomplete info").includes(query)
-    ));
-  }, [filteredByTab, searchQuery]);
 
   return (
     <div>

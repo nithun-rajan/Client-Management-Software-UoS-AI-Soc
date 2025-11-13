@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
-import { Search, Users, Mail, Phone, TrendingUp, Clock, PoundSterling, Star, Home, UserCheck, Building2, Award, Activity } from "lucide-react";
+import { Search, Users, Mail, Phone, TrendingUp, Clock, PoundSterling, Star, Home, UserCheck, Building2, Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAgents, Agent, useAgentManagedEntities, useMyTeamAgents, useAgent } from "@/hooks/useAgents";
 import { useAuth } from "@/hooks/useAuth";
@@ -315,7 +315,7 @@ export default function Agents() {
 
         {/* Agent Detail Dialog */}
         <Dialog open={!!selectedAgentData} onOpenChange={(open) => !open && setSelectedAgent(null)}>
-          <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogContent className="h-[600px] max-w-4xl flex flex-col p-0">
             {selectedAgentData && (() => {
               const fullName = `${selectedAgentData.first_name || ""} ${selectedAgentData.last_name || ""}`.trim() || "Unknown";
               const initials = fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -339,18 +339,9 @@ export default function Agents() {
                 return "kpis";
               };
               
-              // Mock activity feed
-              const activities = [
-                { type: "listing", text: "Listed new property: Court Road, SO15", time: "2 hours ago", icon: Home },
-                { type: "update", text: "Updated offer status for High Street property", time: "5 hours ago", icon: TrendingUp },
-                { type: "deal", text: "Completed deal: Portswood Rd - £340,000", time: "1 day ago", icon: Star },
-                { type: "listing", text: "Listed new property: The Avenue", time: "2 days ago", icon: Home },
-                { type: "update", text: "Updated tenant application status", time: "3 days ago", icon: UserCheck },
-              ];
-
               return (
                 <>
-                  <DialogHeader>
+                  <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
                     <div className="flex items-center gap-4">
                       <div className="relative">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
@@ -372,6 +363,9 @@ export default function Agents() {
                             {agentId}
                           </Badge>
                         </div>
+                        <DialogDescription className="sr-only">
+                          Agent profile for {fullName}, {role} on the {team} team
+                        </DialogDescription>
                         <p className="text-sm font-semibold text-primary mt-1">{role}</p>
                         <p className="text-sm text-muted-foreground">
                           {position}: <span className={team === currentUserTeam ? "text-primary font-medium" : "text-muted-foreground font-medium"}>{team}</span>
@@ -382,67 +376,63 @@ export default function Agents() {
                   </DialogHeader>
 
                   {/* Contact Info */}
-                  <Card className="mt-4">
-                    <CardHeader>
-                      <CardTitle className="text-sm">Contact Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
-                      {selectedAgentData.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <a href={`mailto:${selectedAgentData.email}`} className="text-primary hover:underline">
-                            {selectedAgentData.email}
-                          </a>
-                        </div>
-                      )}
-                      {phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{phone}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div className="px-6 pt-4 flex-shrink-0">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">Contact Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3 text-sm">
+                        {selectedAgentData.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <a href={`mailto:${selectedAgentData.email}`} className="text-primary hover:underline">
+                              {selectedAgentData.email}
+                            </a>
+                          </div>
+                        )}
+                        {phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span>{phone}</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                  <Tabs defaultValue={getDefaultTab()} className="mt-4">
-                    <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${(() => {
-                      const tabs = [];
-                      if (managedEntities?.properties && managedEntities.properties.length > 0) tabs.push("properties");
-                      if (managedEntities?.vendors && managedEntities.vendors.length > 0) tabs.push("vendors");
-                      if (managedEntities?.buyers && managedEntities.buyers.length > 0) tabs.push("buyers");
-                      if (managedEntities?.landlords && managedEntities.landlords.length > 0) tabs.push("landlords");
-                      if (managedEntities?.applicants && managedEntities.applicants.length > 0) tabs.push("applicants");
-                      tabs.push("kpis"); // Always show KPIs
-                      return tabs.length;
-                    })()}, 1fr)` }}>
-                      {(() => {
-                        const tabs = [];
-                        if (managedEntities?.properties && managedEntities.properties.length > 0) {
-                          tabs.push({ value: "properties", label: "Properties" });
-                        }
-                        if (managedEntities?.vendors && managedEntities.vendors.length > 0) {
-                          tabs.push({ value: "vendors", label: "Vendors" });
-                        }
-                        if (managedEntities?.buyers && managedEntities.buyers.length > 0) {
-                          tabs.push({ value: "buyers", label: "Buyers" });
-                        }
-                        if (managedEntities?.landlords && managedEntities.landlords.length > 0) {
-                          tabs.push({ value: "landlords", label: "Landlords" });
-                        }
-                        if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
-                          tabs.push({ value: "applicants", label: "Applicants" });
-                        }
-                        tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
-                        return tabs.map((t) => (
-                          <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm">
-                            {t.label}
-                          </TabsTrigger>
-                        ));
-                      })()}
-                    </TabsList>
+                  <div className="flex flex-col flex-1 min-h-0">
+                    <Tabs defaultValue={getDefaultTab()} className="flex flex-col flex-1 min-h-0">
+                      <div className="px-6 mt-4 mb-4 flex-shrink-0">
+                        <TabsList className="inline-flex h-10 w-full">
+                          {(() => {
+                            const tabs = [];
+                            if (managedEntities?.properties && managedEntities.properties.length > 0) {
+                              tabs.push({ value: "properties", label: "Properties" });
+                            }
+                            if (managedEntities?.vendors && managedEntities.vendors.length > 0) {
+                              tabs.push({ value: "vendors", label: "Vendors" });
+                            }
+                            if (managedEntities?.buyers && managedEntities.buyers.length > 0) {
+                              tabs.push({ value: "buyers", label: "Buyers" });
+                            }
+                            if (managedEntities?.landlords && managedEntities.landlords.length > 0) {
+                              tabs.push({ value: "landlords", label: "Landlords" });
+                            }
+                            if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
+                              tabs.push({ value: "applicants", label: "Applicants" });
+                            }
+                            tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
+                            return tabs.map((t) => (
+                              <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm flex-1 min-w-0 px-2">
+                                <span className="truncate">{t.label}</span>
+                              </TabsTrigger>
+                            ));
+                          })()}
+                        </TabsList>
+                      </div>
 
                     {managedEntities?.properties && managedEntities.properties.length > 0 && (
-                      <TabsContent value="properties" className="mt-4 space-y-3">
+                      <TabsContent value="properties" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
                         {managedLoading ? (
                           <div className="space-y-2">
                             {[1, 2, 3].map((i) => (
@@ -469,7 +459,7 @@ export default function Agents() {
                     )}
 
                     {managedEntities?.applicants && managedEntities.applicants.length > 0 && (
-                      <TabsContent value="applicants" className="mt-4 space-y-3">
+                      <TabsContent value="applicants" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
                         {managedLoading ? (
                           <div className="space-y-2">
                             {[1, 2, 3].map((i) => (
@@ -497,7 +487,7 @@ export default function Agents() {
                     )}
 
                     {managedEntities?.vendors && managedEntities.vendors.length > 0 && (
-                      <TabsContent value="vendors" className="mt-4">
+                      <TabsContent value="vendors" className="mt-4 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
                         {managedLoading ? (
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {[1, 2, 3].map((i) => (
@@ -529,7 +519,7 @@ export default function Agents() {
                     )}
 
                     {managedEntities?.buyers && managedEntities.buyers.length > 0 && (
-                      <TabsContent value="buyers" className="mt-4 space-y-3">
+                      <TabsContent value="buyers" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
                         {managedLoading ? (
                           <div className="space-y-2">
                             {[1, 2, 3].map((i) => (
@@ -557,7 +547,7 @@ export default function Agents() {
                     )}
 
                     {managedEntities?.landlords && managedEntities.landlords.length > 0 && (
-                      <TabsContent value="landlords" className="mt-4">
+                      <TabsContent value="landlords" className="mt-4 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
                         {managedLoading ? (
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {[1, 2, 3].map((i) => (
@@ -588,8 +578,8 @@ export default function Agents() {
                       </TabsContent>
                     )}
 
-                    <TabsContent value="kpis" className="mt-4">
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <TabsContent value="kpis" className="mt-4 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 w-full">
                         {[
                           { icon: TrendingUp, label: "Asking Price", value: stats.askingPrice },
                           { icon: Clock, label: "Days on Market", value: stats.daysOnMarket },
@@ -606,30 +596,8 @@ export default function Agents() {
                         ))}
                       </div>
                     </TabsContent>
-                  </Tabs>
-
-                  {/* Activity Feed */}
-                  <Card className="mt-4">
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        Activity Feed
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {activities.map((activity, i) => (
-                          <div key={i} className="flex items-start gap-3 pb-3 border-b last:border-0 last:pb-0">
-                            <activity.icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm">{activity.text}</p>
-                              <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </Tabs>
+                  </div>
 
                 </>
               );

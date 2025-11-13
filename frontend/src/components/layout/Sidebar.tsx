@@ -11,7 +11,7 @@ import {
   Home, Building2, Users, UserCheck,
   BarChart3, Settings, Store, ShoppingBag,
   User, UserCircle, Building, CheckSquare, Wrench, Handshake, FileText,
-  Calendar, StickyNote, UserCog, Sparkles, LogOut, UserIcon
+  Calendar, StickyNote, UserCog, Sparkles, LogOut, UserIcon, Ticket
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,17 +41,19 @@ const navigation = {
     { name: "Properties for Sale", href: "/properties-for-sale", icon: Building },
     { name: "Vendors", href: "/vendors", icon: UserCircle },
   ],
-        other: [
-          { name: "Maintenance", href: "/maintenance", icon: Wrench },
-          { name: "Tasks", href: "/tasks", icon: CheckSquare },
-          { name: "Tickets", href: "/tickets", icon: Wrench },
-          { name: "Offers", href: "/offers", icon: Handshake },
-          { name: "KPIs", href: "/kpis", icon: BarChart3 },
-        ],
-        admin: [
-          { name: "Agents", href: "/agents", icon: UserCog },
-          { name: "Settings", href: "/settings", icon: Settings },
-        ],
+  operations: [
+    { name: "Maintenance", href: "/maintenance", icon: Wrench },
+    { name: "Tasks", href: "/tasks", icon: CheckSquare },
+    { name: "Tickets", href: "/tickets", icon: Ticket },
+    { name: "Offers", href: "/offers", icon: Handshake },
+  ],
+  analytics: [
+    { name: "KPIs", href: "/kpis", icon: BarChart3 },
+  ],
+  system: [
+    { name: "Agents", href: "/agents", icon: UserCog },
+    { name: "Settings", href: "/settings", icon: Settings },
+  ],
 };
 
 export default function Sidebar() {
@@ -178,10 +180,15 @@ export default function Sidebar() {
             })}
           </div>
 
-          {/* Other Navigation */}
+          {/* Operations Section */}
           <div className="pt-4">
             <Separator className="mb-3 bg-white/10" />
-            {navigation.other.map((item) => {
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Operations
+              </h3>
+            </div>
+            {navigation.operations.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -201,10 +208,43 @@ export default function Sidebar() {
             })}
           </div>
 
-          {/* Admin Section */}
+          {/* Analytics Section */}
+          <div className="pt-4">
+            <Separator className="mb-3 bg-white/10" />
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Analytics
+              </h3>
+            </div>
+            {navigation.analytics.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-white/20 text-white shadow-lg"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* System Section */}
           <div className="pt-4 mt-auto">
             <Separator className="mb-3 bg-white/10" />
-            {navigation.admin.map((item) => {
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                System
+              </h3>
+            </div>
+            {navigation.system.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link

@@ -478,55 +478,55 @@ export default function Calendar() {
 
                   {/* Existing Viewings */}
                   <div className="space-y-3">
-                    {getViewingsForDate(selectedDate).length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No viewings scheduled
-                      </p>
-                    ) : (
-                      getViewingsForDate(selectedDate).map((viewing) => (
-                        <div
-                          key={viewing.id}
-                          className="p-3 border rounded-lg space-y-2 hover:bg-accent/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">
-                                {format(
-                                  new Date(viewing.scheduled_date),
-                                  "HH:mm"
-                                )}
-                              </span>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className={getViewingStatusColor(
-                                viewing.status || "pending"
+                  {getViewingsForDate(selectedDate).length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No viewings scheduled
+                    </p>
+                  ) : (
+                    getViewingsForDate(selectedDate).map((viewing) => (
+                      <div
+                        key={viewing.id}
+                        className="p-3 border rounded-lg space-y-2 hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">
+                              {format(
+                                new Date(viewing.scheduled_date),
+                                "HH:mm"
                               )}
-                            >
-                              {getViewingStatusIcon(viewing.status || "pending")}
-                              <span className="ml-1 capitalize">
-                                {viewing.status || "Pending"}
-                              </span>
-                            </Badge>
+                            </span>
                           </div>
-                          {viewing.property && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Building2 className="h-4 w-4 text-muted-foreground" />
-                              <span className="truncate">
-                                {viewing.property.address || "Property"}
-                              </span>
-                            </div>
-                          )}
-                          {viewing.applicant && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span>{viewing.applicant.name}</span>
-                            </div>
-                          )}
+                          <Badge
+                            variant="outline"
+                            className={getViewingStatusColor(
+                              viewing.status || "pending"
+                            )}
+                          >
+                            {getViewingStatusIcon(viewing.status || "pending")}
+                            <span className="ml-1 capitalize">
+                              {viewing.status || "Pending"}
+                            </span>
+                          </Badge>
                         </div>
-                      ))
-                    )}
+                        {viewing.property && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate">
+                              {viewing.property.address || "Property"}
+                            </span>
+                          </div>
+                        )}
+                        {viewing.applicant && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{viewing.applicant.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
                   </div>
                 </CardContent>
               </Card>

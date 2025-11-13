@@ -128,8 +128,8 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="h-[600px] max-w-4xl flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-lg font-semibold text-white">
@@ -155,46 +155,39 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
           </div>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${(() => {
-            const tabs = [];
-            if (managedEntities?.properties && managedEntities.properties.length > 0) tabs.push("properties");
-            if (managedEntities?.vendors && managedEntities.vendors.length > 0) tabs.push("vendors");
-            if (managedEntities?.buyers && managedEntities.buyers.length > 0) tabs.push("buyers");
-            if (managedEntities?.landlords && managedEntities.landlords.length > 0) tabs.push("landlords");
-            if (managedEntities?.applicants && managedEntities.applicants.length > 0) tabs.push("applicants");
-            tabs.push("kpis"); // Always show KPIs
-            return tabs.length;
-          })()}, 1fr)` }}>
-            {(() => {
-              const tabs = [];
-              if (managedEntities?.properties && managedEntities.properties.length > 0) {
-                tabs.push({ value: "properties", label: "Properties" });
-              }
-              if (managedEntities?.vendors && managedEntities.vendors.length > 0) {
-                tabs.push({ value: "vendors", label: "Vendors" });
-              }
-              if (managedEntities?.buyers && managedEntities.buyers.length > 0) {
-                tabs.push({ value: "buyers", label: "Buyers" });
-              }
-              if (managedEntities?.landlords && managedEntities.landlords.length > 0) {
-                tabs.push({ value: "landlords", label: "Landlords" });
-              }
-              if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
-                tabs.push({ value: "applicants", label: "Tenants" });
-              }
-              tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
-              return tabs.map((t) => (
-                <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm">
-                  {t.label}
-                </TabsTrigger>
-              ));
-            })()}
-          </TabsList>
+        <Tabs value={tab} onValueChange={setTab} className="flex flex-col flex-1 min-h-0">
+          <div className="px-6 mt-4 mb-4 flex-shrink-0">
+            <TabsList className="inline-flex h-10 w-full">
+              {(() => {
+                const tabs = [];
+                if (managedEntities?.properties && managedEntities.properties.length > 0) {
+                  tabs.push({ value: "properties", label: "Properties" });
+                }
+                if (managedEntities?.vendors && managedEntities.vendors.length > 0) {
+                  tabs.push({ value: "vendors", label: "Vendors" });
+                }
+                if (managedEntities?.buyers && managedEntities.buyers.length > 0) {
+                  tabs.push({ value: "buyers", label: "Buyers" });
+                }
+                if (managedEntities?.landlords && managedEntities.landlords.length > 0) {
+                  tabs.push({ value: "landlords", label: "Landlords" });
+                }
+                if (managedEntities?.applicants && managedEntities.applicants.length > 0) {
+                  tabs.push({ value: "applicants", label: "Tenants" });
+                }
+                tabs.push({ value: "kpis", label: "KPIs" }); // Always show KPIs
+                return tabs.map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm flex-1 min-w-0 px-2">
+                    <span className="truncate">{t.label}</span>
+                  </TabsTrigger>
+                ));
+              })()}
+            </TabsList>
+          </div>
 
           {/* PROPERTIES */}
           {managedEntities?.properties && managedEntities.properties.length > 0 && (
-            <TabsContent value="properties" className="mt-4 space-y-3">
+            <TabsContent value="properties" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
               {managedLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
@@ -222,7 +215,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
           {/* VENDORS */}
           {managedEntities?.vendors && managedEntities.vendors.length > 0 && (
-            <TabsContent value="vendors" className="mt-4 space-y-3">
+            <TabsContent value="vendors" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
               {managedLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
@@ -255,7 +248,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
           {/* BUYERS */}
           {managedEntities?.buyers && managedEntities.buyers.length > 0 && (
-            <TabsContent value="buyers" className="mt-4 space-y-3">
+            <TabsContent value="buyers" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
               {managedLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
@@ -284,7 +277,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
           {/* LANDLORDS */}
           {managedEntities?.landlords && managedEntities.landlords.length > 0 && (
-            <TabsContent value="landlords" className="mt-4">
+            <TabsContent value="landlords" className="mt-4 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
               {managedLoading ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {[1, 2, 3].map((i) => (
@@ -317,7 +310,7 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
 
           {/* TENANTS */}
           {managedEntities?.applicants && managedEntities.applicants.length > 0 && (
-            <TabsContent value="applicants" className="mt-4 space-y-3">
+            <TabsContent value="applicants" className="mt-4 space-y-3 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
               {managedLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
@@ -345,8 +338,8 @@ export default function AgentProfileDialog({ open, onOpenChange }: Props) {
           )}
 
           {/* KPIs */}
-          <TabsContent value="kpis" className="mt-4">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <TabsContent value="kpis" className="mt-4 px-6 pb-6 flex-1 overflow-y-auto min-h-0">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 w-full">
               <Card>
                 <CardContent className="p-4 text-center">
                   <TrendingUp className="h-6 w-6 mx-auto mb-2 text-primary" />
