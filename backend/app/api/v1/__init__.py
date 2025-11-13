@@ -21,7 +21,9 @@ from app.api.v1 import (
     offers,
     workflows,
     sales,
-    valuations
+    valuations,
+    calendar,
+    public_booking
 )
 
 api_router = APIRouter()
@@ -47,3 +49,5 @@ api_router.include_router(offers.router)
 api_router.include_router(workflows.router)
 api_router.include_router(sales.router, tags=["sales"])
 api_router.include_router(valuations.router, tags=["valuations"])
+api_router.include_router(calendar.router, tags=["calendar"])
+api_router.include_router(public_booking.router, prefix="/public-booking", tags=["public-booking"])
