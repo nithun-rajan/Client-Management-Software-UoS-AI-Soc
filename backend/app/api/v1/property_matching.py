@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db
-from app.models import Property, Applicant, MatchHistory
+from app.models import Property, Applicant, MatchHistory, MatchProposal
 """from app.models.property import Property
 from app.models.applicant import Applicant
 from app.models.match_history import MatchHistory"""
@@ -246,26 +246,8 @@ async def ai_match_properties(
                 if any(loc.lower() in f"{property.city} {property.postcode}".lower() for loc in locs):
                     reasons.append(f"Preferred location ({property.city})")
 
-            match_record = MatchHistory(
-                applicant_id=applicant.id,
-                property_id=property.id,
-                match_score=score,
-                personalized_message=personalized_message,
-                match_reason=personalized_message,
-                personalization_data={
-                    "match_reasons": reasons,
-                    "calculated_score": score
-                },
-                send_method="api",
-                recipient=applicant.email,
-                sent_at=datetime.now(timezone.utc)
-            )
-            db.add(match_record)
-            db.flush()  # Get ID without commit
-
-            from app.services.calendar_public_booking_service import get_public_booking_service
-            booking_service = get_public_booking_service(db)
-            booking_result = await booking_service.generate_booking_link(match_record.id)
+            # Don't create MatchHistory records here - only create them when actually sending
+            # This allows "Find Matches" to just show proposals without marking them as sent
             
             matches.append({
                 "property_id": property.id,
@@ -286,17 +268,15 @@ async def ai_match_properties(
                 },
                 "personalized_message": personalized_message,
                 "match_reasons": reasons,
-                "match_id": match_record.id,
-                "booking_url": booking_result.get("booking_url") if booking_result["success"] else None,
+                # REMOVED: "match_id" and "booking_url" - these will be created when actually sending
                 # REMOVED: "viewing_slots" hardcoded array
                 "calendar_info": {
                     "has_available_slots": True,
-                    "booking_url": booking_result.get("booking_url") if booking_result["success"] else None,
                     "message": "Click to view real-time availability and book instantly"
                 }
             })
     
-    db.commit()
+    # Don't commit anything - we're just finding matches, not sending them
     
     # Sort by score and limit
     matches.sort(key=lambda x: x['score'], reverse=True)
@@ -324,6 +304,167 @@ async def ai_match_properties(
             "Book viewings for top matches",
             "Request additional information if needed"
         ]
+    }
+
+
+# ============================================================================
+# MATCH PROPOSALS (Saved matches that haven't been sent yet)
+# ============================================================================
+
+class SaveMatchProposalsRequest(BaseModel):
+    """Request body for saving match proposals"""
+    applicant_id: str
+    proposals: List[Dict[str, Any]]  # List of match proposals from /match-proposals
+    notes: Optional[str] = None
+
+
+@router.post("/match-proposals/save")
+async def save_match_proposals(
+    request: SaveMatchProposalsRequest,
+    db: Session = Depends(get_db),
+    current_user_id: str = None  # TODO: Get from auth
+):
+    """
+    Save match proposals for later review and sending
+    Allows agents to find matches, save them, and send them when ready
+    """
+    # Get applicant
+    applicant = db.query(Applicant).filter(Applicant.id == request.applicant_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+    
+    saved_proposals = []
+    
+    for proposal_data in request.proposals:
+        property_id = proposal_data.get("property_id")
+        if not property_id:
+            continue
+        
+        # Check if proposal already exists
+        existing = db.query(MatchProposal).filter(
+            MatchProposal.applicant_id == request.applicant_id,
+            MatchProposal.property_id == property_id,
+            MatchProposal.is_sent == False
+        ).first()
+        
+        if existing:
+            # Update existing proposal
+            existing.match_score = proposal_data.get("score", existing.match_score)
+            existing.personalized_message = proposal_data.get("personalized_message")
+            existing.match_reasons = proposal_data.get("match_reasons", [])
+            existing.personalization_data = {
+                "match_reasons": proposal_data.get("match_reasons", []),
+                "calculated_score": proposal_data.get("score")
+            }
+            if request.notes:
+                existing.notes = request.notes
+            saved_proposals.append(existing)
+        else:
+            # Create new proposal
+            proposal = MatchProposal(
+                applicant_id=request.applicant_id,
+                property_id=property_id,
+                match_score=proposal_data.get("score", 0),
+                personalized_message=proposal_data.get("personalized_message"),
+                match_reasons=proposal_data.get("match_reasons", []),
+                personalization_data={
+                    "match_reasons": proposal_data.get("match_reasons", []),
+                    "calculated_score": proposal_data.get("score")
+                },
+                notes=request.notes,
+                created_by_agent=current_user_id
+            )
+            db.add(proposal)
+            saved_proposals.append(proposal)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "saved_count": len(saved_proposals),
+        "message": f"Saved {len(saved_proposals)} match proposals"
+    }
+
+
+@router.get("/match-proposals/{applicant_id}")
+async def get_saved_match_proposals(
+    applicant_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get saved match proposals for an applicant
+    Returns proposals that haven't been sent yet
+    """
+    applicant = db.query(Applicant).filter(Applicant.id == applicant_id).first()
+    if not applicant:
+        raise HTTPException(status_code=404, detail="Applicant not found")
+    
+    proposals = db.query(MatchProposal).filter(
+        MatchProposal.applicant_id == applicant_id,
+        MatchProposal.is_sent == False
+    ).order_by(MatchProposal.match_score.desc(), MatchProposal.created_at.desc()).all()
+    
+    proposal_list = []
+    for proposal in proposals:
+        property = db.query(Property).filter(Property.id == proposal.property_id).first()
+        if not property:
+            continue
+        
+        proposal_list.append({
+            "id": proposal.id,
+            "property_id": proposal.property_id,
+            "score": proposal.match_score,
+            "property": {
+                "id": property.id,
+                "address": property.address,
+                "address_line1": property.address_line1,
+                "address_line2": property.address_line2,
+                "city": property.city,
+                "postcode": property.postcode,
+                "bedrooms": property.bedrooms,
+                "bathrooms": property.bathrooms,
+                "rent": property.rent,
+                "property_type": property.property_type,
+                "description": property.description,
+                "main_photo": property.main_photo_url
+            },
+            "personalized_message": proposal.personalized_message,
+            "match_reasons": proposal.match_reasons or [],
+            "notes": proposal.notes,
+            "created_at": proposal.created_at.isoformat() if proposal.created_at else None
+        })
+    
+    return {
+        "applicant": {
+            "id": applicant.id,
+            "name": f"{applicant.first_name} {applicant.last_name}"
+        },
+        "proposals": proposal_list,
+        "total_count": len(proposal_list)
+    }
+
+
+@router.delete("/match-proposals/{proposal_id}")
+async def delete_match_proposal(
+    proposal_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a saved match proposal
+    """
+    proposal = db.query(MatchProposal).filter(MatchProposal.id == proposal_id).first()
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Match proposal not found")
+    
+    if proposal.is_sent:
+        raise HTTPException(status_code=400, detail="Cannot delete a proposal that has already been sent")
+    
+    db.delete(proposal)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Match proposal deleted"
     }
 
 

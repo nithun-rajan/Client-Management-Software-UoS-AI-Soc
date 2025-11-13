@@ -119,7 +119,11 @@ export default function Sidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b border-white/10 px-6">
-          <Building2 className="h-8 w-8 text-white" />
+          <img 
+            src="/images/favicon.png" 
+            alt="AI Society Logo" 
+            className="h-10 w-10 object-contain"
+          />
           <div>
             <div className="text-lg font-bold leading-tight text-white">
               UoS Scouting

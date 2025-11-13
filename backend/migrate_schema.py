@@ -121,6 +121,16 @@ def migrate_database():
             else:
                 print(f"[WARN] Error creating match_history table: {e}")
         
+        # Create match_proposals table if it doesn't exist
+        try:
+            Base.metadata.tables['match_proposals'].create(bind=engine, checkfirst=True)
+            print("[OK] Created match_proposals table")
+        except Exception as e:
+            if "already exists" in str(e).lower():
+                print("[SKIP] match_proposals table already exists")
+            else:
+                print(f"[WARN] Error creating match_proposals table: {e}")
+        
         # Update existing notifications to have default priority
         try:
             result = conn.execute(text("UPDATE notifications SET priority = 'medium' WHERE priority IS NULL OR priority = ''"))
