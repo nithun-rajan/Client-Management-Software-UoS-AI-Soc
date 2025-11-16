@@ -4,9 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, useTheme } from "next-themes";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { applyAccentColorFromStorage } from "@/lib/accentColor";
 import Sidebar from "./components/layout/Sidebar";
+import { MCPSidebar, MCPToggleButton } from "@/components/mcp";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
@@ -70,6 +71,7 @@ const App = () => {
 
 const AppContent = () => {
   const { theme } = useTheme();
+  const [isMCPOpen, setIsMCPOpen] = useState(false);
   
   // Re-apply accent color when theme changes
   useEffect(() => {
@@ -128,6 +130,17 @@ const AppContent = () => {
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </main>
+                    
+                    {/* AI Assistant Components */}
+                    <MCPToggleButton
+                      isOpen={isMCPOpen}
+                      onClick={() => setIsMCPOpen(!isMCPOpen)}
+                      connectionStatus="disconnected"
+                    />
+                    <MCPSidebar
+                      isOpen={isMCPOpen}
+                      onClose={() => setIsMCPOpen(false)}
+                    />
                   </div>
                 </ProtectedRoute>
               }
