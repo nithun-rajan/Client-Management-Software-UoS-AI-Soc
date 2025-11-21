@@ -146,11 +146,11 @@ def calculate_agent_stats(agent_id: str, db: Session) -> AgentStats:
         .all()
     
     if properties_for_sale:
-        total_asking = sum(p.asking_price or 0 for p in properties_for_sale)
+        total_asking = sum(float(p.asking_price or 0) for p in properties_for_sale)
         # For now, we'll use asking_price as achieved (in real app, this would come from sales progression)
-        total_achieved = sum(p.asking_price or 0 for p in properties_for_sale)
+        total_achieved = sum(float(p.asking_price or 0) for p in properties_for_sale)
         if total_asking > 0:
-            stats.asking_price_achievement = round((total_achieved / total_asking) * 100, 1)
+            stats.asking_price_achievement = float(round((total_achieved / total_asking) * 100, 1))
     
     # Average days on market (simplified - using created_at to now)
     if properties_for_sale:
@@ -174,7 +174,7 @@ def calculate_agent_stats(agent_id: str, db: Session) -> AgentStats:
         .filter(Property.rent.isnot(None))\
         .all()
     if properties_letting:
-        stats.monthly_fees = sum(p.rent or 0 for p in properties_letting)
+        stats.monthly_fees = float(sum(float(p.rent or 0) for p in properties_letting))
     
     # Satisfaction score (mock for now - could be calculated from feedback/ratings)
     # In a real app, this would come from tenant/landlord feedback

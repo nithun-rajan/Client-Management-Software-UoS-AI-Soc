@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Users,
+  User,
+  UserCheck,
   Mail,
   Phone,
   Bed,
@@ -48,6 +50,11 @@ import { useMyTeamAgents } from "@/hooks/useAgents";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import AICallButton from "@/components/voice/AICallButton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
+import BookViewingDialog from "@/components/shared/BookViewingDialog";
+import { useMatchSending } from "@/hooks/useMatchSending";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Applicants() {
   const navigate = useNavigate();
@@ -57,10 +64,54 @@ export default function Applicants() {
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null);
   const [matchesDialogOpen, setMatchesDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [managedByMe, setManagedByMe] = useState(false);
-  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [bookViewingOpen, setBookViewingOpen] = useState(false);
+  const [selectedPropertyForViewing, setSelectedPropertyForViewing] = useState<{ propertyId: string; propertyAddress?: string } | null>(null);
+  const { toast } = useToast();
+  const { sendMatches, loading: sendingMatches } = useMatchSending();
 
   const matchingMutation = usePropertyMatching(5, 50);
+
+  // Filter applicants that are tenants (willing_to_rent = true)
+  const tenants = useMemo(() => applicants?.filter((a: any) => a.willing_to_rent !== false) || [], [applicants]);
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return tenants.filter((tenant: any) => tenant.assigned_agent_id === user?.id);
+    } else if (activeTab === "managed-by-team") {
+      return tenants.filter((tenant: any) => tenant.assigned_agent_id && teamAgentIds.includes(tenant.assigned_agent_id));
+    }
+    return tenants;
+  }, [tenants, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = tenants.length;
+  const managedByMeCount = tenants.filter((t: any) => t.assigned_agent_id === user?.id).length;
+  const managedByTeamCount = tenants.filter((t: any) => t.assigned_agent_id && teamAgentIds.includes(t.assigned_agent_id)).length;
+
+  // Apply search filter
+  const filteredTenants = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((tenant: any) => (
+      tenant.first_name?.toLowerCase().includes(query) ||
+      tenant.last_name?.toLowerCase().includes(query) ||
+      tenant.email?.toLowerCase().includes(query) ||
+      tenant.phone?.includes(query) ||
+      tenant.preferred_locations?.toLowerCase().includes(query) ||
+      tenant.status?.toLowerCase().includes(query) ||
+      tenant.desired_bedrooms?.toString().includes(query) ||
+      tenant.rent_budget_min?.toString().includes(query) ||
+      tenant.rent_budget_max?.toString().includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
+
+  const matchData = matchingMutation.data;
 
   const handleFindMatches = async (applicantId: string) => {
     setSelectedApplicantId(applicantId);
@@ -72,6 +123,10 @@ export default function Applicants() {
     } catch (error) {
       // Error is already handled by the mutation's onError
     }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
   };
 
   if (isLoading) {
@@ -89,49 +144,12 @@ export default function Applicants() {
     );
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  const matchData = matchingMutation.data;
-
-  // Filter applicants that are tenants (willing_to_rent = true)
-  const tenants = applicants?.filter((a: any) => a.willing_to_rent !== false) || [];
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-
-  // Apply filters and search
-  const filteredTenants = tenants.filter((tenant: any) => {
-    // Managed by Me filter
-    if (managedByMe && tenant.assigned_agent_id !== user?.id) return false;
-    
-    // Managed by My Team filter
-    if (managedByMyTeam && (!tenant.assigned_agent_id || !teamAgentIds.includes(tenant.assigned_agent_id))) return false;
-    
-    // Search filter
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      tenant.first_name?.toLowerCase().includes(query) ||
-      tenant.last_name?.toLowerCase().includes(query) ||
-      tenant.email?.toLowerCase().includes(query) ||
-      tenant.phone?.includes(query) ||
-      tenant.preferred_locations?.toLowerCase().includes(query) ||
-      tenant.status?.toLowerCase().includes(query) ||
-      tenant.desired_bedrooms?.toString().includes(query) ||
-      tenant.rent_budget_min?.toString().includes(query) ||
-      tenant.rent_budget_max?.toString().includes(query)
-    );
-  });
-
   return (
     <div>
       <Header title="Tenants" />
       <div className="p-6">
-        {/* Search Bar and Filters */}
-        <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -156,29 +174,24 @@ export default function Applicants() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-me"
-                checked={managedByMe}
-                onCheckedChange={(checked) => setManagedByMe(checked === true)}
-              />
-              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
-                Managed by Me
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-team"
-                checked={managedByMyTeam}
-                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
-              />
-              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
-                Managed by My Team
-              </Label>
-            </div>
-          </div>
         </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Tenants ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTenants.map((applicant) => (
@@ -280,10 +293,10 @@ export default function Applicants() {
           {filteredTenants.length === 0 && (
             <EmptyState
               icon={Users}
-              title={managedByMe || managedByMyTeam ? "No tenants found with this filter" : "No tenants yet"}
-              description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your tenant database by adding your first tenant"}
-              actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Tenant"}
-              onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
+              title={searchQuery || activeTab !== "all" ? "No tenants found" : "No tenants yet"}
+              description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your tenant database by adding your first tenant"}
+              actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Tenant"}
+              onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
             />
           )}
       </div>
@@ -418,25 +431,62 @@ export default function Applicants() {
                       </div>
 
                       {/* Viewing Slots */}
-                      <div>
-                        <div className="mb-2 flex items-center gap-1 text-sm font-medium">
-                          <Calendar className="h-4 w-4" />
-                          Available Viewing Slots:
+                      {match.viewing_slots && match.viewing_slots.length > 0 && (
+                        <div>
+                          <div className="mb-2 flex items-center gap-1 text-sm font-medium">
+                            <Calendar className="h-4 w-4" />
+                            Available Viewing Slots:
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {match.viewing_slots.map((slot, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {slot}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {match.viewing_slots.map((slot, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              {slot}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button size="sm" className="flex-1">
-                        Send to Applicant
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!matchData?.applicant.id) return;
+                          try {
+                            await sendMatches(
+                              matchData.applicant.id,
+                              [match.property_id],
+                              'email',
+                              match.personalized_message
+                            );
+                            toast({
+                              title: "Success",
+                              description: "Property match sent to applicant",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error?.message || "Failed to send match",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={sendingMatches}
+                      >
+                        {sendingMatches ? "Sending..." : "Send to Applicant"}
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedPropertyForViewing({
+                            propertyId: match.property_id,
+                            propertyAddress: match.property.address
+                          });
+                          setBookViewingOpen(true);
+                        }}
+                      >
                         Book Viewing
                       </Button>
                       <Button 
@@ -476,6 +526,18 @@ export default function Applicants() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Book Viewing Dialog */}
+      {selectedPropertyForViewing && matchData?.applicant && (
+        <BookViewingDialog
+          open={bookViewingOpen}
+          onOpenChange={setBookViewingOpen}
+          propertyId={selectedPropertyForViewing.propertyId}
+          applicantId={matchData.applicant.id}
+          propertyAddress={selectedPropertyForViewing.propertyAddress}
+          applicantName={matchData.applicant.name}
+        />
+      )}
     </div>
   );
 }

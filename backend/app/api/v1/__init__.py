@@ -10,6 +10,7 @@ from app.api.v1 import (
     land_registry, 
     landlords, 
     messaging, 
+    maintenance,
     properties, 
     property_matching, 
     search,
@@ -35,6 +36,7 @@ api_router.include_router(kpis.router)
 api_router.include_router(land_registry.router)
 api_router.include_router(landlords.router)
 api_router.include_router(messaging.router)
+api_router.include_router(maintenance.router)
 api_router.include_router(properties.router)
 api_router.include_router(property_matching.router)
 api_router.include_router(search.router)

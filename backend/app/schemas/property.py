@@ -45,6 +45,8 @@ class PropertyUpdate(AppBaseModel):
     managed_by: str | None = None
     management_type: str | None = None
     management_notes: str | None = None
+    main_photo_url: str | None = None
+    photo_urls: str | None = None  # JSON array of photo URLs
 
     # COMPLIANCE DATES
     epc_expiry: date | None = None # Energy Performance Certificate.
@@ -85,6 +87,8 @@ class PropertyResponse(PropertyBase):
     management_type: str | None = None
     management_notes: str | None = None
     managed_by_name: str | None = None  # Full name of agent managing the landlord/vendor
+    main_photo_url: str | None = None
+    photo_urls: str | None = None  # JSON array of photo URLs
 
     # COMPLIANCE DATES
     epc_expiry: date | None = None # Energy Performance Certificate.

@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+import os
 
 import threading
 import time
@@ -12,7 +14,7 @@ from typing import List, Dict, Any, Optional
 from app.core.database import Base, engine, get_db, SessionLocal
 import app.models  # ensure all models are registered before table creation
 from app.models import Property, User, Landlord, Applicant
-from app.api.v1 import ai_calls, properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations
+from app.api.v1 import ai_calls, properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations, calendar
 
 
 
@@ -362,3 +364,11 @@ app.include_router(auth.router, prefix="/api/v1")  # 🔐 Authentication (by Ant
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(maintenance.router, prefix="/api/v1")  # 🔧 Maintenance Management
 app.include_router(valuations.router, prefix="/api/v1")  # 💰 Valuation Management
+app.include_router(calendar.router, prefix="/api/v1")  # 📅 Calendar & Viewing Scheduler
+
+# Mount static files directory for uploaded files
+# Get the backend directory (parent of app directory)
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+uploads_dir = os.path.join(backend_dir, "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")

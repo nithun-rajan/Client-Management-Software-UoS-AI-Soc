@@ -136,3 +136,17 @@ export function useDeleteMaintenance() {
   });
 }
 
+export function useMyMaintenance(filters?: { status?: string; priority?: string }) {
+  return useQuery({
+    queryKey: ["maintenance", "my", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append("status", filters.status);
+      if (filters?.priority) params.append("priority", filters.priority);
+      
+      const { data } = await api.get(`/api/v1/maintenance/my-maintenance?${params.toString()}`);
+      return data as MaintenanceIssue[];
+    },
+  });
+}
+

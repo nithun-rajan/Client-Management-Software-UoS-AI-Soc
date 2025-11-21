@@ -40,6 +40,7 @@ export interface Property {
   vendor?: VendorInfo;
   virtual_tour_url?: string;
   main_photo_url?: string;
+  photo_urls?: string;  // JSON array of photo URLs
   // Sales fields
   sales_status?: string;
   asking_price?: number;

@@ -18,17 +18,28 @@ def upload_file_to_cloud(file_name: str, file_content: bytes) -> str:
     For this example, we'll save it locally but warn that this is not for production.
     """
     print("WARNING: Saving file to local /uploads directory. NOT FOR PRODUCTION.")
-    # Ensure the upload directory exists
-    os.makedirs("uploads", exist_ok=True)
+    # Ensure the upload directory exists (relative to backend directory)
+    # Get the backend directory (parent of app directory)
+    # Path: backend/app/api/v1/documents.py
+    #       -> backend/app/api/v1 (1 dirname)
+    #       -> backend/app/api (2 dirname)
+    #       -> backend/app (3 dirname)
+    #       -> backend (4 dirname)
+    # This matches the path calculation in main.py which uses 2 dirname calls for backend/app/main.py
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    uploads_dir = os.path.join(backend_dir, "uploads")
+    os.makedirs(uploads_dir, exist_ok=True)
     
-    file_path = f"uploads/{file_name}"
+    file_path = os.path.join(uploads_dir, file_name)
     
     # --- MODIFIED: Changed to standard sync 'with open' ---
     with open(file_path, "wb") as buffer:
         buffer.write(file_content)
     # --- END OF MODIFICATION ---
         
-    return file_path # In production, this would be the cloud URL/key
+    # Return relative path for URL construction (matches what main.py expects)
+    # StaticFiles mounts /uploads pointing to backend/uploads/, so /uploads/filename.jpg works
+    return f"uploads/{file_name}"
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 def upload_document(
@@ -74,8 +85,16 @@ def upload_document(
 
     db_document = Document(**doc_create.model_dump())
     db.add(db_document)
+    # Commit to database - this saves the document record for ALL users
+    # The document is linked to the property, making it accessible to everyone
     db.commit()
     db.refresh(db_document)
+    
+    # Log successful upload
+    if property_id:
+        print(f"[INFO] Document uploaded for property {property_id}: {file_path}")
+        print(f"[INFO] Document ID: {db_document.id}, File URL: {file_path}")
+    
     return db_document
 
 # --- Secure Download Endpoint ---

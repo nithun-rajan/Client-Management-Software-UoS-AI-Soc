@@ -13,12 +13,14 @@ from .user import User
 from .offer import Offer
 from .viewing import Viewing
 from .match_history import MatchHistory
+from .match_proposal import MatchProposal
 from .document import Document
 from .valuation import Valuation, ComparableSale
 from .maintenance import MaintenanceIssue
 from .sales import SalesProgression, SalesOffer
 from .notification import Notification
 from .tickets import Ticket
+from .calendar import AgentAvailability, PropertyViewingSlot, ViewingScheduleRule, ViewingConflict
 
 __all__ = [
     "AICall",
@@ -35,6 +37,7 @@ __all__ = [
     "Offer",
     "Viewing",
     "MatchHistory",
+    "MatchProposal",
     "Document",
     "MaintenanceIssue",
     "SalesProgression",
@@ -43,5 +46,9 @@ __all__ = [
     "SalesOffer",
     "Notification",
     "Ticket",
+    "AgentAvailability",
+    "PropertyViewingSlot",
+    "ViewingScheduleRule",
+    "ViewingConflict",
 ]
 

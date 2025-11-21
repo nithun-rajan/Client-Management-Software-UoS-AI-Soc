@@ -284,7 +284,7 @@ export default function VendorDetails() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-3xl font-bold text-white">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-3xl font-bold text-white">
                   {getInitials(vendor.first_name, vendor.last_name)}
                 </div>
                 <div>

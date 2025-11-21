@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMaintenanceByProperty } from "@/hooks/useMaintenance";
 import { MaintenanceIssue } from "@/types";
+import PhotoGallery from "@/components/property/PhotoGallery";
 import EmptyState from "@/components/shared/EmptyState";
 
 export default function PropertyDetails() {
@@ -88,6 +89,47 @@ export default function PropertyDetails() {
       return response.data;
     },
   });
+
+  // Helper function to normalize photo URLs
+  const normalizePhotoUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+    return `${apiBaseUrl}/${url}`;
+  };
+
+  // Helper function to get photos array from property
+  const getPropertyPhotos = (property: any): string[] => {
+    if (property?.photo_urls) {
+      try {
+        const photos = JSON.parse(property.photo_urls);
+        if (Array.isArray(photos) && photos.length > 0) {
+          return photos.map(normalizePhotoUrl);
+        }
+      } catch (e) {
+        console.error("Failed to parse photo_urls:", e);
+      }
+    }
+    // Fallback to main_photo_url if photo_urls is not available
+    if (property?.main_photo_url) {
+      return [normalizePhotoUrl(property.main_photo_url)];
+    }
+    return [];
+  };
+
+  // Handler for photo updates
+  const handlePhotosUpdate = async (photos: string[]) => {
+    if (!id) return;
+    refetch();
+  };
+
+  // Handler for main photo update
+  const handleMainPhotoUpdate = async (url: string) => {
+    if (!id) return;
+    refetch();
+  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -340,13 +382,16 @@ export default function PropertyDetails() {
                   <CardTitle>Property Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                    <img
-                      src={`https://picsum.photos/seed/building${property.id}/800/450`}
-                      alt={property.address || property.address_line1 || property.city}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
+                  <PhotoGallery
+                    photos={getPropertyPhotos(property)}
+                    propertyId={property.id}
+                    onPhotosUpdate={handlePhotosUpdate}
+                    mainPhotoUrl={property?.main_photo_url ? normalizePhotoUrl(property.main_photo_url) : undefined}
+                    onMainPhotoUpdate={handleMainPhotoUpdate}
+                    allowEdit={true}
+                    gridView={true}
+                    className="mb-4"
+                  />
                   <div className="grid grid-cols-3 gap-4">
                     <div className="rounded-lg bg-muted p-4 text-center">
                       <Bed className="mx-auto mb-2 h-6 w-6 text-primary" />

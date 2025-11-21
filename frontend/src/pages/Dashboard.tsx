@@ -182,13 +182,16 @@ export default function Dashboard() {
     return funnelStages;
   }, [applicants]);
 
-  // Tasks due today
+  // Tasks due today assigned to current user
   const tasksDueToday = useMemo(() => {
-    if (!tasks) return [];
+    if (!tasks || !user) return [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Get user's full name for matching
+    const userFullName = `${user.first_name} ${user.last_name}`;
 
     return tasks.filter((task) => {
       if (!task.due_date) return false;
@@ -197,7 +200,7 @@ export default function Dashboard() {
       return dueDate >= today && dueDate < tomorrow && 
              task.status !== "completed" && 
              task.status !== "cancelled" &&
-             (!user || task.assigned_to === user.id || !task.assigned_to);
+             task.assigned_to === userFullName; // Match by full name
     }).slice(0, 5);
   }, [tasks, user]);
 

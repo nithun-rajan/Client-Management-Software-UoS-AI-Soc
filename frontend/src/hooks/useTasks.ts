@@ -112,3 +112,17 @@ export function useDeleteTask() {
   });
 }
 
+export function useMyTasks(filters?: { status?: string; priority?: string }) {
+  return useQuery({
+    queryKey: ["tasks", "my", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append("status", filters.status);
+      if (filters?.priority) params.append("priority", filters.priority);
+      
+      const { data } = await api.get(`/api/v1/tasks/my-tasks?${params.toString()}`);
+      return data as Task[];
+    },
+  });
+}
+

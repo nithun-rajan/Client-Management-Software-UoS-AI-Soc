@@ -349,8 +349,17 @@ export default function Tickets() {
               const property = properties?.find((p) => p.id === ticket.property_id);
               const applicant = applicants?.find((a) => a.id === ticket.applicant_id);
               
+              // Determine border styling based on priority/urgency
+              const isUrgent = ticket.priority === "urgent" || ticket.urgency === "emergency";
+              const isHigh = ticket.priority === "high" || ticket.urgency === "urgent";
+              
               return (
-                <Card key={ticket.id} className="hover:shadow-lg transition-shadow">
+                <Card 
+                  key={ticket.id} 
+                  className={`hover:shadow-lg transition-shadow ${
+                    isUrgent ? "border-red-500 border-2" : isHigh ? "border-orange-500" : ""
+                  }`}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{ticket.title}</CardTitle>

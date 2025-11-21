@@ -1,4 +1,4 @@
-import { Bell, Plus, LogOut, User as UserIcon } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,8 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -48,9 +46,10 @@ import {
 
 interface HeaderProps {
   title: string;
+  hideQuickAdd?: boolean;
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, hideQuickAdd = false }: HeaderProps) {
   const [propertyOpen, setPropertyOpen] = useState(false);
   const [landlordOpen, setLandlordOpen] = useState(false);
   const [applicantOpen, setApplicantOpen] = useState(false);
@@ -64,22 +63,11 @@ export default function Header({ title }: HeaderProps) {
   const navigate = useNavigate();
   const { data: landlords } = useLandlords();
   const { data: vendors } = useVendors();
-  const { user, logout } = useAuth();
   const { data: notifications = [] } = useNotifications();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteAllNotifications = useDeleteAllNotifications();
   const markNotificationRead = useMarkNotificationRead();
   const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  const getUserInitials = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
-    }
-    if (user?.email) {
-      return user.email[0].toUpperCase();
-    }
-    return "U";
-  };
 
   const handleMarkAllRead = async () => {
     try {
@@ -262,13 +250,14 @@ export default function Header({ title }: HeaderProps) {
       <h1 className="text-2xl font-bold">{title}</h1>
 
         <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="default" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Quick Add
-              </Button>
-            </DropdownMenuTrigger>
+          {!hideQuickAdd && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Quick Add
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setPropertyOpen(true)}>
                 + New Property
@@ -287,6 +276,7 @@ export default function Header({ title }: HeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
 
                   {/* Live Bell */}
         <DropdownMenu>
@@ -410,49 +400,6 @@ export default function Header({ title }: HeaderProps) {
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* User Menu */}
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    {user.first_name} {user.last_name}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
-                  <p className="text-xs leading-none text-muted-foreground capitalize mt-1">
-                    {user.role}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
-                <UserIcon className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={logout}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
         
         {/* Delete confirmation dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

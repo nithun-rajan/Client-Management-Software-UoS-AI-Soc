@@ -38,10 +38,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   useTasks,
+  useMyTasks,
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
 } from "@/hooks/useTasks";
+import { useAuth } from "@/hooks/useAuth";
 import { useUsers } from "@/hooks/useUsers";
 import { useLandlords } from "@/hooks/useLandlords";
 import { useVendors } from "@/hooks/useVendors";
@@ -55,9 +57,11 @@ import { format } from "date-fns";
 
 export default function Tasks() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [viewFilter, setViewFilter] = useState<"mine" | "all">("all"); // Default to all tasks
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -68,7 +72,12 @@ export default function Tasks() {
   if (statusFilter !== "all") filters.status = statusFilter;
   if (priorityFilter !== "all") filters.priority = priorityFilter;
 
-  const { data: tasks, isLoading } = useTasks(filters);
+  // Use my tasks when viewFilter is "mine", otherwise use all tasks
+  const { data: myTasks, isLoading: myTasksLoading } = useMyTasks(filters);
+  const { data: allTasks, isLoading: allTasksLoading } = useTasks(filters);
+  
+  const tasks = viewFilter === "mine" ? myTasks : allTasks;
+  const isLoading = viewFilter === "mine" ? myTasksLoading : allTasksLoading;
   const { data: users, isLoading: usersLoading } = useUsers();
   const { data: landlords, isLoading: landlordsLoading } = useLandlords();
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
@@ -107,16 +116,18 @@ export default function Tasks() {
     setShowUserSuggestions(false);
   };
   
-  // Combined list of assignable people (users + landlords + vendors + applicants/tenants/buyers)
+  // Combined list of assignable people (users + agents + landlords + vendors + applicants/tenants/buyers)
   const getAllAssignablePeople = () => {
-    const people: Array<{ id: string; name: string; type: "user" | "landlord" | "vendor" | "applicant" }> = [];
+    const people: Array<{ id: string; name: string; type: "user" | "agent" | "landlord" | "vendor" | "applicant" }> = [];
     
-    // Add users
+    // Add users (including agents)
     users?.forEach((user) => {
+      // Check if user is an agent
+      const isAgent = user.role === "agent";
       people.push({
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
-        type: "user"
+        type: isAgent ? "agent" : "user"
       });
     });
     
@@ -272,7 +283,8 @@ export default function Tasks() {
       case "applicant":
         return `/applicants/${person.id}`;
       case "user":
-        // Users don't have a detail page, return null
+      case "agent":
+        // Users and agents don't have detail pages, return null
         return null;
       default:
         return null;
@@ -363,6 +375,15 @@ export default function Tasks() {
                 <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={viewFilter} onValueChange={(value) => setViewFilter(value as "mine" | "all")}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tasks</SelectItem>
+                <SelectItem value="mine">My Tasks</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={handleCreate} className="gap-2">
             <Plus className="h-4 w-4" />
@@ -389,7 +410,12 @@ export default function Tasks() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={task.id} 
+                className={`hover:shadow-lg transition-shadow ${
+                  task.priority === "urgent" ? "border-red-500 border-2" : ""
+                } ${task.priority === "high" ? "border-orange-500" : ""}`}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg font-semibold line-clamp-2">

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Store,
+  User,
+  UserCheck,
   Mail,
   Phone,
   Building2,
@@ -11,7 +13,6 @@ import {
   AlertCircle,
   Search,
   X,
-  UserCheck,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useVendors, useDeleteVendor, useUpdateVendor } from "@/hooks/useVendors";
 import { useProperties } from "@/hooks/useProperties";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,8 +37,8 @@ import { Vendor } from "@/types";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMemo } from "react";
 
 export default function Vendors() {
   const { data: vendors, isLoading } = useVendors();
@@ -49,8 +51,52 @@ export default function Vendors() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [managedByMe, setManagedByMe] = useState(false);
-  const [managedByMyTeam, setManagedByMyTeam] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Helper functions
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  };
+
+  const getFullName = (vendor: Vendor) => {
+    const parts = [vendor.first_name, vendor.last_name].filter(Boolean);
+    return parts.join(" ");
+  };
+
+  // Get team agent IDs
+  const teamAgentIds = teamAgents?.map(a => a.id) || [];
+  
+  // Filter by tab
+  const filteredByTab = useMemo(() => {
+    if (activeTab === "managed-by-me") {
+      return vendors?.filter((vendor: Vendor) => vendor.managed_by === user?.id) || [];
+    } else if (activeTab === "managed-by-team") {
+      return vendors?.filter((vendor: Vendor) => vendor.managed_by && teamAgentIds.includes(vendor.managed_by)) || [];
+    }
+    return vendors || [];
+  }, [vendors, activeTab, user?.id, teamAgentIds]);
+
+  // Calculate counts
+  const allCount = vendors?.length || 0;
+  const managedByMeCount = vendors?.filter((v: Vendor) => v.managed_by === user?.id).length || 0;
+  const managedByTeamCount = vendors?.filter((v: Vendor) => v.managed_by && teamAgentIds.includes(v.managed_by)).length || 0;
+
+  // Apply search filter
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery) return filteredByTab;
+    
+    const query = searchQuery.toLowerCase();
+    return filteredByTab.filter((vendor: Vendor) => (
+      vendor.first_name?.toLowerCase().includes(query) ||
+      vendor.last_name?.toLowerCase().includes(query) ||
+      vendor.email?.toLowerCase().includes(query) ||
+      vendor.primary_phone?.includes(query) ||
+      vendor.current_address?.toLowerCase().includes(query) ||
+      vendor.status?.toLowerCase().includes(query) ||
+      vendor.aml_status?.toLowerCase().includes(query) ||
+      (vendor.vendor_complete_info ? "complete info" : "incomplete info").includes(query)
+    ));
+  }, [filteredByTab, searchQuery]);
 
   const handleEdit = (vendor: Vendor) => {
     setSelectedVendor(vendor);
@@ -109,48 +155,12 @@ export default function Vendors() {
     );
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase();
-  };
-
-  const getFullName = (vendor: Vendor) => {
-    const parts = [vendor.first_name, vendor.last_name].filter(Boolean);
-    return parts.join(" ");
-  };
-
-  // Get team agent IDs
-  const teamAgentIds = teamAgents?.map(a => a.id) || [];
-  
-  // Apply filters and search
-  const filteredVendors = vendors?.filter((vendor: Vendor) => {
-    // Managed by Me filter
-    if (managedByMe && vendor.managed_by !== user?.id) return false;
-    
-    // Managed by My Team filter
-    if (managedByMyTeam && (!vendor.managed_by || !teamAgentIds.includes(vendor.managed_by))) return false;
-    
-    // Search filter
-    if (!searchQuery) return true;
-    
-    const query = searchQuery.toLowerCase();
-    return (
-      vendor.first_name?.toLowerCase().includes(query) ||
-      vendor.last_name?.toLowerCase().includes(query) ||
-      vendor.email?.toLowerCase().includes(query) ||
-      vendor.primary_phone?.includes(query) ||
-      vendor.current_address?.toLowerCase().includes(query) ||
-      vendor.status?.toLowerCase().includes(query) ||
-      vendor.aml_status?.toLowerCase().includes(query) ||
-      (vendor.vendor_complete_info ? "complete info" : "incomplete info").includes(query)
-    );
-  }) || [];
-
   return (
     <div>
       <Header title="Vendors" />
       <div className="p-6">
-        {/* Search Bar and Filters */}
-        <div className="mb-6 space-y-4">
+        {/* Search Bar */}
+        <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -175,29 +185,24 @@ export default function Vendors() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-me"
-                checked={managedByMe}
-                onCheckedChange={(checked) => setManagedByMe(checked === true)}
-              />
-              <Label htmlFor="managed-by-me" className="text-sm font-normal cursor-pointer">
-                Managed by Me
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="managed-by-team"
-                checked={managedByMyTeam}
-                onCheckedChange={(checked) => setManagedByMyTeam(checked === true)}
-              />
-              <Label htmlFor="managed-by-team" className="text-sm font-normal cursor-pointer">
-                Managed by My Team
-              </Label>
-            </div>
-          </div>
         </div>
+
+        {/* Filter Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Vendors ({allCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-me">
+              <User className="mr-2 h-4 w-4" />
+              Managed by Me ({managedByMeCount})
+            </TabsTrigger>
+            <TabsTrigger value="managed-by-team">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Managed by My Team ({managedByTeamCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="grid gap-6 md:grid-cols-2">
           {filteredVendors.map((vendor) => (
@@ -208,7 +213,7 @@ export default function Vendors() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xl font-bold text-white">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-xl font-bold text-white">
                       {getInitials(vendor.first_name, vendor.last_name)}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -290,10 +295,10 @@ export default function Vendors() {
         {filteredVendors.length === 0 && (
           <EmptyState
             icon={Store}
-            title={managedByMe || managedByMyTeam ? "No vendors found with this filter" : "No vendors yet"}
-            description={managedByMe || managedByMyTeam ? "Try adjusting your filters to see more results" : "Start building your sales network by adding your first vendor"}
-            actionLabel={managedByMe || managedByMyTeam ? undefined : "+ Add Vendor"}
-            onAction={managedByMe || managedByMyTeam ? undefined : () => {}}
+            title={searchQuery || activeTab !== "all" ? "No vendors found" : "No vendors yet"}
+            description={searchQuery || activeTab !== "all" ? "Try adjusting your search or filters to see more results" : "Start building your sales network by adding your first vendor"}
+            actionLabel={searchQuery || activeTab !== "all" ? undefined : "+ Add Vendor"}
+            onAction={searchQuery || activeTab !== "all" ? undefined : () => {}}
           />
         )}
       </div>
