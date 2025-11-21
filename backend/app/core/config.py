@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_PHONE_NUMBER: Optional[str] = None  # Your Twilio phone in E.164 format (e.g., +14155552671)
+    # Referencing service
+    REFERENCING_API_KEY : Optional[str] = None
+    REFERENCING_API_URL : Optional[str] = None
+
+    # Deposit service
+    DEPOSIT_API_KEY : Optional[str] = None
+    DEPOSIT_API_URL : Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")  # NEW WAY
 
