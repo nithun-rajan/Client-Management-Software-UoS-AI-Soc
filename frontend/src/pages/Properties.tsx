@@ -16,8 +16,15 @@ import {
   AlertCircle,
   User,
   UserCheck,
+  TrendingUp,
+  Brain,
+  Lightbulb,
+  BarChart,
+  Users,
+  Mail,
+  Send,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +58,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useApplicantMatching, useSendPropertyToApplicants, type MatchedApplicant } from "@/hooks/useApplicantMatching";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Properties() {
   const { data: properties, isLoading, refetch } = useProperties();
@@ -64,9 +73,42 @@ export default function Properties() {
   const [valuationPackOpen, setValuationPackOpen] = useState(false);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading property data...");
   const [activeTab, setActiveTab] = useState("all");
   const [managedByMe, setManagedByMe] = useState(false);
   const [managedByMyTeam, setManagedByMyTeam] = useState(false);
+  
+  // Applicant matching state
+  const [matchingDialogOpen, setMatchingDialogOpen] = useState(false);
+  const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
+  const [sendingToApplicants, setSendingToApplicants] = useState(false);
+  const applicantMatchingMutation = useApplicantMatching(50, 50);
+  const sendPropertyMutation = useSendPropertyToApplicants();
+
+  // Animated loading messages
+  useEffect(() => {
+    if (!generatingPack) return;
+
+    const messages = [
+      "Loading property data...",
+      "Fetching market information...",
+      "Thinking...",
+      "Analyzing property characteristics...",
+      "Comparing with similar properties...",
+      "Evaluating location factors...",
+      "Calculating optimal price...",
+      "Generating recommendations...",
+      "Almost done...",
+    ];
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % messages.length;
+      setLoadingMessage(messages[currentIndex]);
+    }, 2000); // Change message every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [generatingPack]);
 
   const handleEdit = (property: any) => {
     setSelectedProperty(property);
@@ -143,35 +185,113 @@ export default function Properties() {
 
   const handleGenerateValuationPack = async (property: any) => {
     setSelectedProperty(property);
+    setValuationPack(null); // Clear previous data
     setGeneratingPack(true);
+    setValuationPackOpen(true); // Open dialog immediately to show loading
     try {
-      const response = await api.post("/api/v1/land-registry/valuation-pack", {
-        postcode: property.postcode,
-        property_type: property.property_type,
-        bedrooms: property.bedrooms,
-        property_id: property.id,
-        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
+      // Extract house number from address_line1 or address
+      const addressToUse = property.address_line1 || property.address || "";
+      const houseNumber = addressToUse.split(',')[0].trim() || addressToUse.split(' ')[0].trim() || "1";
+      
+      // Use NEW AI-powered lettings valuation endpoint
+      const response = await api.get("/api/v1/land-registry/ai-lettings-valuation", {
+        params: {
+          postcode: property.postcode,
+          house_number: houseNumber,
+        }
       });
-      setValuationPack(response.data.data);
-      setValuationPackOpen(true);
+      setValuationPack(response.data);
       // Update property flag
       await api.patch(`/api/v1/properties/${property.id}`, {
         has_valuation_pack: true,
       });
       toast({
         title: "Success",
-        description: "Valuation pack generated successfully",
+        description: "AI-powered valuation generated successfully",
       });
       refetch();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error?.response?.data?.detail || "Failed to generate valuation pack",
+        description: error?.response?.data?.detail || "Failed to generate AI valuation",
         variant: "destructive",
       });
+      setValuationPackOpen(false); // Close dialog on error
     } finally {
       setGeneratingPack(false);
     }
+  };
+
+  const handleFindMatchingApplicants = async (property: any) => {
+    setSelectedProperty(property);
+    setSelectedApplicants([]); // Clear previous selections
+    try {
+      const result = await applicantMatchingMutation.mutateAsync(property.id);
+      if (result.matches.length > 0) {
+        // Pre-select top matches (score >= 75) up to 10 applicants
+        const topMatches = result.matches
+          .filter((m: MatchedApplicant) => m.score >= 75 && !m.already_sent)
+          .slice(0, 10)
+          .map((m: MatchedApplicant) => m.applicant_id);
+        setSelectedApplicants(topMatches);
+        setMatchingDialogOpen(true);
+      }
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+    }
+  };
+
+  const handleSendToApplicants = async () => {
+    if (selectedApplicants.length === 0) {
+      toast({
+        title: "No Applicants Selected",
+        description: "Please select at least one applicant to send to.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedApplicants.length > 20) {
+      if (!confirm(`You're about to send to ${selectedApplicants.length} applicants. Sending to many applicants at once may reduce response rates. Consider targeting your top matches. Continue anyway?`)) {
+        return;
+      }
+    }
+
+    setSendingToApplicants(true);
+    try {
+      await sendPropertyMutation.mutateAsync({
+        propertyId: selectedProperty.id,
+        applicantIds: selectedApplicants,
+        sendMethod: 'email'
+      });
+      setMatchingDialogOpen(false);
+      setSelectedApplicants([]);
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+    } finally {
+      setSendingToApplicants(false);
+    }
+  };
+
+  const toggleApplicantSelection = (applicantId: string) => {
+    setSelectedApplicants(prev => 
+      prev.includes(applicantId)
+        ? prev.filter(id => id !== applicantId)
+        : [...prev, applicantId]
+    );
+  };
+
+  const selectAllApplicants = () => {
+    if (applicantMatchingMutation.data) {
+      const allIds = applicantMatchingMutation.data.matches
+        .filter((m: MatchedApplicant) => !m.already_sent)
+        .map((m: MatchedApplicant) => m.applicant_id);
+      setSelectedApplicants(allIds);
+    }
+  };
+
+  const deselectAllApplicants = () => {
+    setSelectedApplicants([]);
   };
 
   const handleExportCSV = () => {
@@ -452,22 +572,34 @@ export default function Properties() {
                   )}
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
+              <CardFooter className="flex flex-col gap-2">
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleGenerateValuationPack(property)}
+                    disabled={generatingPack}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {property.has_valuation_pack ? "View Valuation" : "Generate Valuation"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Link to={`/properties/${property.id}`}>
+                      <Eye className="mr-1 h-4 w-4" />
+                      View
+                    </Link>
+                  </Button>
+                </div>
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="sm"
-                  className="flex-1"
-                  onClick={() => handleGenerateValuationPack(property)}
-                  disabled={generatingPack}
+                  className="w-full"
+                  onClick={() => handleFindMatchingApplicants(property)}
+                  disabled={applicantMatchingMutation.isPending}
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  {property.has_valuation_pack ? "View Valuation Pack" : "Generate Valuation Pack"}
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1" asChild>
-                  <Link to={`/properties/${property.id}`}>
-                    <Eye className="mr-1 h-4 w-4" />
-                    View
-                  </Link>
+                  <Users className="mr-2 h-4 w-4" />
+                  Find Matching Applicants
                 </Button>
               </CardFooter>
             </Card>
@@ -615,146 +747,417 @@ export default function Properties() {
         </DialogContent>
       </Dialog>
 
-      {/* Valuation Pack Dialog */}
+      {/* AI-Powered Valuation Pack Dialog */}
       <Dialog open={valuationPackOpen} onOpenChange={setValuationPackOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Valuation Pack - {selectedProperty?.address_line1 || selectedProperty?.address}
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Valuation - {selectedProperty?.address_line1 || selectedProperty?.address}
             </DialogTitle>
             <DialogDescription>
-              Comprehensive property valuation and market analysis
+              Intelligent property valuation powered by AI
             </DialogDescription>
           </DialogHeader>
 
-          {valuationPack && (
-            <div className="space-y-6">
-              {/* Recommended Valuation - Highlighted */}
-              {valuationPack.valuation_summary && (
-                <Card className="border-2 border-primary bg-primary/5">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Recommended Valuation & Price Range</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Quick Sale Range</div>
-                        <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.min?.toLocaleString()} - 
-                          £{Math.round((valuationPack.valuation_summary?.recommended_range?.min || 0) * 1.05).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-primary/10 p-3 border-2 border-primary">
-                        <div className="text-sm text-muted-foreground">Recommended Guide Price</div>
-                        <div className="text-xl font-bold text-primary">
-                          £{Math.round(((valuationPack.valuation_summary?.recommended_range?.min || 0) + (valuationPack.valuation_summary?.recommended_range?.max || 0)) / 2).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Aspirational Range</div>
-                        <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.max?.toLocaleString()}+
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Average Price:</strong> £{valuationPack.valuation_summary.average_price?.toLocaleString()} | 
-                      <strong> Median:</strong> £{valuationPack.valuation_summary.median_price?.toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Market Trend */}
-              {valuationPack.market_trend && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Market Trend</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-2">
-                      {valuationPack.market_trend.percentage_change > 0 ? (
-                        <AlertCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                      )}
-                      <span>
-                        {valuationPack.market_trend.percentage_change > 0 ? "Increasing" : "Decreasing"} by{" "}
-                        {Math.abs(valuationPack.market_trend.percentage_change).toFixed(1)}% over{" "}
-                        {valuationPack.market_trend.period}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Comparables */}
-              {valuationPack.comparables && valuationPack.comparables.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Comparative Sales</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {valuationPack.comparables.slice(0, 10).map((comp: any, idx: number) => (
-                        <div key={idx} className="flex justify-between border-b pb-2">
-                          <div>
-                            <div className="font-medium">{comp.address || `${comp.street}, ${comp.town}`}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {comp.property_type} | Sold {comp.date || comp.sold_date}
-                            </div>
-                          </div>
-                          <div className="font-bold">£{comp.price?.toLocaleString()}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Area Statistics */}
-              {valuationPack.area_statistics && 
-               valuationPack.area_statistics.total_sales > 0 && 
-               valuationPack.area_statistics.average_price > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Area Statistics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm text-muted-foreground">Total Sales</div>
-                        <div className="text-lg font-semibold">
-                          {valuationPack.area_statistics.total_sales.toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Average Price</div>
-                        <div className="text-lg font-semibold">
-                          £{valuationPack.area_statistics.average_price.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                    {valuationPack.area_statistics.time_period && (
-                      <div className="mt-3 text-xs text-muted-foreground">
-                        {valuationPack.area_statistics.time_period}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
+          {/* Loading State */}
           {generatingPack && !valuationPack && (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <div className="mb-2">Generating valuation pack...</div>
-                <p className="text-sm text-muted-foreground">This may take a few moments</p>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="relative">
+                <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                <Sparkles className="h-6 w-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-lg font-medium animate-pulse">{loadingMessage}</p>
+                <p className="text-sm text-muted-foreground">AI is working its magic ✨</p>
               </div>
             </div>
           )}
+
+          {/* AI Valuation Results */}
+          {valuationPack && valuationPack.ai_estimate && (
+            <div className="space-y-6">
+              {/* Price Estimate - Highlighted */}
+              <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    {valuationPack.valuation_type === 'lettings' ? 'Monthly Rent Estimate' : 'Sale Price Estimate'}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={valuationPack.ai_estimate.confidence === 'high' ? 'default' : 'secondary'}>
+                      {valuationPack.ai_estimate.confidence.toUpperCase()} CONFIDENCE
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">Powered by AI</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded-lg bg-background p-4 border">
+                      <div className="text-xs text-muted-foreground mb-1">Minimum</div>
+                      <div className="text-lg font-bold text-primary">
+                        £{valuationPack.ai_estimate.rent_range?.minimum?.toLocaleString() || valuationPack.ai_estimate.price_range?.minimum?.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-primary p-4 border-2 border-primary">
+                      <div className="text-xs text-primary-foreground/80 mb-1">Recommended</div>
+                      <div className="text-2xl font-bold text-primary-foreground">
+                        £{valuationPack.ai_estimate.monthly_rent?.toLocaleString() || valuationPack.ai_estimate.sale_price?.toLocaleString()}
+                      </div>
+                      {valuationPack.valuation_type === 'lettings' && <div className="text-xs text-primary-foreground/80 mt-1">per month</div>}
+                    </div>
+                    <div className="rounded-lg bg-background p-4 border">
+                      <div className="text-xs text-muted-foreground mb-1">Maximum</div>
+                      <div className="text-lg font-bold text-primary">
+                        £{valuationPack.ai_estimate.rent_range?.maximum?.toLocaleString() || valuationPack.ai_estimate.price_range?.maximum?.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {valuationPack.ai_estimate.price_per_sqm && (
+                    <div className="text-sm text-muted-foreground pt-2 border-t">
+                      <strong>Price per m²:</strong> £{valuationPack.ai_estimate.price_per_sqm.toLocaleString()}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* AI Reasoning */}
+              {valuationPack.ai_estimate.reasoning && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      AI Analysis & Reasoning
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed">{valuationPack.ai_estimate.reasoning}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Factors */}
+              {valuationPack.ai_estimate.factors && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Positive Factors */}
+                  {valuationPack.ai_estimate.factors.positive?.length > 0 && (
+                    <Card className="border-green-200 bg-green-50/50">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2 text-green-700">
+                          <CheckCircle className="h-4 w-4" />
+                          Positive Factors
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {valuationPack.ai_estimate.factors.positive.map((factor: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-green-600 mt-1">✓</span>
+                              <span>{factor}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Negative Factors */}
+                  {valuationPack.ai_estimate.factors.negative?.length > 0 && (
+                    <Card className="border-amber-200 bg-amber-50/50">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2 text-amber-700">
+                          <AlertCircle className="h-4 w-4" />
+                          Considerations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {valuationPack.ai_estimate.factors.negative.map((factor: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-amber-600 mt-1">⚠</span>
+                              <span>{factor}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Market Comparison */}
+              {valuationPack.ai_estimate.market_comparison && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart className="h-5 w-5" />
+                      Market Comparison
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">{valuationPack.ai_estimate.market_comparison}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recommendations */}
+              {valuationPack.ai_estimate.recommendations?.length > 0 && (
+                <Card className="border-blue-200 bg-blue-50/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-blue-700">
+                      <Lightbulb className="h-5 w-5" />
+                      AI Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {valuationPack.ai_estimate.recommendations.map((rec: string, idx: number) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-blue-600 font-bold mt-0.5">{idx + 1}.</span>
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Property Details */}
+              {valuationPack.property && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Property Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Address:</span>
+                        <div className="font-medium">{valuationPack.property.address}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Type:</span>
+                        <div className="font-medium">{valuationPack.property.property_type}</div>
+                      </div>
+                      {valuationPack.property.bedrooms && (
+                        <div>
+                          <span className="text-muted-foreground">Bedrooms:</span>
+                          <div className="font-medium">{valuationPack.property.bedrooms}</div>
+                        </div>
+                      )}
+                      {valuationPack.property.floor_area_sqm && (
+                        <div>
+                          <span className="text-muted-foreground">Floor Area:</span>
+                          <div className="font-medium">{valuationPack.property.floor_area_sqm} m²</div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Data Source */}
+              <div className="text-xs text-center text-muted-foreground pt-4 border-t">
+                {valuationPack.data_source} • Model: {valuationPack.ai_estimate.model_used}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Matching Applicants Dialog */}
+      <Dialog open={matchingDialogOpen} onOpenChange={setMatchingDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Matching Applicants for {selectedProperty?.address_line1}
+            </DialogTitle>
+            <DialogDescription>
+              Select applicants to send personalized property details via email
+            </DialogDescription>
+          </DialogHeader>
+
+          {applicantMatchingMutation.isPending && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Finding matching applicants...</p>
+              </div>
+            </div>
+          )}
+
+          {applicantMatchingMutation.data && (
+            <div className="space-y-4">
+              {/* Summary Stats */}
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Matches</p>
+                  <p className="text-2xl font-bold">{applicantMatchingMutation.data.total_matches}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Selected</p>
+                  <p className="text-2xl font-bold text-primary">{selectedApplicants.length}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={selectAllApplicants}>
+                    Select All
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={deselectAllApplicants}>
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+
+              {/* Warning for bulk sending */}
+              {selectedApplicants.length > 20 && (
+                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-900">Large recipient list</p>
+                    <p className="text-amber-700">
+                      Sending to many applicants at once may reduce response rates. Consider targeting your top matches.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Applicant List */}
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {applicantMatchingMutation.data.matches.map((match: MatchedApplicant) => {
+                  const isSelected = selectedApplicants.includes(match.applicant_id);
+                  const isAlreadySent = match.already_sent;
+                  const scoreColor = match.score >= 90 ? "text-green-600 bg-green-100" : 
+                                     match.score >= 75 ? "text-blue-600 bg-blue-100" : 
+                                     "text-gray-600 bg-gray-100";
+
+                  return (
+                    <Card 
+                      key={match.applicant_id} 
+                      className={`${isSelected ? "border-primary ring-2 ring-primary/20" : ""} ${isAlreadySent ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"} transition-colors`}
+                      onClick={() => !isAlreadySent && toggleApplicantSelection(match.applicant_id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          {/* Checkbox */}
+                          <Checkbox
+                            checked={isSelected}
+                            disabled={isAlreadySent}
+                            onCheckedChange={() => toggleApplicantSelection(match.applicant_id)}
+                            className="mt-1 pointer-events-none"
+                          />
+
+                          {/* Avatar */}
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>
+                              {match.applicant.first_name[0]}{match.applicant.last_name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          {/* Applicant Details */}
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-semibold">
+                                  {match.applicant.first_name} {match.applicant.last_name}
+                                </h4>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Mail className="h-3 w-3" />
+                                  {match.applicant.email}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={scoreColor}>
+                                  {match.score}% Match
+                                </Badge>
+                                {isAlreadySent && (
+                                  <Badge variant="outline" className="bg-gray-100">
+                                    Sent {new Date(match.sent_date!).toLocaleDateString()}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Match Criteria */}
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <Badge variant="outline" className="font-normal">
+                                <Bed className="h-3 w-3 mr-1" />
+                                {match.applicant.desired_bedrooms} beds
+                              </Badge>
+                              <Badge variant="outline" className="font-normal">
+                                <PoundSterling className="h-3 w-3 mr-1" />
+                                {match.applicant.budget}
+                              </Badge>
+                              {match.applicant.move_in_date && (
+                                <Badge variant="outline" className="font-normal">
+                                  Move-in: {new Date(match.applicant.move_in_date).toLocaleDateString()}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Match Reasons */}
+                            {match.match_reasons.length > 0 && (
+                              <div className="text-xs space-y-1">
+                                {match.match_reasons.map((reason, idx) => (
+                                  <div key={idx} className="flex items-center gap-1 text-muted-foreground">
+                                    <CheckCircle className="h-3 w-3 text-green-600" />
+                                    {reason}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Personalized Message Preview */}
+                            <details className="text-sm" onClick={(e) => e.stopPropagation()}>
+                              <summary className="cursor-pointer text-primary hover:underline">
+                                View personalized message
+                              </summary>
+                              <div className="mt-2 p-3 bg-muted/50 rounded text-xs whitespace-pre-wrap">
+                                {match.personalized_message}
+                              </div>
+                            </details>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Empty State */}
+              {applicantMatchingMutation.data.matches.length === 0 && (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-lg font-semibold">No Matching Applicants</p>
+                  <p className="text-sm text-muted-foreground">
+                    No active applicants match this property's criteria at the moment.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMatchingDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendToApplicants}
+              disabled={selectedApplicants.length === 0 || sendingToApplicants}
+            >
+              {sendingToApplicants ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send to {selectedApplicants.length} Applicant{selectedApplicants.length !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,5 +1,6 @@
 
 
+from .ai_call import AICall
 from .applicant import Applicant
 from .landlord import Landlord
 from .property import Property
@@ -20,6 +21,7 @@ from .notification import Notification
 from .tickets import Ticket
 
 __all__ = [
+    "AICall",
     "Applicant",
     "Landlord",
     "Property",

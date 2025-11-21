@@ -393,4 +393,66 @@ export interface Ticket {
   created_at: string;
   updated_at?: string;
 }
->>>>>>> pivzavod-3
+
+// AI Call Agent Types
+export interface ExtractedApplicantData {
+  full_name?: string;
+  confirmed_phone?: string;
+  employment_status?: string;
+  monthly_income?: number;
+  number_of_adults?: number;
+  number_of_children?: number;
+  has_pets?: boolean;
+  pet_type?: string;
+  pet_count?: number;
+  pet_details?: string;
+  budget_min?: number;
+  budget_max?: number;
+  preferred_locations?: string[];
+  desired_bedrooms?: string;
+  desired_property_type?: string;
+  move_in_date?: string;
+  buying_timeline?: string;
+  parking_required?: boolean;
+  outdoor_space_required?: boolean;
+  accessibility_requirements?: string;
+  special_requirements?: string;
+  additional_notes?: string;
+}
+
+export interface AICall {
+  id: string;
+  applicant_id: string;
+  created_by_user_id: string;
+  phone_number: string;
+  user_context?: string;
+  status: "pending" | "in_progress" | "completed" | "failed" | "no_answer";
+  ultravox_call_id?: string;
+  duration_seconds?: number;
+  transcript?: string;
+  summary?: string;
+  extracted_data?: ExtractedApplicantData;
+  recording_url?: string;
+  error_message?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AICallSummary {
+  id: string;
+  applicant_id: string;
+  status: "pending" | "in_progress" | "completed" | "failed" | "no_answer";
+  duration_seconds?: number;
+  summary?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
+export interface AICallCreate {
+  applicant_id: string;
+  phone_number?: string;
+  user_context?: string;
+}
