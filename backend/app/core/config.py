@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: Optional[str] = None
     DEFAULT_FROM_EMAIL: Optional[str] = None
 
+    # AI Call Agent (Ultravox + Twilio)
+    ULTRAVOX_API_KEY: Optional[str] = None
+    ULTRAVOX_AGENT_ID: Optional[str] = None  # Ultravox Agent ID for calls
+    TWILIO_ACCOUNT_SID: Optional[str] = None
+    TWILIO_AUTH_TOKEN: Optional[str] = None
+    TWILIO_PHONE_NUMBER: Optional[str] = None  # Your Twilio phone in E.164 format (e.g., +14155552671)
     # Referencing service
     REFERENCING_API_KEY : Optional[str] = None
     REFERENCING_API_URL : Optional[str] = None

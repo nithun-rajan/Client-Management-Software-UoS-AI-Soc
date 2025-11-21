@@ -141,49 +141,83 @@ def create_landlords(db: Session, count: int = 10):
     return landlords
 
 def create_applicants(db: Session, count: int = 15):
-    """Create realistic applicants"""
-    print(f"\n[*] Creating {count} applicants...")
+    """Create realistic applicants with criteria that match existing properties"""
+    print(f"\n[*] Creating {count} applicants (with property matching in mind)...")
 
-    # Get status values from ApplicantStatus class
+    # Get status values from ApplicantStatus class - focus on active applicants
     statuses = [
         ApplicantStatus.NEW,
+        ApplicantStatus.NEW,
+        ApplicantStatus.NEW,  # More new applicants for matching
         ApplicantStatus.QUALIFIED,
         ApplicantStatus.VIEWING_BOOKED,
-        ApplicantStatus.OFFER_SUBMITTED,
-        ApplicantStatus.OFFER_ACCEPTED,
-        ApplicantStatus.REFERENCES,
-        ApplicantStatus.LET_AGREED,
-        ApplicantStatus.TENANCY_STARTED,
-        ApplicantStatus.ARCHIVED,
     ]
-    uk_postcodes = ["SO14", "SO15", "SO16", "SW1", "SW2", "E1", "E2", "M1", "M2"]
+    
+    uk_cities = ["Southampton", "London", "Manchester", "Birmingham", "Leeds", "Bristol"]
+
+    # Define bedroom preferences (mix of exact and ranges)
+    bedroom_options = [
+        "1", "2", "3", "4",  # Exact matches
+        "1-2", "2-3", "3-4",  # Ranges
+    ]
 
     applicants = []
     for i in range(count):
-        bedrooms_min = random.randint(1, 3)
-        bedrooms_max = bedrooms_min + random.randint(0, 2)
-        desired_bedrooms = f"{bedrooms_min}-{bedrooms_max}"
-        rent_min = random.randint(800, 1500)
-        rent_max = rent_min + random.randint(500, 1500)
+        # Pick bedroom preference
+        desired_bedrooms = random.choice(bedroom_options)
+        
+        # Calculate budget based on bedroom preference
+        # This ensures they match the property rent ranges we created
+        if "1" in desired_bedrooms:
+            rent_min = random.randint(500, 800)
+            rent_max = rent_min + random.randint(300, 700)
+        elif "2" in desired_bedrooms:
+            rent_min = random.randint(700, 1000)
+            rent_max = rent_min + random.randint(400, 800)
+        elif "3" in desired_bedrooms:
+            rent_min = random.randint(900, 1300)
+            rent_max = rent_min + random.randint(500, 1000)
+        else:  # 4+ bedrooms
+            rent_min = random.randint(1200, 1600)
+            rent_max = rent_min + random.randint(600, 1200)
+        
+        # Vary some budgets to create partial matches
+        if random.random() < 0.3:  # 30% have tighter budgets
+            rent_max = rent_min + random.randint(200, 400)
+        
         move_date = fake.date_between(start_date='today', end_date='+3m')
-        has_pets = random.choice([True, False])
+        has_pets = random.choice([True, False, False])  # 1/3 have pets
+        has_parking_requirement = random.choice([True, False])
+        
+        # Create applicant
         applicant = Applicant(
             first_name=fake.first_name(),
             last_name=fake.last_name(),
             email=fake.unique.email(),
             phone=fake.phone_number(),
-            date_of_birth=fake.date_between(start_date='-40y', end_date='-18y'),
+            date_of_birth=fake.date_between(start_date='-40y', end_date='-21y'),
             status=random.choice(statuses),
             desired_bedrooms=desired_bedrooms,
             desired_property_type=random.choice(["flat", "house", "maisonette"]),
             rent_budget_min=rent_min,
             rent_budget_max=rent_max,
-            preferred_locations=f"{random.choice(uk_postcodes)}, {random.choice(uk_postcodes)}",
+            preferred_locations=random.choice(uk_cities),  # Use city names for easier matching
             move_in_date=move_date,
             has_pets=has_pets,
-            pet_details=("Has a small dog" if has_pets else None),
-            special_requirements=("Ground floor preferred" if random.choice([True, False]) else None),
-            willing_to_rent=True,  # All existing applicants are tenants
+            pet_details=(
+                random.choice(["Has a small dog", "Has a cat", "Has two cats"]) 
+                if has_pets else None
+            ),
+            special_requirements=(
+                random.choice([
+                    "Parking required",
+                    "Ground floor preferred",
+                    "Near schools",
+                    "Good transport links",
+                    "Quiet area preferred"
+                ]) if random.random() < 0.4 else None
+            ),
+            willing_to_rent=True,  # All these applicants are tenants
             willing_to_buy=False,
         )
 
@@ -194,7 +228,7 @@ def create_applicants(db: Session, count: int = 15):
             print(f"   Created {i + 1}/{count} applicants...")
 
     db.commit()
-    print(f"[OK] Created {count} applicants (tenants)")
+    print(f"[OK] Created {count} applicants (tenants) with matching criteria")
     return applicants
 
 def create_buyers(db: Session, count: int = 10):

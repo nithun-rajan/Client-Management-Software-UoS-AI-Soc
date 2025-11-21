@@ -39,6 +39,7 @@ class ValuationPackRequest(BaseModel):
 async def lookup_specific_property(
     house_number: str = Query(..., description="House number or flat number (e.g., '123' or 'Flat 5')"),
     postcode: str = Query(..., description="UK postcode (e.g., 'SO15 2JS')"),
+    tier: str = Query("core", description="Data tier: 'core' (£0.10) or 'premium' (£0.50)"),
 ):
     """
     🏠 Look Up Specific Property by Address
@@ -54,9 +55,13 @@ async def lookup_specific_property(
     - Price trends over time
     - Google Maps link
     
+    **API Tiers:**
+    - **Core (£0.10)**: Essential data - sales history, EPC, property type, characteristics
+    - **Premium (£0.50)**: All core data PLUS planning applications, enhanced market stats
+    
     **Example:**
     ```
-    GET /api/v1/land-registry/lookup-property?house_number=10&postcode=SW1A%201AA
+    GET /api/v1/land-registry/lookup-property?house_number=10&postcode=SW1A%201AA&tier=premium
     ```
     
     **Returns:**
@@ -65,6 +70,8 @@ async def lookup_specific_property(
     - Price appreciation/depreciation
     - Property characteristics
     - Google Maps URL
+    - (Premium only) Planning applications
+    - (Premium only) Enhanced area statistics
     """
     try:
         # Use data.street.co.uk API (commercial, real data!)
@@ -72,12 +79,15 @@ async def lookup_specific_property(
         property_data = await service.lookup_property(
             postcode=postcode,
             house_number=house_number,
+            tier=tier,
         )
         
         return {
             "success": True,
             "data": property_data,
             "source": "data.street.co.uk Property API",
+            "tier": tier,
+            "cost_gbp": property_data.get("api_cost", 0.10 if tier == "core" else 0.50),
         }
     except ValueError as e:
         # API key not configured
@@ -418,4 +428,220 @@ async def land_registry_health_check():
             "success": False,
             "message": f"Error: {str(e)}",
         }
+
+
+@router.get("/ai-lettings-valuation")
+async def ai_lettings_valuation(
+    postcode: str = Query(..., description="UK postcode (e.g., 'SO17 1BJ')"),
+    house_number: str = Query(..., description="House number or name (e.g., '1' or 'Flat 5')"),
+):
+    """
+    🤖 AI-Powered Lettings Valuation
+    
+    Get an intelligent monthly rent estimate using AI analysis of comprehensive property data.
+    
+    This endpoint:
+    1. Fetches property data from Data.Street API (Core tier)
+    2. Analyzes using OpenAI GPT-4o-mini
+    3. Returns detailed rent estimate with reasoning
+    
+    **Perfect for:**
+    - Landlord valuations
+    - Rental pricing strategy
+    - Market positioning
+    - Tenant affordability analysis
+    
+    **Returns:**
+    - Estimated monthly rent
+    - Rent range (min/max/optimal)
+    - Confidence level
+    - Positive/negative factors
+    - Market comparison
+    - Actionable recommendations
+    
+    **Example:**
+    ```
+    GET /api/v1/land-registry/ai-lettings-valuation?house_number=1&postcode=SO17%201BJ
+    ```
+    """
+    try:
+        # Fetch property data from Data.Street API
+        data_street_service = await get_data_street_service()
+        property_data = await data_street_service.lookup_property(
+            postcode=postcode,
+            house_number=house_number,
+        )
+        
+        if not property_data.get("found"):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Property not found: {property_data.get('message', 'Unknown error')}"
+            )
+        
+        # Get AI-powered rent estimation
+        llm_service = await get_llm_service()
+        ai_analysis = await llm_service.estimate_monthly_rent(property_data)
+        
+        if not ai_analysis.get("success"):
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI analysis failed: {ai_analysis.get('error', 'Unknown error')}"
+            )
+        
+        return {
+            "success": True,
+            "valuation_type": "lettings",
+            "property": {
+                "address": property_data.get("full_address"),
+                "postcode": postcode,
+                "property_type": property_data.get("property_type"),
+                "bedrooms": property_data.get("bedrooms"),
+                "bathrooms": property_data.get("bathrooms"),
+                "floor_area_sqm": property_data.get("floor_area_sqm"),
+            },
+            "ai_estimate": {
+                "monthly_rent": ai_analysis.get("estimated_rent"),
+                "rent_range": ai_analysis.get("rent_range", {}),
+                "confidence": ai_analysis.get("confidence"),
+                "reasoning": ai_analysis.get("reasoning"),
+                "factors": ai_analysis.get("factors", {}),
+                "market_comparison": ai_analysis.get("market_comparison"),
+                "recommendations": ai_analysis.get("recommendations", []),
+                "price_per_sqm": ai_analysis.get("price_per_sqm"),
+                "model_used": ai_analysis.get("model_used"),
+            },
+            "data_source": "AI-Powered Analysis (OpenAI + Data.Street API Core Tier)"
+        }
+        
+    except ValueError as e:
+        # API key not configured
+        error_msg = str(e)
+        if "OPENAI_API_KEY" in error_msg:
+            raise HTTPException(
+                status_code=500,
+                detail="OPENAI_API_KEY not configured. Please add your OpenAI API key to .env file."
+            )
+        elif "DATA_STREET_API_KEY" in error_msg:
+            raise HTTPException(
+                status_code=500,
+                detail="DATA_STREET_API_KEY not configured. Please add your Data.Street API key to .env file."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating lettings valuation: {str(e)}"
+        )
+
+
+@router.get("/ai-sales-valuation")
+async def ai_sales_valuation(
+    postcode: str = Query(..., description="UK postcode (e.g., 'SO17 1BJ')"),
+    house_number: str = Query(..., description="House number or name (e.g., '1' or 'Flat 5')"),
+):
+    """
+    🤖 AI-Powered Sales Valuation
+    
+    Get an intelligent sale price estimate using AI analysis of comprehensive property data.
+    
+    This endpoint:
+    1. Fetches property data from Data.Street API (Core tier)
+    2. Analyzes using OpenAI GPT-4o-mini
+    3. Returns detailed sale price estimate with reasoning
+    
+    **Perfect for:**
+    - Vendor valuations
+    - Pricing strategy
+    - Market positioning
+    - Investment analysis
+    
+    **Returns:**
+    - Estimated sale price
+    - Price range (min/max/optimal)
+    - Confidence level
+    - Positive/negative factors
+    - Market comparison
+    - Actionable recommendations
+    
+    **Example:**
+    ```
+    GET /api/v1/land-registry/ai-sales-valuation?house_number=1&postcode=SO17%201BJ
+    ```
+    """
+    try:
+        # Fetch property data from Data.Street API
+        data_street_service = await get_data_street_service()
+        property_data = await data_street_service.lookup_property(
+            postcode=postcode,
+            house_number=house_number,
+        )
+        
+        if not property_data.get("found"):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Property not found: {property_data.get('message', 'Unknown error')}"
+            )
+        
+        # Get AI-powered sale price estimation
+        llm_service = await get_llm_service()
+        ai_analysis = await llm_service.estimate_sale_price(property_data)
+        
+        if not ai_analysis.get("success"):
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI analysis failed: {ai_analysis.get('error', 'Unknown error')}"
+            )
+        
+        return {
+            "success": True,
+            "valuation_type": "sales",
+            "property": {
+                "address": property_data.get("full_address"),
+                "postcode": postcode,
+                "property_type": property_data.get("property_type"),
+                "bedrooms": property_data.get("bedrooms"),
+                "bathrooms": property_data.get("bathrooms"),
+                "floor_area_sqm": property_data.get("floor_area_sqm"),
+                "last_sold_price": property_data.get("latest_sale", {}).get("price") if property_data.get("latest_sale") else None,
+                "last_sold_date": property_data.get("latest_sale", {}).get("date") if property_data.get("latest_sale") else None,
+            },
+            "ai_estimate": {
+                "sale_price": ai_analysis.get("estimated_sale_price"),
+                "price_range": ai_analysis.get("price_range", {}),
+                "confidence": ai_analysis.get("confidence"),
+                "reasoning": ai_analysis.get("reasoning"),
+                "factors": ai_analysis.get("factors", {}),
+                "market_comparison": ai_analysis.get("market_comparison"),
+                "recommendations": ai_analysis.get("recommendations", []),
+                "price_per_sqm": ai_analysis.get("price_per_sqm"),
+                "model_used": ai_analysis.get("model_used"),
+            },
+            "data_source": "AI-Powered Analysis (OpenAI + Data.Street API Core Tier)"
+        }
+        
+    except ValueError as e:
+        # API key not configured
+        error_msg = str(e)
+        if "OPENAI_API_KEY" in error_msg:
+            raise HTTPException(
+                status_code=500,
+                detail="OPENAI_API_KEY not configured. Please add your OpenAI API key to .env file."
+            )
+        elif "DATA_STREET_API_KEY" in error_msg:
+            raise HTTPException(
+                status_code=500,
+                detail="DATA_STREET_API_KEY not configured. Please add your Data.Street API key to .env file."
+            )
+        else:
+            raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating sales valuation: {str(e)}"
+        )
 

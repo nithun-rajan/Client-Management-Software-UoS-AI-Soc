@@ -1,5 +1,6 @@
 
 
+from .ai_call import AICall
 from .applicant import Applicant
 from .landlord import Landlord
 from .property import Property
@@ -22,6 +23,7 @@ from .tickets import Ticket
 from .calendar import AgentAvailability, PropertyViewingSlot, ViewingScheduleRule, ViewingConflict
 
 __all__ = [
+    "AICall",
     "Applicant",
     "Landlord",
     "Property",

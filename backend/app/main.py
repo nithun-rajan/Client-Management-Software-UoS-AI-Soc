@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional
 from app.core.database import Base, engine, get_db, SessionLocal
 import app.models  # ensure all models are registered before table creation
 from app.models import Property, User, Landlord, Applicant
-from app.api.v1 import properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations, calendar
+from app.api.v1 import ai_calls, properties, landlords, applicants, agents, search, kpis, events, property_matching, land_registry, messaging, tickets, tenancy, tasks, vendors, viewings, offers, workflows, notifications, sales, auth, documents, maintenance, valuations, calendar
 
 
 
@@ -165,7 +165,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -334,6 +340,7 @@ def health_check():
 
 
 # Register all routers
+app.include_router(ai_calls.router, prefix="/api/v1")  # 🤖 AI Call Agent
 app.include_router(properties.router, prefix="/api/v1")
 app.include_router(landlords.router, prefix="/api/v1")
 app.include_router(applicants.router, prefix="/api/v1")

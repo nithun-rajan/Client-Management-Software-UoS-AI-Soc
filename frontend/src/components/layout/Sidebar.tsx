@@ -97,9 +97,9 @@ export default function Sidebar() {
           />
           <div>
             <div className="text-lg font-bold leading-tight text-white">
-              UoS Scouting
+              Properly CRM
             </div>
-            <div className="text-xs text-white/70">Challenge</div>
+            <div className="text-xs text-white/70">Estate Management</div>
           </div>
         </div>
 

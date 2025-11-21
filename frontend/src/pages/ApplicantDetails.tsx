@@ -19,6 +19,7 @@ import {
   Trash2,
   Edit,
   UserCheck,
+  PhoneCall,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ import { useTickets } from "@/hooks/useTickets";
 import { useOffers } from "@/hooks/useOffers";
 import NotesSection from "@/components/shared/NotesSection";
 import { useAuth } from "@/hooks/useAuth";
+import { useApplicantAICalls } from "@/hooks/useAICalls";
+import AICallSummaryCard from "@/components/voice/AICallSummaryCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,6 +141,9 @@ export default function ApplicantDetails() {
   const applicantOffers = allOffers?.filter(
     (offer) => offer.applicant_id === applicant?.id
   ) || [];
+
+  // Get AI call history for this applicant
+  const { data: aiCalls = [] } = useApplicantAICalls(id || "");
 
 
   if (isLoading) {
@@ -992,6 +998,25 @@ export default function ApplicantDetails() {
               />
             </div>
           </div>
+
+          {/* AI Call History Section */}
+          {aiCalls && aiCalls.length > 0 && (
+            <div className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PhoneCall className="h-5 w-5" />
+                    AI Call History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {aiCalls.map((call) => (
+                    <AICallSummaryCard key={call.id} call={call} />
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
 

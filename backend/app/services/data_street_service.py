@@ -46,6 +46,7 @@ class DataStreetService:
         self,
         postcode: str,
         house_number: Optional[str] = None,
+        tier: str = "core",
     ) -> Dict[str, Any]:
         """
         Look up a specific property by postcode and optionally house number
@@ -53,17 +54,26 @@ class DataStreetService:
         Args:
             postcode: UK postcode
             house_number: Optional house number/name
+            tier: API tier - "core" (£0.10) or "premium" (£0.50)
+                 - Core: Essential data (sales history, EPC, property type)
+                 - Premium: Includes planning applications, enhanced statistics
             
         Returns:
             Property details including sold prices, valuations, EPCs
         """
         try:
+            # Validate tier
+            if tier not in ["core", "premium"]:
+                tier = "core"  # Default to core if invalid
+            
             # Build address string for the API
             address = house_number if house_number else ""
             
-            # Use the correct endpoint: /properties/addresses?tier=premium (POST)
+            # Use the correct endpoint with selected tier
+            # Core tier: £0.10 per property - provides all essential data
+            # Premium tier: £0.50 per property - adds planning applications, enhanced stats
             response = await self.client.post(
-                f"{self.BASE_URL}/properties/addresses?tier=premium",
+                f"{self.BASE_URL}/properties/addresses?tier={tier}",
                 json={
                     "data": {
                         "address": address,
@@ -97,7 +107,22 @@ class DataStreetService:
             
             # Parse and return the comprehensive property data
             # Pass the full response data for comprehensive parsing
-            return self._parse_datastreet_response(property_data, postcode, house_number)
+            parsed_data = self._parse_datastreet_response(property_data, postcode, house_number)
+            
+            # Add tier information and cost to the response
+            parsed_data["api_tier"] = tier
+            parsed_data["api_cost"] = 0.10 if tier == "core" else 0.50
+            
+            # Include metadata if available
+            if "meta" in response_data:
+                meta = response_data["meta"]
+                parsed_data["api_metadata"] = {
+                    "cost_gbp": meta.get("request_cost_gbp"),
+                    "balance_gbp": meta.get("balance_gbp"),
+                    "address_match_confidence": meta.get("address_match_confidence"),
+                }
+            
+            return parsed_data
             
         except httpx.HTTPError as e:
             print(f"Data.Street API Error: {e}")

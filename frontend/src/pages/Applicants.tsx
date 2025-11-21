@@ -17,6 +17,8 @@ import {
   Calendar,
   Search,
   X,
+  UserCheck,
+  PhoneCall,
 } from "lucide-react";
 import {
   Card,
@@ -45,6 +47,9 @@ import EmptyState from "@/components/shared/EmptyState";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTeamAgents } from "@/hooks/useAgents";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import AICallButton from "@/components/voice/AICallButton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMemo } from "react";
 import BookViewingDialog from "@/components/shared/BookViewingDialog";
@@ -259,16 +264,22 @@ export default function Applicants() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                   onClick={() => handleFindMatches(applicant.id)}
                   disabled={matchingMutation.isPending}
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
                   {matchingMutation.isPending && selectedApplicantId === applicant.id
                     ? "Finding..."
-                    : "Find Matches"}
+                    : "Matches"}
                 </Button>
-                <Button variant="outline" size="sm" className="w-full" asChild>
+                <AICallButton 
+                  applicant={applicant} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex-1"
+                />
+                <Button variant="outline" size="sm" className="flex-1" asChild>
                   <Link to={`/applicants/${applicant.id}`}>
                     <Eye className="mr-2 h-4 w-4" />
                     View

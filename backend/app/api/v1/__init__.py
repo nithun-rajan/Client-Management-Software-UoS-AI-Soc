@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    ai_calls,
     applicants, 
     agents,
     auth, 
@@ -26,6 +27,7 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 
+api_router.include_router(ai_calls.router)
 api_router.include_router(applicants.router)
 api_router.include_router(agents.router)
 api_router.include_router(auth.router)

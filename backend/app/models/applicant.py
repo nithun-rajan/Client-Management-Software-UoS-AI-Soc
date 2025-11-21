@@ -46,6 +46,7 @@ class Applicant(BaseModel):
     sales_progression = relationship("SalesProgression", back_populates="buyer")
     sales_offers = relationship("SalesOffer", back_populates="buyer")  # Sales offers
     reported_tickets = relationship("Ticket", back_populates="reporter")
+    ai_calls = relationship("AICall", back_populates="applicant")  # AI phone call records
 
     # Sales buyer specific fields
     buyer_type = Column(String)

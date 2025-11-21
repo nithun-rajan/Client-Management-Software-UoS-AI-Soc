@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   User,
@@ -14,6 +14,10 @@ import {
   Download,
   Search,
   X,
+  TrendingUp,
+  Brain,
+  Lightbulb,
+  BarChart,
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +54,7 @@ export default function PropertiesForSale() {
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [valuationPack, setValuationPack] = useState<any>(null);
   const [generatingPack, setGeneratingPack] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading property data...");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
@@ -93,33 +98,64 @@ export default function PropertiesForSale() {
     ));
   }, [filteredByTab, searchQuery]);
 
+  // Animated loading messages
+  useEffect(() => {
+    if (!generatingPack) return;
+
+    const messages = [
+      "Loading property data...",
+      "Fetching market information...",
+      "Thinking...",
+      "Analyzing property characteristics...",
+      "Comparing with similar properties...",
+      "Evaluating location factors...",
+      "Calculating optimal price...",
+      "Generating recommendations...",
+      "Almost done...",
+    ];
+
+    let currentIndex = 0;
+    const interval = setInterval(() => {
+      currentIndex = (currentIndex + 1) % messages.length;
+      setLoadingMessage(messages[currentIndex]);
+    }, 2000); // Change message every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [generatingPack]);
+
   const handleGenerateValuationPack = async (property: any) => {
     setSelectedProperty(property);
+    setValuationPack(null); // Clear previous data
     setGeneratingPack(true);
+    setValuationPackOpen(true); // Open dialog immediately to show loading
     try {
-      const response = await api.post("/api/v1/land-registry/valuation-pack", {
-        postcode: property.postcode,
-        property_type: property.property_type,
-        bedrooms: property.bedrooms,
-        property_id: property.id,
-        asking_price: property.asking_price ? parseFloat(property.asking_price.toString()) : null,
+      // Extract house number from address_line1 or address
+      const addressToUse = property.address_line1 || property.address || "";
+      const houseNumber = addressToUse.split(',')[0].trim() || addressToUse.split(' ')[0].trim() || "1";
+      
+      // Use NEW AI-powered sales valuation endpoint
+      const response = await api.get("/api/v1/land-registry/ai-sales-valuation", {
+        params: {
+          postcode: property.postcode,
+          house_number: houseNumber,
+        }
       });
-      setValuationPack(response.data.data);
-      setValuationPackOpen(true);
+      setValuationPack(response.data);
       // Update property flag
       await api.patch(`/api/v1/properties/${property.id}`, {
         has_valuation_pack: true,
       });
       toast({
         title: "Success",
-        description: "Valuation pack generated successfully",
+        description: "AI-powered valuation generated successfully",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error?.response?.data?.detail || "Failed to generate valuation pack",
+        description: error?.response?.data?.detail || "Failed to generate AI valuation",
         variant: "destructive",
       });
+      setValuationPackOpen(false); // Close dialog on error
     } finally {
       setGeneratingPack(false);
     }
@@ -363,103 +399,218 @@ export default function PropertiesForSale() {
         )}
       </div>
 
-      {/* Valuation Pack Dialog */}
+      {/* AI-Powered Valuation Pack Dialog */}
       <Dialog open={valuationPackOpen} onOpenChange={setValuationPackOpen}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Valuation Pack - {selectedProperty?.address_line1}
+              <Sparkles className="h-5 w-5 text-primary" />
+              AI Valuation - {selectedProperty?.address_line1}
             </DialogTitle>
             <DialogDescription>
-              Comprehensive property valuation and market analysis
+              Intelligent property valuation powered by AI
             </DialogDescription>
           </DialogHeader>
 
-          {valuationPack && (
+          {/* Loading State */}
+          {generatingPack && !valuationPack && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="relative">
+                <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                <Sparkles className="h-6 w-6 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-lg font-medium animate-pulse">{loadingMessage}</p>
+                <p className="text-sm text-muted-foreground">AI is working its magic ✨</p>
+              </div>
+            </div>
+          )}
+
+          {/* AI Valuation Results */}
+          {valuationPack && valuationPack.ai_estimate && (
             <div className="space-y-6">
-              {/* Recommended Valuation - Highlighted */}
-              {valuationPack.valuation_summary && (
-                <Card className="border-2 border-primary bg-primary/5">
+              {/* Price Estimate - Highlighted */}
+              <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Sale Price Estimate
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={valuationPack.ai_estimate.confidence === 'high' ? 'default' : 'secondary'}>
+                      {valuationPack.ai_estimate.confidence.toUpperCase()} CONFIDENCE
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">Powered by AI</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="rounded-lg bg-background p-4 border">
+                      <div className="text-xs text-muted-foreground mb-1">Minimum</div>
+                      <div className="text-lg font-bold text-primary">
+                        £{valuationPack.ai_estimate.price_range?.minimum?.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-primary p-4 border-2 border-primary">
+                      <div className="text-xs text-primary-foreground/80 mb-1">Recommended</div>
+                      <div className="text-2xl font-bold text-primary-foreground">
+                        £{valuationPack.ai_estimate.sale_price?.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-background p-4 border">
+                      <div className="text-xs text-muted-foreground mb-1">Maximum</div>
+                      <div className="text-lg font-bold text-primary">
+                        £{valuationPack.ai_estimate.price_range?.maximum?.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {valuationPack.ai_estimate.price_per_sqm && (
+                    <div className="text-sm text-muted-foreground pt-2 border-t">
+                      <strong>Price per m²:</strong> £{valuationPack.ai_estimate.price_per_sqm.toLocaleString()}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* AI Reasoning */}
+              {valuationPack.ai_estimate.reasoning && (
+                <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Recommended Valuation & Price Range</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      AI Analysis & Reasoning
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Quick Sale Range</div>
-                        <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.min?.toLocaleString()} - 
-                          £{Math.round((valuationPack.valuation_summary?.recommended_range?.min || 0) * 1.05).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-primary/10 p-3 border-2 border-primary">
-                        <div className="text-sm text-muted-foreground">Recommended Guide Price</div>
-                        <div className="text-xl font-bold text-primary">
-                          £{Math.round(((valuationPack.valuation_summary?.recommended_range?.min || 0) + (valuationPack.valuation_summary?.recommended_range?.max || 0)) / 2).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-background p-3">
-                        <div className="text-sm text-muted-foreground">Aspirational Range</div>
-                        <div className="text-lg font-bold text-primary">
-                          £{valuationPack.valuation_summary?.recommended_range?.max?.toLocaleString()}+
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Average Price:</strong> £{valuationPack.valuation_summary.average_price?.toLocaleString()} | 
-                      <strong> Median:</strong> £{valuationPack.valuation_summary.median_price?.toLocaleString()}
-                    </div>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed">{valuationPack.ai_estimate.reasoning}</p>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Market Trend */}
-              {valuationPack.market_trend && (
+              {/* Factors */}
+              {valuationPack.ai_estimate.factors && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Positive Factors */}
+                  {valuationPack.ai_estimate.factors.positive?.length > 0 && (
+                    <Card className="border-green-200 bg-green-50/50">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2 text-green-700">
+                          <CheckCircle className="h-4 w-4" />
+                          Positive Factors
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {valuationPack.ai_estimate.factors.positive.map((factor: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-green-600 mt-1">✓</span>
+                              <span>{factor}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Negative Factors */}
+                  {valuationPack.ai_estimate.factors.negative?.length > 0 && (
+                    <Card className="border-amber-200 bg-amber-50/50">
+                      <CardHeader>
+                        <CardTitle className="text-sm flex items-center gap-2 text-amber-700">
+                          <AlertCircle className="h-4 w-4" />
+                          Considerations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {valuationPack.ai_estimate.factors.negative.map((factor: string, idx: number) => (
+                            <li key={idx} className="text-sm flex items-start gap-2">
+                              <span className="text-amber-600 mt-1">⚠</span>
+                              <span>{factor}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* Market Comparison */}
+              {valuationPack.ai_estimate.market_comparison && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Market Trend</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart className="h-5 w-5" />
+                      Market Comparison
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-2">
-                      {valuationPack.market_trend.percentage_change > 0 ? (
-                        <AlertCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                      )}
-                      <span>
-                        {valuationPack.market_trend.percentage_change > 0 ? "Increasing" : "Decreasing"} by{" "}
-                        {Math.abs(valuationPack.market_trend.percentage_change).toFixed(1)}% over{" "}
-                        {valuationPack.market_trend.period}
-                      </span>
-                    </div>
+                    <p className="text-sm">{valuationPack.ai_estimate.market_comparison}</p>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Comparables */}
-              {valuationPack.comparables && valuationPack.comparables.length > 0 && (
-                <Card>
+              {/* Recommendations */}
+              {valuationPack.ai_estimate.recommendations?.length > 0 && (
+                <Card className="border-blue-200 bg-blue-50/50">
                   <CardHeader>
-                    <CardTitle>Comparative Sales</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-blue-700">
+                      <Lightbulb className="h-5 w-5" />
+                      AI Recommendations
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {valuationPack.comparables.slice(0, 10).map((comp: any, idx: number) => (
-                        <div key={idx} className="flex justify-between border-b pb-2">
-                          <div>
-                            <div className="font-medium">{comp.address || `${comp.street}, ${comp.town}`}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {comp.property_type} | Sold {comp.date || comp.sold_date}
-                            </div>
-                          </div>
-                          <div className="font-bold">£{comp.price?.toLocaleString()}</div>
-                        </div>
+                    <ul className="space-y-3">
+                      {valuationPack.ai_estimate.recommendations.map((rec: string, idx: number) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-blue-600 font-bold mt-0.5">{idx + 1}.</span>
+                          <span>{rec}</span>
+                        </li>
                       ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Property Details */}
+              {valuationPack.property && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Property Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Address:</span>
+                        <div className="font-medium">{valuationPack.property.address}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Type:</span>
+                        <div className="font-medium">{valuationPack.property.property_type}</div>
+                      </div>
+                      {valuationPack.property.bedrooms && (
+                        <div>
+                          <span className="text-muted-foreground">Bedrooms:</span>
+                          <div className="font-medium">{valuationPack.property.bedrooms}</div>
+                        </div>
+                      )}
+                      {valuationPack.property.floor_area_sqm && (
+                        <div>
+                          <span className="text-muted-foreground">Floor Area:</span>
+                          <div className="font-medium">{valuationPack.property.floor_area_sqm} m²</div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               )}
+
+              {/* Data Source */}
+              <div className="text-xs text-center text-muted-foreground pt-4 border-t">
+                {valuationPack.data_source} • Model: {valuationPack.ai_estimate.model_used}
+              </div>
             </div>
           )}
         </DialogContent>
